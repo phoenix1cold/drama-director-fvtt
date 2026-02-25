@@ -19,7 +19,7 @@ jobs:
       - name: Create fixed ZIP archive
         run: |
           # Создаём ZIP с фиксированным именем drama-director.zip
-          zip -r drama-director.zip . -x "*.git*" -x ".github/*"
+          zip -r drama-director.zip . -x "*.git*" -x ".github/*" -x "docs/*"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
