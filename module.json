@@ -1,0 +1,45 @@
+{
+  "id": "drama-director",
+  "title": "Drama Director",
+  "description": "Cinematic effects for Foundry VTT \u2014 intros, endings, filters, text overlays, video player, visual novel.",
+  "version": "3.4.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "phoenix1cold"
+    }
+  ],
+  "esmodules": [
+    "scripts/drama-director.mjs"
+  ],
+  "styles": [
+    "styles/drama-director.css",
+    "styles/cutin-base.css",
+    "styles/cutin-themes-personal.css",
+    "styles/cutin-themes-allout.css",
+    "styles/cutin-panel.css",
+    "styles/vn.css"
+  ],
+  "socket": true,
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "ru",
+      "name": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439",
+      "path": "lang/ru.json"
+    }
+  ],
+  "templates": [
+    "templates/panel.hbs",
+    "templates/cutin-panel.hbs",
+    "templates/vn-panel.hbs"
+  ],
+  "flags": {}
+}

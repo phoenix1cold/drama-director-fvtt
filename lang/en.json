@@ -1,0 +1,83 @@
+{
+  "DRAMADIRECTOR": {
+    "title": "Drama Director",
+    "tabs": { "intro": "Intro", "effects": "Effects" },
+    "targetUser": "Target Player",
+    "allPlayers": "All Players",
+
+    "intro": {
+      "section": "Cinematic Introduction",
+      "style": "Style",
+      "title": "Title",
+      "titlePlaceholder": "Scene or chapter name...",
+      "subtitle": "Subtitle",
+      "subtitlePlaceholder": "Additional line (optional)...",
+      "animation": "Animation",
+      "animReveal": "Reveal",
+      "animZoom": "Zoom",
+      "animSlide": "Slide Up",
+      "duration": "Duration (ms)",
+      "show": "Show Introduction",
+      "styleEpic": "⚔ Epic",
+      "styleHorror": "💀 Horror",
+      "styleRoyal": "👑 Royal",
+      "styleMinimal": "✦ Minimal",
+      "styleWar": "🔥 War"
+    },
+
+    "vignette": "Vignette",
+    "grayscale": "Grayscale",
+    "drunk": "Drunk",
+    "high": "High",
+    "blood": "Blood",
+    "glitch": "Glitch",
+    "sakura": "Sakura",
+    "hearts": "Hearts",
+
+    "customText": "Screen Text",
+    "textPlaceholder": "Enter text...",
+    "textSubtitlePlaceholder": "Chapter subtitle...",
+    "textStyle": "Style",
+    "textStyleCenter": "Center",
+    "textStyleLeft": "◀ Left Block",
+    "textStyleRight": "Right Block ▶",
+    "textStyleBottom": "▼ Bottom Subtitle",
+    "textStyleChapter": "✦ Chapter Title",
+    "textStyleHorror": "Horror",
+    "textStyleAnime": "Anime",
+    "textAnimation": "Animation",
+    "textAnimFade": "Fade",
+    "textAnimZoom": "Zoom",
+    "textAnimShake": "Shake",
+    "textAnimImpact": "Impact",
+    "textDuration": "ms",
+    "showText": "Show Text",
+
+    "sounds": "Sounds",
+    "soundChord": "Chord",
+    "soundImpact": "Impact",
+    "soundSweep": "Sweep",
+    "customSound": "Custom Audio File",
+    "customSoundPath": "Path to audio file...",
+    "customSoundBrowse": "Browse",
+    "customSoundPlay": "Play",
+    "customSoundBroadcast": "Play for all",
+
+    "clearEffects": "Clear All Effects",
+    "basicEffects": "Basic Effects",
+    "animeEffects": "Anime Effects",
+    "statusEffects": "Status Effects",
+    "specialEffects": "Special Effects",
+
+    "settings": {
+      "vignetteIntensity": "Vignette Intensity",
+      "vignetteIntensityHint": "How dark the screen edges will be",
+      "textDuration": "Default Text Duration (ms)",
+      "textDurationHint": "How long text is displayed in milliseconds",
+      "enableSounds": "Enable Sounds",
+      "enableSoundsHint": "Play sound effects",
+      "soundVolume": "Sound Volume",
+      "soundVolumeHint": "Volume of sound effects from 0 to 1"
+    }
+  }
+}

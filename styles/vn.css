@@ -1,0 +1,949 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Drama Director — Visual Novel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── OVERLAY ────────────────────────────────────────────────────────────── */
+#dd-vn-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: block; overflow: hidden;
+  font-family: 'Noto Serif', 'Georgia', serif;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+#dd-vn-overlay.interactive {
+  pointer-events: auto;
+  z-index: 100;
+  opacity: 1;
+}
+/* Когда overlay неактивен — ВСЕ дочерние элементы должны игнорировать события мыши */
+#dd-vn-overlay:not(.interactive) * {
+  pointer-events: none !important;
+}
+#dd-vn-overlay * { box-sizing: border-box; }
+
+/* ── Quick Bar (верхний правый угол) ────────────────────────────────────── */
+.vn-quick-bar {
+  position: absolute; top: 12px; right: 12px;
+  display: flex; align-items: center; gap: 4px;
+  z-index: 50;
+  pointer-events: auto;
+  background: rgba(10,10,18,.82);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  padding: 4px 6px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(0,0,0,.5);
+}
+
+.vn-quick-btn {
+  width: 34px; height: 34px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #777;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+.vn-quick-btn:hover {
+  background: rgba(255,255,255,.09);
+  border-color: rgba(255,255,255,.18);
+  color: #ddd;
+}
+.vn-quick-btn.vn-mic-on {
+  color: #4f4;
+  border-color: rgba(80,200,80,.4);
+  background: rgba(80,200,80,.1);
+  box-shadow: 0 0 8px rgba(80,200,80,.3);
+}
+
+.vn-quick-sep {
+  width: 1px; height: 22px;
+  background: rgba(255,255,255,.15);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Dot внутри mic-indicator теперь маленький, правее кнопки */
+.vn-mic-indicator {
+  display: flex; align-items: center; gap: 4px;
+}
+
+.vn-mic-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #c44;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.vn-mic-dot.vn-mic-dot-on {
+  background: #4a4;
+  box-shadow: 0 0 6px rgba(80,200,80,.6);
+  animation: vn-mic-pulse 1.5s ease-in-out infinite;
+}
+@keyframes vn-mic-pulse {
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.7;transform:scale(1.15)}
+}
+
+.vn-bg-layer {
+  position: absolute; inset: 0; z-index: 1;
+  background-size: cover; background-position: center;
+  transition: opacity .4s;
+}
+.vn-bg-layer::after {
+  content: ''; position: absolute; inset: 0; z-index: 2;
+  background: rgba(0,0,0,var(--vn-dim,0));
+  pointer-events: none;
+}
+.vn-bg-layer video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* Stage 1920×1080 */
+.vn-stage {
+  position: absolute; top: 50%; left: 50%;
+  width: 1920px; height: 1080px;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  overflow: visible; pointer-events: none;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  z-index: 10;
+}
+
+/* ── Персонажи ─────────────────────────────────────────────────────────── */
+.vn-chars { 
+  display: flex !important; 
+  align-items: flex-end; 
+  height: 100%; 
+  z-index: 15;
+  position: relative;
+}
+.vn-chars-left  { flex-direction: row; }
+.vn-chars-right { flex-direction: row-reverse; }
+
+.vn-char { 
+  display: flex !important; 
+  flex-direction: column; 
+  align-items: center; 
+  position: relative;
+  transition: filter .3s, opacity .3s, transform .3s; 
+  flex-shrink: 0;
+  z-index: 20;
+  min-height: 200px;
+  pointer-events: auto;
+}
+
+.vn-char-portrait {
+  width: 100%; height: 900px;
+  display: flex; align-items: flex-end; justify-content: center;
+  position: relative;
+  z-index: 22;
+  transition: filter .3s;
+}
+.vn-char-portrait img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  position: relative;
+  z-index: 23;
+}
+
+/* ── Контейнер для кроссфейда изображений ───────────────────────────────────── */
+.vn-char-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.vn-char-img-wrap img {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.vn-char-img-base {
+  opacity: 1;
+  z-index: 1;
+}
+
+.vn-char-img-active {
+  opacity: 0;
+  z-index: 2;
+}
+
+.vn-char-img-base.vn-img-hidden {
+  opacity: 0;
+}
+
+.vn-char-img-active.vn-img-visible {
+  opacity: 1;
+}
+.vn-char-empty {
+  width: 100%; height: 600px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  background: rgba(80,80,120,.3); 
+  border: 3px dashed rgba(255,255,255,.4); 
+  border-radius: 12px;
+  font-size: 80px; color: rgba(255,255,255,.5);
+}
+
+.vn-char-active { 
+  filter: none; 
+  opacity: 1; 
+  z-index: 30 !important;
+  transform: scale(1.05);
+  transition: transform .3s ease-out, z-index .1s;
+}
+.vn-char-dim    { filter: grayscale(40%) brightness(0.6); opacity: 0.85; z-index: 10; }
+.vn-char-all-visible { filter: none; opacity: 1; z-index: 15; }
+
+.vn-char-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 15px;
+  font-size: 18px; font-weight: bold; text-align: center; white-space: nowrap;
+  color: #ffe066;
+  text-shadow: 0 2px 8px #000, 0 0 20px rgba(0,0,0,.9);
+  background: rgba(0,0,0,.85);
+  padding: 6px 20px;
+  border-radius: 6px;
+  z-index: 25;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+  border: 1px solid rgba(255,220,60,.3);
+}
+.vn-char:hover .vn-char-label,
+.vn-char-active .vn-char-label {
+  opacity: 1;
+}
+.vn-char-active .vn-char-label {
+  border-color: rgba(255,220,60,.7);
+  box-shadow: 0 0 15px rgba(255,220,60,.4);
+}
+.vn-char-title { font-size: 14px; font-weight: normal; display: block; opacity: 0.9; }
+
+/* ── Диалоговое окно ───────────────────────────────────────────────────── */
+.vn-dialogue-box {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  width: 1640px; display: flex;
+  z-index: 10; pointer-events: none;
+}
+.vn-dialogue-inner {
+  flex: 1; background: rgba(5,5,15,.88);
+  border: 2px solid rgba(255,220,60,.3);
+  border-radius: 8px; padding: 18px 32px 14px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -4px 40px rgba(0,0,0,.7);
+}
+.vn-speaker {
+  font-size: 28px; font-weight: bold;
+  margin-bottom: 10px; letter-spacing: .04em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.8);
+}
+.vn-text {
+  font-size: 24px; color: #f0ead8; line-height: 1.6;
+  min-height: 28px;
+  text-shadow: 1px 1px 4px rgba(0,0,0,.8);
+}
+
+/* ── Субтитры — внутри диалогового окна ─────────────────────────────── */
+.vn-subtitle-line {
+  display: none; align-items: baseline; gap: 10px;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid rgba(255,220,60,.2);
+  flex-wrap: wrap;
+}
+.vn-sub-name {
+  font-size: 19px; font-weight: bold; white-space: nowrap;
+  text-shadow: 0 1px 4px #000;
+}
+.vn-sub-text {
+  font-size: 19px; color: #e8e0cc; font-style: italic;
+  text-shadow: 0 1px 4px #000;
+}
+
+/* ── Множественные субтитры ─────────────────────────────────────────── */
+.vn-subtitles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,220,60,.2);
+  max-height: 150px;
+  overflow-y: auto;
+}
+.vn-subtitle-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  animation: vn-sub-fadein 0.3s ease-out forwards;
+  opacity: 0;
+}
+@keyframes vn-sub-fadein {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.vn-subtitle-item .vn-sub-name {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.vn-subtitle-item .vn-sub-text {
+  font-size: 16px;
+  color: #e8e0cc;
+}
+
+/* ── GM Controls ───────────────────────────────────────────────────────── */
+.vn-gm-controls {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; z-index: 20;
+  background: rgba(0,0,0,.85); border: 1px solid #555;
+  border-radius: 20px; padding: 5px 14px;
+  pointer-events: all;
+}
+.vn-gm-label { font-size: 12px; color: #999; font-family: sans-serif; }
+.vn-gm-controls button {
+  background: #222; border: 1px solid #555; border-radius: 4px;
+  color: #ccc; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  font-family: sans-serif;
+}
+.vn-gm-controls button:hover { background: #333; color: #fff; }
+.vn-gm-controls .vn-btn-danger { border-color: #700; color: #f88; background: rgba(80,0,0,.4); }
+.vn-gm-controls .vn-btn-danger:hover { background: rgba(120,0,0,.5); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dd-vn-panel .window-content { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.dd-vn-panel { z-index: 10002 !important; } /* Выше VN overlay */
+
+.vn-panel-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; font-size: 13px; }
+
+.vn-panel-header { flex-shrink: 0; border-bottom: 1px solid #333; padding: 7px 10px 0; background: rgba(0,0,0,.35); }
+.vn-status-bar   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.vn-status-on    { color: #6fcf6f; font-weight: bold; font-size: 12px; }
+.vn-status-off   { color: #888;    font-weight: bold; font-size: 12px; }
+
+.vn-tabs { display: flex; gap: 2px; }
+.vn-tab {
+  padding: 5px 11px; background: #151515; border: 1px solid #333;
+  border-radius: 4px 4px 0 0; color: #666; font-size: 12px; cursor: pointer;
+  border-bottom-color: #333;
+}
+.vn-tab:hover  { background: #1e1e1e; color: #bbb; }
+.vn-tab.active { background: #1c1c1c; border-color: #555; border-bottom-color: #1c1c1c; color: #eee; }
+.vn-mic-dot { display: inline-block; width: 7px; height: 7px; background: #f00;
+  border-radius: 50%; margin-left: 4px; animation: vn-blink 1s infinite; }
+@keyframes vn-blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+.vn-panel-body { flex: 1; min-height: 0; overflow: hidden; }
+.vn-tab-content { padding: 10px; height: 100%; overflow-y: auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+
+/* Buttons */
+.vn-btn-primary  { background: linear-gradient(135deg,#1a4a1a,#2d7a2d); border: 1px solid #3a9a3a; border-radius: 4px; color: #afe; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+.vn-btn-primary:hover  { background: linear-gradient(135deg,#1e541e,#338a33); }
+.vn-btn-secondary{ background: #222; border: 1px solid #555; border-radius: 4px; color: #aaa; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+.vn-btn-secondary:hover{ background: #2a2a2a; color: #ddd; }
+.vn-btn-danger   { background: rgba(100,0,0,.4); border: 1px solid #700; border-radius: 4px; color: #f88; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.vn-btn-danger:hover{ background: rgba(130,0,0,.5); }
+.vn-btn-add      { background: #1e3a1e; border: 1px solid #3a6a3a; border-radius: 3px; color: #7fc97f; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+.vn-btn-add:hover{ background: #254525; }
+
+/* Layout */
+.vn-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── BG Section ─────────────────────────────────────────────────────────── */
+.vn-bg-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+.vn-bg-group { margin-bottom: 10px; }
+.vn-bg-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 5px;
+}
+.vn-bg-group-name { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; letter-spacing: .06em; }
+.vn-bg-group-actions { display: flex; gap: 3px; }
+.vn-bg-move-btn {
+  background: #1a1a1a; border: 1px solid #3a3a3a; border-radius: 3px;
+  color: #666; padding: 2px 5px; font-size: 10px; cursor: pointer;
+}
+.vn-bg-move-btn:hover { background: #252525; color: #aaa; }
+.vn-bg-delete-btn:hover { border-color: #700; color: #f88 !important; }
+
+.vn-bg-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.vn-bg-tile {
+  display: flex; flex-direction: column; align-items: center;
+  width: 80px; padding: 6px 4px;
+  background: #0e1420; border: 1px solid #2a3a4a; border-radius: 5px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+  overflow: hidden;
+}
+.vn-bg-tile:hover { border-color: #5a8aaa; background: #131c28; }
+.vn-bg-tile-active { border-color: #ffe066 !important; background: rgba(255,220,60,.08) !important; box-shadow: 0 0 8px rgba(255,220,60,.25); }
+.vn-bg-tile-icon { font-size: 22px; color: #4a7aaa; margin-bottom: 4px; }
+.vn-bg-tile-name { font-size: 10px; color: #8ab0cc; text-align: center; line-height: 1.2; word-break: break-word; }
+
+/* ── BG Edit Form (modal-like) ──────────────────────────────────────────── */
+.vn-bgedit-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.vn-bgedit-box {
+  background: #1a1a1a; border: 1px solid #555; border-radius: 6px;
+  padding: 16px; width: 480px; max-width: 95%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.8);
+}
+.vn-bgedit-box h4 { margin: 0 0 12px; color: #eee; font-size: 14px; }
+.vn-bgedit-var-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+.vn-bgedit-var-num { color: #666; font-size: 11px; min-width: 16px; }
+.vn-bgedit-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 12px; }
+
+/* ── Chars ─────────────────────────────────────────────────────────────── */
+.vn-chars-header  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; flex-shrink: 0; }
+.vn-chars-counts  { font-size: 12px; color: #888; }
+.vn-chars-actions { display: flex; gap: 5px; }
+
+.vn-char-list { display: flex; flex-direction: column; gap: 5px; flex: 1; overflow-y: auto; }
+.vn-char-row {
+  display: flex; gap: 7px; align-items: stretch;
+  background: rgba(0,0,0,.3); border: 1px solid #333; border-radius: 5px;
+  padding: 6px 8px; flex-shrink: 0;
+}
+.vn-char-row-active { border-color: rgba(255,220,60,.45) !important; background: rgba(255,220,60,.04) !important; }
+
+.vn-char-row-left { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+.vn-char-thumb { width: 52px; height: 52px; border-radius: 4px; overflow: hidden; border: 1px solid #444; background: #111; }
+.vn-char-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.vn-char-thumb-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #444; }
+.vn-char-pos-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: bold; }
+.vn-char-pos-badge.left  { background: rgba(60,100,200,.35); color: #88aaff; }
+.vn-char-pos-badge.right { background: rgba(200,60,60,.35);  color: #ffaaaa; }
+
+.vn-char-row-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.vn-char-params-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+
+.vn-char-row-right { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+
+.vn-active-btn {
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  border: 2px solid #444; background: #1a1a1a;
+  display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555;
+  transition: all .15s;
+}
+.vn-active-btn:hover    { border-color: #ffe066; color: #ffe066; }
+.vn-active-btn-on       { border-color: #ffe066 !important; color: #ffe066 !important;
+  background: rgba(255,220,60,.12) !important;
+  box-shadow: 0 0 10px rgba(255,220,60,.4);
+  animation: vn-btn-pulse 1.8s ease-in-out infinite;
+}
+@keyframes vn-btn-pulse { 0%,100%{box-shadow:0 0 8px rgba(255,220,60,.3)} 50%{box-shadow:0 0 16px rgba(255,220,60,.7)} }
+
+.vn-side-btn, .vn-order-btn {
+  width: 24px; height: 24px; border-radius: 3px; cursor: pointer;
+  border: 1px solid #444; background: #1a1a1a;
+  display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;
+}
+.vn-side-btn:hover, .vn-order-btn:hover { background: #252525; color: #aaa; border-color: #666; }
+
+.vn-chars-presets-bar {
+  display: flex; gap: 5px; align-items: center; flex-shrink: 0;
+  padding: 6px; background: rgba(0,0,0,.2); border: 1px solid #2a2a2a; border-radius: 4px;
+}
+
+/* ── Character Search ───────────────────────────────────────────────────── */
+.vn-chars-search {
+  margin-bottom: 7px;
+  flex-shrink: 0;
+}
+.vn-chars-search .dd-input {
+  width: 100%;
+}
+
+/* ── Slider Values ─────────────────────────────────────────────────────── */
+.vn-char-params-row .vn-slider-val {
+  min-width: 35px;
+  text-align: right;
+  font-size: 11px;
+  color: #888;
+  margin-left: 4px;
+}
+
+.vn-char-params-row input[type="range"] {
+  width: 70px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+}
+
+.vn-char-params-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ffe066;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.vn-char-params-row input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ffe066;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Misc */
+.vn-mic-active-badge {
+  background: rgba(0,100,0,.3); border: 1px solid #060; border-radius: 4px;
+  color: #6f6; padding: 6px 12px; font-size: 13px; font-weight: bold; text-align: center;
+  animation: vn-blink 2s infinite;
+}
+.vn-macro-example {
+  background: #0a0a0a; border: 1px solid #333; border-radius: 4px;
+  padding: 10px; font-size: 11px; color: #90b870; font-family: monospace;
+  white-space: pre; overflow-x: auto;
+}
+
+/* mic styles перенесены в .vn-quick-bar секцию выше */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GM LEFT BAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#vn-gm-left-bar {
+  position: absolute;
+  top: 60px;
+  left: 12px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  width: 220px;
+}
+
+.vn-gml-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.vn-gml-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Голос GM ─────────────────────────────────────────────────────────────── */
+.vn-gml-voice {
+  background: rgba(10,10,18,.88);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 9px;
+  padding: 7px 9px;
+  backdrop-filter: blur(6px);
+  gap: 4px;
+}
+.vn-gml-label {
+  font-size: 10px;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: sans-serif;
+}
+.vn-gml-select {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 5px;
+  color: #ddd;
+  font-size: 12px;
+  padding: 4px 6px;
+  width: 100%;
+  font-family: sans-serif;
+  cursor: pointer;
+}
+.vn-gml-select:focus { outline: none; border-color: rgba(255,220,60,.5); }
+
+/* ── Toggle кнопка аккордеона ────────────────────────────────────────────── */
+.vn-gml-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10,10,18,.88);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 9px;
+  color: #aaa;
+  font-size: 12px;
+  font-family: sans-serif;
+  padding: 7px 10px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  backdrop-filter: blur(6px);
+  transition: background .15s, color .15s;
+  position: relative;
+}
+.vn-gml-toggle-btn:hover {
+  background: rgba(30,30,48,.92);
+  color: #eee;
+}
+.vn-gml-toggle-btn.open {
+  border-radius: 9px 9px 0 0;
+  border-bottom-color: rgba(255,255,255,.06);
+  color: #fff;
+  background: rgba(20,20,36,.95);
+}
+.vn-gml-count {
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  padding: 0 5px;
+  font-size: 10px;
+  color: #999;
+  margin-left: 2px;
+}
+.vn-gml-chev { margin-left: auto; font-size: 10px; color: #666; }
+
+/* ── Dropdown ────────────────────────────────────────────────────────────── */
+.vn-gml-dropdown {
+  display: none;
+  flex-direction: column;
+  background: rgba(8,8,16,.95);
+  border: 1px solid rgba(255,255,255,.13);
+  border-top: none;
+  border-radius: 0 0 9px 9px;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  max-height: 320px;
+}
+.vn-gml-dropdown.open { display: flex; }
+
+.vn-gml-search-row {
+  padding: 6px 7px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+.vn-gml-search {
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 5px;
+  color: #ccc;
+  font-size: 11px;
+  padding: 4px 7px;
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+.vn-gml-search:focus { outline: none; border-color: rgba(255,220,60,.4); }
+
+.vn-gml-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+.vn-gml-list::-webkit-scrollbar { width: 4px; }
+.vn-gml-list::-webkit-scrollbar-track { background: transparent; }
+.vn-gml-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+
+.vn-gml-empty {
+  padding: 10px;
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+  font-family: sans-serif;
+}
+
+/* ── Char items ─────────────────────────────────────────────────────────── */
+.vn-gml-char-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  user-select: none;
+}
+.vn-gml-char-item:last-child { border-bottom: none; }
+.vn-gml-char-item:hover { background: rgba(255,255,255,.06); }
+.vn-gml-char-item.gml-active { background: rgba(255,220,60,.07); }
+.vn-gml-char-item.gml-hidden-char { opacity: 0.45; }
+.vn-gml-char-item.gml-hidden-char .vn-gml-char-name::after {
+  content: ' (скрыт)';
+  color: #666;
+  font-size: 10px;
+}
+
+.vn-gml-char-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vn-gml-char-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.vn-gml-char-thumb-icon { font-size: 16px; color: #555; }
+
+.vn-gml-char-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.vn-gml-char-name {
+  font-size: 12px;
+  font-weight: bold;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vn-gml-char-meta {
+  font-size: 10px;
+  color: #666;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vn-gml-active-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #444;
+  background: rgba(0,0,0,.3);
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.vn-gml-active-btn:hover { border-color: #ffe066; color: #ffe066; }
+.vn-gml-active-btn.on {
+  border-color: #ffe066;
+  color: #ffe066;
+  background: rgba(255,220,60,.12);
+  box-shadow: 0 0 8px rgba(255,220,60,.35);
+  animation: vn-btn-pulse 1.8s ease-in-out infinite;
+}
+
+/* ── BG items ────────────────────────────────────────────────────────────── */
+.vn-gml-bg-group-name {
+  padding: 5px 8px 2px;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: sans-serif;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+
+.vn-gml-bg-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  user-select: none;
+}
+.vn-gml-bg-item:hover { background: rgba(255,255,255,.06); }
+.vn-gml-bg-item.gml-bg-active {
+  background: rgba(255,220,60,.1);
+  border-left: 2px solid #ffe066;
+  padding-left: 6px;
+}
+.vn-gml-bg-icon { font-size: 13px; color: #4a7aaa; flex-shrink: 0; }
+.vn-gml-bg-name { font-size: 12px; color: #bbb; font-family: sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Presets section ───────────────────────────────────────────────────────── */
+.vn-gml-preset-section {
+  padding: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.vn-gml-preset-section:last-child { border-bottom: none; }
+
+.vn-gml-preset-header {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-family: sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,.02);
+}
+.vn-gml-preset-header i { font-size: 10px; color: #777; }
+
+.vn-gml-preset-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+.vn-gml-preset-list::-webkit-scrollbar { width: 4px; }
+.vn-gml-preset-list::-webkit-scrollbar-track { background: transparent; }
+.vn-gml-preset-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+
+.vn-gml-preset-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.vn-gml-preset-item:last-child { border-bottom: none; }
+.vn-gml-preset-item:hover { background: rgba(255,255,255,.06); }
+.vn-gml-preset-item:hover .vn-gml-preset-load { opacity: 1; }
+
+.vn-gml-preset-icon { font-size: 12px; color: #7a9aaa; flex-shrink: 0; }
+.vn-gml-preset-name {
+  flex: 1;
+  font-size: 12px;
+  color: #bbb;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vn-gml-preset-load {
+  font-size: 10px;
+  color: #ffe066;
+  opacity: 0;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HELP TAB
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-help-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.vn-help-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.vn-help-section:last-child { border-bottom: none; }
+
+.vn-help-section h3 {
+  font-size: 13px;
+  color: #e0c060;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.vn-help-section h3 i { color: #ffe066; font-size: 12px; }
+
+.vn-help-section p {
+  font-size: 12px;
+  color: #aaa;
+  margin: 0 0 6px;
+  line-height: 1.55;
+}
+
+.vn-help-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vn-help-list li {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.5;
+}
+.vn-help-list li strong { color: #ddd; }
+.vn-help-list li i { color: #ffe066; font-size: 11px; }
+.vn-help-list li em { color: #8ab; font-style: normal; }
+
+.vn-help-sublist {
+  margin: 4px 0 0 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  list-style: circle;
+}
+.vn-help-sublist li {
+  font-size: 11px;
+  color: #999;
+  line-height: 1.45;
+}
+.vn-help-sublist li strong { color: #ccc; }
+
+.vn-help-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: rgba(255,140,0,.2);
+  color: #ffa040;
+  border: 1px solid rgba(255,140,0,.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GM BAR — Player binding
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-gml-char-player-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.vn-gml-player-sel {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 10px;
+  padding: 2px 4px;
+  max-width: 90px;
+  cursor: pointer;
+  font-family: sans-serif;
+  flex-shrink: 0;
+}
+.vn-gml-player-sel:focus { outline: none; border-color: rgba(255,220,60,.4); }

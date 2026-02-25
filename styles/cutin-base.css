@@ -1,0 +1,1274 @@
+/* --- START OF FILE base-ui.css --- */
+
+/* ==========================================================================
+   base-ui.css
+   - Core Layouts (Fixed 1920x1080 Resolution)
+   - Overlay Containers
+   - Configuration Windows
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&display=swap');
+
+/* ========================================= */
+/* 1. CORE OVERLAY CONTAINERS (Safe)         */
+/* ========================================= */
+
+/* 
+   1. 최상위 오버레이 
+   - 위치 잡기용 (화면 전체)
+   - 배경은 투명 (중앙 구멍으로 게임 화면을 봐야 함)
+*/
+#cinematic-overlay,
+#cinematic-group-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+    
+    /* 평소엔 숨김 */
+    display: none; 
+    
+    /* Flex로 중앙 정렬 */
+    align-items: center;
+    justify-content: center;
+    
+    background-color: transparent !important;
+    overflow: hidden; /* 화면 밖 요소 숨김 */
+}
+
+/* 활성화 시 표시 */
+#cinematic-overlay.active,
+#cinematic-group-overlay.active {
+    display: flex !important;
+}
+
+/* 투표 모드일 때는 클릭 허용 (버튼 눌러야 하니까) */
+#cinematic-group-overlay.active.voting-mode {
+    pointer-events: auto;
+}
+
+/* 
+   2. [핵심] 가상 해상도 스테이지 (1920 x 1080 고정) 
+   - 이 박스는 JS(_fitScreen)에 의해 사용자의 화면 크기에 맞춰 Scale(확대/축소).
+   - 비율이 안 맞는 부분은 box-shadow가 채워줌 (레터박스).
+*/
+.cinematic-aspect-stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    translate: -50% -50%; /* 중앙 정렬 고정 */
+    overflow: hidden;
+}
+
+/* --- [모드별 스타일] --- */
+
+/* 1. 레터박스 계열 (16:9 유지 + 검은 여백) */
+.cinematic-aspect-stage.mode-letterbox {
+    box-shadow: 0 0 0 10000px #000 !important;
+}
+.cinematic-aspect-stage.mode-dimmed {
+    box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 2. 풀스크린/플로팅 계열 (여백 투명 또는 가득 채움) */
+.cinematic-aspect-stage.mode-fit,
+.cinematic-aspect-stage.mode-stretch,
+.cinematic-aspect-stage.mode-cover {
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+/* 3. 오버레이 컨테이너 자체 배경 제거 (가장 중요) */
+#cinematic-overlay, 
+#cinematic-group-overlay {
+    background-color: transparent !important;
+}
+
+/* 4. 플로팅 모드(fit)에서 경계선이 너무 칼같을 때를 위한 부드러운 효과 */
+.cinematic-aspect-stage.mode-fit {
+    filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+}
+
+/* 
+   3. 내부 래퍼 (실제 컨텐츠)
+   - 스테이지(1920x1080)를 가득 채움
+*/
+#cinematic-overlay .cinematic-wrapper,
+#cinematic-group-overlay .cinematic-group-container {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+/* ========================================= */
+/* PREVIEW FIXES (설정창 미리보기)           */
+/* ========================================= */
+
+/* 1. 미리보기 컨테이너 (부모) - 투명 체크무늬 패턴 적용 */
+.cinematic-config .preview-container,
+.all-out-config .preview-stage-wrapper {
+    flex: 1; 
+    min-height: 0;
+    width: 100%;
+    
+    position: relative;
+    border: 2px solid #555;
+    border-radius: 4px;
+    overflow: hidden; 
+    
+    background-color: #1a1a1a;
+    background-image:
+      linear-gradient(45deg, #252525 25%, transparent 25%),
+      linear-gradient(-45deg, #252525 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #252525 75%),
+      linear-gradient(-45deg, transparent 75%, #252525 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* 
+   2. 미리보기 스테이지 (자식) 
+   - 1920x1080 고정 해상도
+   - 배경을 투명하게 설정하여 뒤의 체크무늬가 보이게 함
+*/
+.cinematic-config #preview-stage,
+.all-out-config #group-preview-stage {
+    position: absolute !important;
+    width: 1920px !important;
+    height: 1080px !important;
+    
+    /* 중앙 정렬 기준점 */
+    top: 50% !important; 
+    left: 50% !important;
+    
+    /* JS에서 scale이 적용될 때 translate(-50%, -50%)가 유지되도록 설정 */
+    transform: translate(-50%, -50%); 
+    transform-origin: center center;
+    
+    background-color: transparent !important; 
+    box-shadow: none !important;
+    border: 2px dashed #ffffff;
+    filter: drop-shadow(0 0 1px #000); 
+    pointer-events: none;
+    box-sizing: border-box;
+    display: block !important; /* hidden 상태를 무시하고 프리뷰에선 보이게 */
+    background-color: transparent !important;
+}
+
+/* 
+   3. 설정창 내부의 16:9 박스 강제 투명화 
+   (혹시 모를 상속 문제 방지)
+*/
+.cinematic-config .cinematic-aspect-stage {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+/* ========================================= */
+/* COMMON ANIMATIONS & UTILS                 */
+/* ========================================= */
+
+.cinematic-wrapper.animate {
+    animation: wrapper-fade-in-out var(--custom-duration, 4s) ease forwards;
+}
+
+.cinematic-aspect-stage.animate {
+    animation: wrapper-fade-in-out var(--custom-duration, 4s) ease forwards;
+}
+
+.cinematic-aspect-stage.animate .cinematic-wrapper.animate {
+    animation: none; 
+}
+
+@keyframes wrapper-fade-in-out {
+    0% { opacity: 0; }
+    5% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.cinematic-character {
+    position: absolute;
+    z-index: 2;
+    object-fit: contain;
+    opacity: 0;
+    pointer-events: none;
+    width: auto;
+    height: 100%;
+    border: none;
+}
+
+.cinematic-pattern-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.cinematic-custom-bg video,
+.cinematic-custom-overlay video {
+    pointer-events: none;
+}
+
+.cinematic-text-main {
+    font-size: var(--main-font-size, 8rem);
+    margin-left: var(--main-offset-x, 0px); margin-top: var(--main-offset-y, 0px);
+    line-height: 0.9; color: #fff; text-transform: uppercase; font-weight: 700;
+    opacity: 0; font-family: var(--cinematic-font, 'Teko'), sans-serif;
+}
+
+.cinematic-text-sub {
+    font-size: var(--sub-font-size, 2rem);
+    margin-left: var(--sub-offset-x, 0px); margin-top: calc(10px + var(--sub-offset-y, 0px));
+    width: fit-content; font-weight: 600; letter-spacing: 5px;
+    transform: scaleX(0); opacity: 0; font-family: var(--cinematic-font, 'Teko'), sans-serif;
+}
+
+/* 일시정지 (Pause) 유틸리티 */
+.cinematic-wrapper.paused,
+.cinematic-wrapper.paused *,
+.cinematic-group-container.paused,
+.cinematic-group-container.paused * {
+    animation-play-state: paused !important;
+}
+
+/* ========================================= */
+/* 2. CONFIG WINDOW STYLES (Scoped)          */
+/* ========================================= */
+
+.cinematic-config,
+.all-out-config {
+    min-width: 800px; 
+    height: 600px;
+    color: #efe6d8;
+}
+
+.cinematic-config .window-content,
+.all-out-config .window-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+.cinematic-config-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    height: 100%;
+    overflow: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Left Panel */
+.cinematic-config .config-panel,
+.all-out-config .config-panel {
+    overflow-y: auto;
+    padding-right: 5px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.cinematic-config .config-panel h3,
+.all-out-config .config-panel h3 {
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-family: 'Teko', sans-serif;
+    font-size: 1.5em;
+    flex: 0 0 auto;
+}
+.cinematic-config .config-panel h3:first-child,
+.all-out-config .config-panel h3:first-child { margin-top: 0; }
+
+.cinematic-config .form-group,
+.all-out-config .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    width: 100%;
+    min-height: 28px;
+}
+
+.cinematic-config .config-panel label,
+.all-out-config .config-panel label { 
+    flex: 0 0 100px;
+    font-weight: bold; 
+    font-size: 0.9em;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.cinematic-config .form-fields,
+.all-out-config .form-fields { 
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    width: 100%;
+}
+
+.cinematic-config .form-fields input,
+.cinematic-config .form-fields select,
+.cinematic-config .form-fields button,
+.all-out-config .form-fields input,
+.all-out-config .form-fields select,
+.all-out-config .form-fields button {
+    height: 28px;
+    font-size: 0.9em;
+    box-sizing: border-box;
+    color: white;
+    white-space: nowrap;
+}
+
+.cinematic-config .form-fields button,
+.all-out-config .form-fields button {
+    width: auto;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.cinematic-config .preset-manager .form-group label { display: none; }
+.cinematic-config .preset-manager .form-fields { width: 100%; }
+
+.cinematic-config .form-fields.grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+}
+
+.cinematic-config .mini-field,
+.all-out-config .mini-field,
+.all-out-config-root .mini-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0,0,0,0.1);
+    padding: 2px;
+    border-radius: 4px;
+    justify-content: center;
+}
+
+.cinematic-config .mini-field label,
+.all-out-config .mini-field label,
+.all-out-config-root .mini-field label {
+    flex: initial !important; 
+    width: auto !important;
+    height: auto !important;
+    font-size: 0.75em;
+    color: #888;
+    margin-bottom: 2px;
+    font-family: monospace;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0 3px;
+    min-width: 15px;
+}
+
+.cinematic-config .mini-field input,
+.all-out-config .mini-field input,
+.all-out-config-root .mini-field input {
+    width: 100% !important;
+    text-align: center;
+    padding: 2px !important;
+    height: 25px;
+    font-size: 0.9em;
+    border: none !important;
+    background: transparent !important;
+    color: #eee;
+}
+
+.cinematic-config .adjust-row {
+    align-items: flex-start;
+    margin-top: 10px;
+}
+.cinematic-config .adjust-row > label { margin-top: 5px; }
+
+/* Preview Panel */
+.cinematic-config .preview-panel {
+    display: flex;
+    flex-direction: column;
+    background: #222;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    min-width: 0; 
+    min-height: 0;
+    height: 100%;
+    overflow: hidden; 
+    box-sizing: border-box;
+}
+
+.cinematic-config .preview-panel h3 {
+    color: #fff;
+    text-align: center;
+    margin: 0 0 15px 0;
+    font-family: 'Teko', sans-serif;
+    flex: 0 0 auto;
+}
+
+.cinematic-config .preview-panel .hint {
+    font-size: 0.8em;
+    color: #888;
+    text-align: center;
+    margin-top: 10px;
+    flex: 0 0 auto;
+}
+
+.cinematic-config .form-footer {
+    margin-top: auto;
+    display: flex;
+    gap: 10px;
+}
+
+.cinematic-config .form-footer button {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 1.2em;
+    font-family: 'Teko', sans-serif;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    color: white;
+    width: auto;
+    height: auto;
+}
+
+.cinematic-config .form-footer button[data-action="reset"]:hover { background: #777 !important; }
+.cinematic-config .form-footer button[data-action="save"]:hover { background: #ff2d49 !important; box-shadow: 0 0 15px #e61c34; }
+
+/* Tabs Navigation (Common) */
+.cinematic-tabs-nav {
+    display: flex;
+    background: #111;
+    border-bottom: 2px solid #333;
+    margin-bottom: 10px;
+    border-radius: 4px 4px 0 0;
+}
+
+.cinematic-tabs-nav .item {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    font-family: 'Teko', sans-serif;
+    font-size: 1.2em;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.cinematic-tabs-nav .item:hover { color: #ccc; background: rgba(255,255,255,0.05); }
+.cinematic-tabs-nav .item.active { color: #fff; background: #222; border-bottom: 2px solid #e61c34; font-weight: bold; }
+
+.cinematic-config .tab-content, 
+.cinematic-control .tab-content {
+    display: none;
+    animation: fade-in 0.2s ease-out;
+}
+
+.cinematic-config .tab-content.active, 
+.cinematic-control .tab-content.active {
+    display: block;
+    background-color: rgb(11 10 19 / 90%);
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================= */
+/* 3. ALL-OUT CONFIG LAYOUT (Scoped)         */
+/* ========================================= */
+
+.all-out-config-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    width: 100%; height: 100%;
+    gap: 10px;
+}
+
+.all-out-config .config-sidebar {
+    display: flex; flex-direction: column;
+    overflow-y: auto; padding-right: 5px;
+    background-color: rgb(11 10 19 / 90%);
+    max-height: 100%;
+}
+
+.all-out-config .preview-sidebar {
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    height: 100%;
+}
+
+.all-out-config .preview-stage-wrapper {
+    flex: 1; position: relative; overflow: hidden; background: #000;
+}
+
+.all-out-config #group-preview-stage {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 100%; 
+    height: 100%;
+    background: #222;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    pointer-events: none;
+    box-shadow: 0 0 0 2px #555;
+}
+
+.all-out-config .execute-btn {
+    width: 100%;
+    background: #e61c34;
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-family: 'Teko';
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+}
+.all-out-config .execute-btn:hover { background: #ff2d49; }
+.all-out-config button[data-action="test"]:hover { background: #d35400 !important; }
+.all-out-config button[data-action="play"]:hover { background: #ff2d49 !important; }
+
+/* ========================================================= */
+/* 4. CONTROL PANEL STYLES (Merged & Scoped)                 */
+/* ========================================================= */
+
+.cinematic-control-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #1a1a1a;
+    font-family: 'Teko', sans-serif;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Filter Buttons */
+.cinematic-control-wrapper .filter-btn {
+    flex: 1;
+    background: #333;
+    border: 1px solid #444;
+    color: #888;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 0.9em;
+    border-radius: 3px;
+}
+.cinematic-control-wrapper .filter-btn.active {
+    background: #e61c34;
+    color: #fff;
+    border-color: #e61c34;
+}
+.cinematic-control-wrapper .filter-btn:hover:not(.active) {
+    background: #444;
+    color: #ccc;
+}
+
+/* Tabs Navigation */
+.cinematic-control-wrapper .cinematic-tabs {
+    display: flex;
+    background: #111;
+    border-bottom: 2px solid #333;
+}
+
+.cinematic-control-wrapper .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 10px;
+    font-family: 'Teko';
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.cinematic-control-wrapper .tab-btn:hover {
+    color: #ccc;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.cinematic-control-wrapper .tab-btn.active {
+    color: #fff;
+    background: #222;
+    border-bottom: 2px solid #e61c34;
+}
+
+/* Tab Content Area */
+.cinematic-control-wrapper .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* Accordion Styles */
+.cinematic-control-wrapper .accordion-item {
+    margin-bottom: 5px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #222;
+    overflow: hidden;
+}
+
+.cinematic-control-wrapper .accordion-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background: #333;
+    transition: background 0.2s;
+}
+
+.cinematic-control-wrapper .accordion-header:hover {
+    background: #444;
+}
+
+.cinematic-control-wrapper .header-click-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.cinematic-control-wrapper .actor-icon {
+    margin-right: 10px;
+    border: none;
+}
+
+.cinematic-control-wrapper .actor-name {
+    flex: 1;
+    font-size: 1.2em !important;
+    font-weight: bold;
+    color: #eee;
+}
+
+.cinematic-control-wrapper .actor-select-checkbox {
+    margin-right: 10px;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+/* Expanded State */
+.cinematic-control-wrapper .accordion-item.expanded .accordion-header .arrow {
+    transform: rotate(180deg);
+}
+
+.cinematic-control-wrapper .accordion-header .arrow {
+    transition: transform 0.3s;
+}
+
+.cinematic-control-wrapper .accordion-content {
+    display: none;
+    padding: 5px;
+    background: #252525;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.cinematic-control-wrapper .accordion-item.expanded .accordion-content {
+    display: grid;
+}
+
+/* Buttons */
+.cinematic-control-wrapper button {
+    border: none !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #888;
+}
+
+.cinematic-control-wrapper .config-btn {
+    background: #444 !important;
+    color: #aaa !important;
+    grid-column: span 2;
+    justify-content: center;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    font-family: 'Teko';
+    font-size: 1.1em;
+    border-radius: 4px;
+}
+
+.cinematic-control-wrapper .config-btn:hover {
+    background: #555 !important;
+    color: #fff !important;
+}
+
+.cinematic-control-wrapper .preset-row {
+    display: flex;
+    gap: 5px;
+    grid-column: span 2;
+}
+
+/* Full width rows */
+.cinematic-control-wrapper .play-btn {
+    flex: 1 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Teko';
+    font-size: 1.1em;
+    background: #e61c34 !important;
+    color: white !important;
+    height: 30px !important;
+}
+
+.cinematic-control-wrapper .play-btn:hover {
+    background: #ff2d49 !important;
+    box-shadow: 0 0 5px #e61c34;
+}
+
+.cinematic-control-wrapper .delete-btn {
+    flex: 0 0 30px !important; width: 30px !important; height: 30px !important;
+    padding: 0 !important; margin: 0 !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    background: #444 !important;
+    color: #ff6b6b !important;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cinematic-control-wrapper .delete-btn:hover {
+    background: #662222 !important;
+    color: #ff4444 !important;
+}
+
+/* Copy Button (Added from user snippet) */
+.cinematic-control-wrapper .copy-btn {
+    flex: 0 0 30px !important; width: 30px !important; height: 30px !important;
+    padding: 0 !important; margin: 0 !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    background: #444 !important;
+    color: #4ecdc4 !important;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cinematic-control-wrapper .copy-btn:hover {
+    background: #226666 !important;
+    color: #fff !important;
+}
+
+/* Group Preset Styles */
+.cinematic-control-wrapper .all-out-btn.create-new {
+    background: #333;
+    border: 1px dashed #666;
+    color: #aaa;
+    padding: 15px;
+    font-size: 1.5em;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Teko';
+    font-weight: bold;
+}
+
+.cinematic-control-wrapper .all-out-btn.create-new:hover {
+    background: #444;
+    color: #e61c34; /* Text color change on hover */
+    border-color: #e61c34;
+}
+
+.cinematic-control-wrapper .group-preset-card {
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #e61c34;
+}
+
+.cinematic-control-wrapper .preset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.cinematic-control-wrapper .preset-name {
+    font-size: 1.3em;
+    color: #fff;
+    font-weight: bold;
+}
+
+.cinematic-control-wrapper .preset-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.cinematic-control-wrapper .preset-actions button {
+    background: #333;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    padding: 0;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.cinematic-control-wrapper .btn-play:hover {
+    background: #e61c34 !important;
+    color: #fff !important;
+}
+
+.cinematic-control-wrapper .btn-edit:hover {
+    background: #444 !important;
+    color: #fff !important;
+}
+
+.cinematic-control-wrapper .btn-del:hover {
+    background: #444 !important;
+    color: #ff4444 !important;
+}
+
+.cinematic-control-wrapper .btn-copy {
+    background: #444 !important; 
+    color: #4ecdc4 !important;
+}
+.cinematic-control-wrapper .btn-copy:hover {
+    background: #444 !important;
+    color: #4ecdc4 !important;
+}
+
+.cinematic-control-wrapper .participant-previews {
+    display: flex;
+    gap: -8px;
+    padding-left: 8px;
+}
+
+.cinematic-control-wrapper .mini-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #252525;
+    object-fit: cover;
+    margin-left: -8px;
+    background: #333;
+    transition: transform 0.2s;
+}
+
+.cinematic-control-wrapper .mini-avatar:hover {
+    transform: translateY(-3px) scale(1.1);
+    z-index: 10;
+    border-color: #e61c34;
+}
+
+.cinematic-control-wrapper .no-data {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+}
+
+/* ========================================= */
+/* 5. UTILITIES & FIXES (Scoped Inputs)      */
+/* ========================================= */
+
+.cinematic-canvas-shake {
+    animation: cinematic-shake-anim 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+@keyframes cinematic-shake-anim {
+    10%, 90% { transform: translate3d(calc(-1px * var(--shake-power)), 0, 0); }
+    20%, 80% { transform: translate3d(calc(2px * var(--shake-power)), 0, 0); }
+    30%, 50%, 70% { transform: translate3d(calc(-4px * var(--shake-power)), 0, 0); }
+    40%, 60% { transform: translate3d(calc(4px * var(--shake-power)), 0, 0); }
+}
+
+/* V12 Input Color Fixes - SCOPED TO MODULE CLASSES */
+.cinematic-config input[type="text"],
+.cinematic-config input[type="number"],
+.cinematic-config select,
+.all-out-config input[type="text"],
+.all-out-config input[type="number"],
+.all-out-config select {
+    color: #ffffff !important; 
+    background-color: #222 !important;
+    border: 1px solid var(--color-border-light-primary, #555) !important;
+    border-radius: 3px; 
+}
+
+.cinematic-config input::placeholder,
+.all-out-config input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.cinematic-config input:focus,
+.cinematic-config select:focus,
+.all-out-config input:focus,
+.all-out-config select:focus {
+    box-shadow: 0 0 5px #e61c34;
+    border-color: #e61c34 !important;
+    color: #ffffff !important;
+}
+
+.cinematic-config select option,
+.all-out-config select option,
+.cinematic-config select optgroup,
+.all-out-config select optgroup {
+    background-color: #222 !important; 
+    color: #ffffff !important;        
+}
+
+.cinematic-config button,
+.all-out-config button {
+    color: #ffffff;
+}
+.cinematic-config button:hover,
+.all-out-config button:hover {
+    color: #ffffff !important;
+}
+
+/* ========================================= */
+/* SKIP BUTTON (Emergency Stop)              */
+/* ========================================= */
+
+#cinematic-skip-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 330px;
+    z-index: 20000;
+    pointer-events: auto;
+    
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: 1px solid #777;
+    border-radius: 20px;
+    padding: 5px 12px;
+    
+    font-family: "Teko", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    
+    transition: all 0.2s;
+    opacity: 0;
+    transform: translateY(10px);
+    display: none; 
+    
+    backdrop-filter: blur(4px);
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+#cinematic-skip-btn.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#cinematic-skip-btn:hover {
+    background: #e61c34;
+    border-color: #ff2d49;
+    box-shadow: 0 0 10px #e61c34;
+}
+
+/* Custom Background & Overlay Support */
+.cinematic-custom-bg {
+    position: absolute; 
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;        
+    align-items: center; 
+    justify-content: center; 
+    pointer-events: none;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: translate(var(--custom-bg-x, 0px), var(--custom-bg-y, 0px)) scale(var(--custom-bg-scale, 1));
+}
+
+.animate .cinematic-custom-bg {
+    opacity: var(--custom-bg-opacity, 0.5);
+}
+
+.cinematic-custom-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50; 
+    pointer-events: none;
+    background-image: var(--custom-overlay);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transform: translate(var(--custom-overlay-x, 0px), var(--custom-overlay-y, 0px)) scale(var(--custom-overlay-scale, 1));
+    opacity: 1; 
+}
+.animate .cinematic-custom-overlay {
+    opacity: 1;
+}
+
+/* Theme Hide Background Support */
+.cinematic-wrapper.hide-bg .cinematic-bg-layer,
+.cinematic-wrapper.hide-bg .cinematic-paint,
+.cinematic-wrapper.hide-bg .cinematic-deco-line {
+    display: none !important;
+}
+
+.cinematic-wrapper.hide-main-text .cinematic-text-main {
+    display: none !important;
+}
+
+.cinematic-wrapper.hide-sub-text .cinematic-text-sub {
+    display: none !important;
+}
+
+.cinematic-custom-bg .custom-media,
+.cinematic-custom-overlay .custom-media {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    object-fit: contain; 
+}
+
+.cinematic-paint {
+    width: 100%; 
+    height: 100%;
+    /* 배경색 띠는 끊기면 안 되므로 cover 혹은 넓은 배경색 유지 */
+    background-size: cover;
+}
+
+.cinematic-custom-bg,
+.cinematic-custom-overlay,
+.char-mask {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* 인터랙티브 프롬프트 컨테이너 */
+.cinematic-prompt-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30000;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* 바닥 점선 링 - 이제 정확히 중앙에서 돕니다 */
+.prompt-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 190px;
+    height: 190px;
+    margin-top: -95px;
+    margin-left: -95px;
+    border: 3px dashed var(--theme-color);
+    border-radius: 50%;
+    animation: prompt-ring-spin 6s linear infinite;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 메인 버튼 */
+.prompt-button {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    background: #111;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    overflow: hidden; /* 이미지를 동그랗게 자름 */
+    box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 0 20px var(--theme-color);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.prompt-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px var(--theme-color);
+    border-color: var(--theme-color);
+}
+
+.prompt-actor-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.9; /* 얼굴 잘 보이게 투명도 상향 */
+    filter: contrast(1.1);
+    transition: transform 0.3s;
+}
+
+.prompt-button:hover .prompt-actor-img {
+    transform: scale(1.1);
+}
+
+/* READY? 라벨 - 더 작고 깔끔하게 */
+.prompt-label {
+    position: absolute;
+    /* 1. 일단 정중앙으로 보냅니다 */
+    top: 50%;
+    left: 50%;
+    
+    /* 2. 중앙에서부터 버튼의 오른쪽 하단 방향으로 이동시킵니다.
+       버튼 지름이 130px이므로, 중앙에서 약 45~55px 정도 밀어내면 버튼 테두리에 딱 붙습니다. */
+    margin-top: 50px;   /* 양수일수록 아래로 */
+    margin-left: 40px;  /* 양수일수록 오른쪽으로 */
+    
+    /* 3. 회전 각도 및 기본 기울기 */
+    transform: translate(-50%, -50%) rotate(-8deg); 
+    
+    background: #fff;
+    color: var(--theme-color);
+    border: 2px solid var(--theme-color);
+    
+    font-family: 'Teko', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 1px 12px;
+    border-radius: 4px;
+    
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+    
+    white-space: nowrap;
+    z-index: 10;
+    letter-spacing: 1px;
+    pointer-events: none;
+    
+    /* 애니메이션 */
+    animation: prompt-tag-settled 2.5s ease-in-out infinite;
+}
+
+@keyframes prompt-tag-settled {
+    0%, 100% { transform: translate(-50%, -50%) rotate(-8deg); }
+    50% { transform: translate(-50%, calc(-50% - 4px)) rotate(-8deg); } 
+}
+
+/* 지문 아이콘 - 작게 줄여서 구석으로 배치 */
+.prompt-icon {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 1.2rem; /* 훨씬 작게 */
+    color: var(--theme-color);
+    background: #fff;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    opacity: 1;
+    z-index: 3;
+    animation: prompt-icon-pulse 1.5s infinite;
+}
+
+/* 취소 버튼 위치 조정 */
+.prompt-gm-cancel {
+    position: absolute;
+    bottom: -50px;
+    background: rgba(0,0,0,0.8);
+    color: #aaa;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: 1px solid #444;
+    pointer-events: auto;
+    white-space: nowrap;
+}
+
+/* 애니메이션 정의 */
+@keyframes prompt-ring-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes prompt-icon-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0px var(--theme-color); }
+    50% { transform: scale(1.2); box-shadow: 0 0 10px var(--theme-color); }
+    100% { transform: scale(1); box-shadow: 0 0 0px var(--theme-color); }
+}
+
+.cinematic-prompt-container.fade-out {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+    transition: all 0.3s ease-in;
+}
+
+/* 레이어 컨테이너들 */
+.layers-back-container,
+.layers-front-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+/* 순서 정의 (Stacking Context) */
+.layers-back-container { z-index: 0; } /* 테마 배경(1)보다 뒤? 혹은 사이? 테마에 따라 다름 */
+.cinematic-bg-layer    { z-index: 1; }
+.cinematic-deco-line   { z-index: 2; }
+.char-mask             { z-index: 5; } /* 캐릭터 */
+.layers-front-container{ z-index: 8; } /* 캐릭터 위 */
+.cinematic-content     { z-index: 10; } /* 텍스트 (맨 위) */
+
+/* 만약 Back 레이어가 테마 배경(paint)보다 더 뒤에 가야 한다면 z-index: 0
+   테마 배경과 캐릭터 사이에 넣고 싶다면 z-index: 1.5 등을 써야 함.
+   하지만 단순화를 위해 Back=0으로 두고, 테마 요소들의 z-index를 1 이상으로 정리하는 게 좋음. */
+
+.custom-layer-media {
+    pointer-events: none;
+    will-change: transform, opacity;
+}

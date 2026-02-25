@@ -1,0 +1,159 @@
+<div class="ddg-layout">
+
+  <!-- ═══ ЛЕВАЯ КОЛОНКА ════════════════════════════════════════════════════ -->
+  <div class="ddg-left">
+
+    <section class="dd-section">
+      <h3><i class="fas fa-bookmark"></i> Пресеты</h3>
+      <div class="dd-row">
+        <select id="ddg-preset-select" class="dd-select">
+          <option value="">— Выбрать пресет —</option>
+          {{#each presets}}<option value="{{this}}">{{this}}</option>{{/each}}
+        </select>
+        <button type="button" data-action="dd-group-preset-load" title="Загрузить"><i class="fas fa-upload"></i></button>
+        <button type="button" data-action="dd-group-preset-delete" title="Удалить" class="dd-btn-danger"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="dd-row">
+        <input type="text" id="ddg-preset-name" placeholder="Название пресета…" class="dd-input" value="{{data._name}}"/>
+        <button type="button" data-action="dd-group-preset-save"><i class="fas fa-save"></i> Сохранить</button>
+      </div>
+    </section>
+
+    <section class="dd-section">
+      <h3><i class="fas fa-palette"></i> Тема</h3>
+      <select id="ddg-theme" class="dd-select" style="margin-bottom:6px">
+        {{#each themes}}
+        <option value="{{this.id}}" {{#if (eq ../data.theme this.id)}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+      <div class="dd-row dd-row-pair">
+        <label>Шрифт</label>
+        <input type="text" id="ddg-font" value="{{data.fontFamily}}" class="dd-input" placeholder="Teko"/>
+      </div>
+      <div class="dd-row dd-row-pair">
+        <label>Время (с, 0=авто)</label>
+        <input type="number" id="ddg-display-time" value="{{data.displayTime}}" min="0" max="30" step="0.5" class="dd-input-sm"/>
+      </div>
+      <div class="dd-row dd-row-pair">
+        <label>
+          <input type="checkbox" id="ddg-show-names" {{#if data.showNames}}checked{{/if}}/>
+          Показывать имена
+        </label>
+      </div>
+    </section>
+
+    <section class="dd-section">
+      <h3><i class="fas fa-align-center"></i> Центральный текст</h3>
+      <label class="dd-label">Основной</label>
+      <div class="dd-row">
+        <input type="text" id="ddg-center-main" value="{{data.centerMainText}}" class="dd-input" placeholder="ALL-OUT ATTACK"/>
+        <input type="color" id="ddg-center-main-color" value="{{data.centerMainColor}}" class="dd-color"/>
+        <input type="number" id="ddg-center-main-size" value="{{data.centerMainSize}}" min="1" max="30" step="0.5" class="dd-input-sm"/>
+      </div>
+      <label class="dd-label">Подпись</label>
+      <div class="dd-row">
+        <input type="text" id="ddg-center-sub" value="{{data.centerSubText}}" class="dd-input" placeholder="TIME TO FINISH IT!"/>
+        <input type="color" id="ddg-center-sub-color" value="{{data.centerSubColor}}" class="dd-color"/>
+        <input type="number" id="ddg-center-sub-size" value="{{data.centerSubSize}}" min="0.5" max="15" step="0.5" class="dd-input-sm"/>
+      </div>
+    </section>
+
+    <section class="dd-section">
+      <h3><i class="fas fa-code"></i> Макрос</h3>
+      <button type="button" data-action="dd-group-macro-copy" class="dd-btn-wide">
+        <i class="fas fa-copy"></i> Скопировать код макроса
+      </button>
+    </section>
+
+    <div class="dd-actions">
+      <button type="button" data-action="dd-group-stop" class="dd-btn-stop">
+        <i class="fas fa-stop"></i> Стоп
+      </button>
+      <button type="button" data-action="dd-group-play" class="dd-btn-play">
+        <i class="fas fa-play"></i> Показать всем
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ═══ ПРАВАЯ КОЛОНКА — Участники ══════════════════════════════════════ -->
+  <div class="ddg-right">
+    <div class="ddg-participants-header">
+      <h3 style="margin:0"><i class="fas fa-users"></i> Участники ({{participants.length}})</h3>
+      <div class="ddg-header-btns">
+        <button type="button" data-action="dd-group-fill-tokens" class="ddg-fill-btn" title="Заполнить из выбранных токенов на сцене">
+          <i class="fas fa-map-marker-alt"></i> Из токенов
+        </button>
+        <button type="button" data-action="dd-group-fill-players" class="ddg-fill-btn" title="Заполнить из активных игроков">
+          <i class="fas fa-users"></i> Из игроков
+        </button>
+        <button type="button" data-action="dd-group-add-participant" class="dd-btn-add-layer">
+          <i class="fas fa-plus"></i> Добавить
+        </button>
+      </div>
+    </div>
+
+    <p class="dd-hint">Порядок появления рандомизируется (кроме Wanted). До 5 участников — оптимально.</p>
+
+    {{#if participants}}
+    <div class="ddg-participants-list">
+      {{#each participants}}
+      <div class="ddg-part-row" data-part-idx="{{this._idx}}">
+        <div class="ddg-part-header">
+          <span class="ddg-part-num">#{{this._num}}</span>
+          <input type="text" class="ddg-part-img dd-input" value="{{this.img}}" placeholder="Изображение…"/>
+          <button type="button" data-part-action="browse-img" title="Выбрать изображение"><i class="fas fa-image"></i></button>
+          <button type="button" data-part-action="from-actor" title="Из актора Foundry"><i class="fas fa-user"></i></button>
+          <button type="button" data-part-action="remove" class="dd-btn-danger" title="Удалить"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ddg-part-body">
+          <div class="dd-row">
+            <label class="dd-label" style="margin:0;flex:0 0 40px">Текст</label>
+            <input type="text" class="ddg-part-text dd-input" value="{{this.text}}" placeholder="Имя / надпись…"/>
+            <label class="dd-label" style="margin:0">Цвет фона</label>
+            <input type="color" class="ddg-part-color dd-color" value="{{this.color}}"/>
+            <label class="dd-label" style="margin:0">Цвет текста</label>
+            <input type="color" class="ddg-part-tcolor dd-color" value="{{this.textColor}}"/>
+          </div>
+          <div class="ddg-part-params">
+            <label class="dd-param-group"><span>Масштаб</span>
+              <input type="number" class="ddg-part-scale dd-input-sm" value="{{this.scale}}" min="0.1" max="5" step="0.05"/>
+            </label>
+            <label class="dd-param-group"><span>Сдвиг X</span>
+              <input type="number" class="ddg-part-x dd-input-sm" value="{{this.x}}" step="10"/>
+            </label>
+            <label class="dd-param-group"><span>Сдвиг Y</span>
+              <input type="number" class="ddg-part-y dd-input-sm" value="{{this.y}}" step="10"/>
+            </label>
+            <label class="dd-param-group"><span>Поворот°</span>
+              <input type="number" class="ddg-part-rot dd-input-sm" value="{{this.rotation}}" min="-360" max="360" step="5"/>
+            </label>
+            <label class="dd-param-group dd-param-check">
+              <input type="checkbox" class="ddg-part-mirror" {{#if this.mirror}}checked{{/if}}/>
+              <span>Зеркало</span>
+            </label>
+          </div>
+          <div class="dd-row" style="margin-top:4px">
+            <label class="dd-label" style="margin:0;flex:0 0 40px;font-size:10px">Звук</label>
+            <input type="text" class="ddg-part-sound dd-input" value="{{this.sound}}" placeholder="Звук при появлении…" style="font-size:11px"/>
+            <button type="button" data-part-action="browse-sound" title="Выбрать" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
+          </div>
+          <div class="dd-row">
+            <label class="dd-label" style="margin:0;flex:0 0 40px;font-size:10px">SFX</label>
+            <input type="text" class="ddg-part-sfx dd-input" value="{{this.sfx}}" placeholder="Доп. эффект…" style="font-size:11px"/>
+            <button type="button" data-part-action="browse-sfx" title="Выбрать" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <div class="dd-empty-layers">
+      <i class="fas fa-users" style="font-size:2em;opacity:.2;display:block;text-align:center;margin-bottom:8px"></i>
+      <p style="text-align:center;color:#777">Участники не добавлены</p>
+      <p class="dd-hint" style="text-align:center">Нажмите «Из токенов», «Из игроков» или «Добавить»</p>
+    </div>
+    {{/if}}
+  </div>
+
+</div>

@@ -1,0 +1,2576 @@
+/* ==========================================================================
+   theme-all-out.css
+   - Group / Multi-Actor Cut-in Themes
+   - All-Out Attack Specific Layouts (Polygons)
+   - Voting Mode & Interactive UI
+   ========================================================================== */
+
+/* --------------------------------------------------------
+   CORE LAYOUT & COMMON STYLES
+   -------------------------------------------------------- */
+
+/* 전체 컨테이너 */
+.cinematic-group-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    pointer-events: none;
+    display: none;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.95);
+    perspective: 1000px;
+}
+
+.cinematic-group-container.active {
+    display: block;
+}
+
+/* 공통: 슬라이스 (구역) */
+.cinematic-slice {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+    --zoom-x: 0px;
+    --zoom-y: 0px;
+    --mugshot-zoom: 1.5;
+    --char-x: 0px;
+    --char-y: 0px;
+    --char-scale: 1.0;
+}
+
+/* 공통: 배경 레이어 */
+.slice-bg {
+    position: absolute;
+    inset: -50%;
+    background-color: var(--theme-color, #e61c34);
+    transform-origin: center;
+    z-index: 0;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.3);
+}
+
+/* 공통: 캐릭터 */
+.cinematic-group-container .cinematic-character {
+    /* 최종 위치 및 크기 변수화 */
+    --final-x: calc(-50% + var(--char-x, 0px));
+    --final-y: calc(var(--char-y, 0px));
+    --final-scale: var(--char-scale, 1.0);
+
+    position: absolute;
+    left: var(--base-x, 50%);
+    bottom: 0;
+
+    /* 초기 상태 */
+    transform: translateX(var(--final-x)) translateY(100%) scale(var(--final-scale));
+
+    height: 100%;
+    width: auto;
+    object-fit: cover;
+    z-index: 2;
+    opacity: 0;
+
+    filter: drop-shadow(10px 10px 0px var(--char-shadow-color, #000)) contrast(1.1);
+}
+
+/* 공통: 텍스트 (기본) */
+.slice-text {
+    position: absolute;
+    z-index: 10;
+    font-family: var(--cinematic-font, 'Teko'), sans-serif;
+    font-size: var(--text-size, 6rem);
+    font-weight: 900;
+    font-style: italic;
+    color: var(--text-color, #fff);
+    white-space: nowrap;
+    opacity: 0;
+
+    left: var(--base-x, 50%);
+    top: var(--base-y, 50%);
+    text-shadow: 3px 3px 0 #000;
+}
+
+/* 임팩트 플래시 (화면 번쩍임) */
+.cinematic-group-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
+.cinematic-group-container.active.animate .cinematic-group-flash {
+    animation: ultimate-flash 0.6s ease-out forwards;
+}
+
+@keyframes ultimate-flash {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* [공통] 기본 캐릭터 팝업 */
+@keyframes group-char-pop {
+    0% {
+        transform: translateX(var(--final-x)) translateY(100%) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * 0.8 * var(--char-mirror-x, 1)), calc(var(--final-scale) * 0.8));
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        opacity: 1;
+    }
+}
+
+.cinematic-group-container.active.animate .cinematic-character {
+    animation: group-char-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: var(--delay, 0s);
+}
+
+#group-preview-stage.animate .cinematic-character {
+    animation: group-char-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: var(--delay, 0s);
+}
+
+
+/* ==========================================================================
+   THEME: REBEL (Persona 5 Style)
+   ========================================================================== */
+
+.cinematic-group-container.theme-rebel {
+    background: #000;
+}
+
+.cinematic-group-container.theme-rebel .slice-bg {
+    background-image:
+        radial-gradient(circle, rgba(0, 0, 0, 0.2) 2px, transparent 2.5px),
+        linear-gradient(45deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%);
+    background-size: 10px 10px, 20px 20px;
+    border: 3px solid #000;
+    --bg-transform: scale(1.05);
+    transform: var(--bg-transform);
+}
+
+.cinematic-group-container.theme-rebel .cinematic-character {
+    filter: drop-shadow(15px 15px 0px var(--char-shadow-color, #000)) contrast(1.2) brightness(1.1);
+}
+
+.cinematic-group-container.theme-rebel .slice-text {
+    --text-geometry: skewX(-10deg) rotate(-5deg);
+    background: #000;
+    color: var(--text-color);
+    padding: 0 15px;
+    transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry);
+    transform-origin: center center;
+    box-shadow: 5px 5px 0 var(--theme-color);
+    border: 2px solid #fff;
+    font-style: italic;
+    animation: rebel-text-slam 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+    animation-delay: calc(var(--delay) + 0.3s) !important;
+}
+
+@keyframes rebel-text-slam {
+    0% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(3);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(1);
+    }
+}
+
+/* Animations */
+.cinematic-group-container.theme-rebel.animate .cinematic-slice {
+    animation: rebel-shard-pulse 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+    z-index: 1;
+}
+
+@keyframes rebel-shard-pulse {
+    0% {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.0);
+    }
+}
+
+.cinematic-group-container.theme-rebel.animate .cinematic-character {
+    animation: rebel-image-pan 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes rebel-image-pan {
+    0% {
+        opacity: 0;
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) translate(var(--zoom-x, 0px), var(--zoom-y, 0px)) rotate(var(--char-rotate)) scale(calc(var(--mugshot-zoom, 1.5) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 1.5));
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale, 1.0) * var(--char-mirror-x, 1)), var(--final-scale, 1.0));
+    }
+}
+
+/* Rebel Layouts (2-6) */
+.cinematic-group-container.theme-rebel[data-count="2"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 70% 0, 30% 100%, 0 100%);
+    --base-x: 35%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="2"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(70% 0, 100% 0, 100% 100%, 30% 100%);
+    --base-x: 65%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="3"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 60% 0, 50% 50%, 0 70%);
+    --base-x: 30%;
+    --base-y: 40%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="3"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(60% 0, 100% 0, 100% 70%, 50% 50%);
+    --base-x: 70%;
+    --base-y: 40%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="3"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 70%, 50% 50%, 100% 70%, 100% 100%, 0 100%);
+    --base-x: 50%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="4"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 35% 45%, 0 35%);
+    --base-x: 30%;
+    --base-y: 30%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="4"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 45%, 35% 45%);
+    --base-x: 70%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="4"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 35%, 35% 45%, 55% 100%, 0 100%);
+    --base-x: 25%;
+    --base-y: 70%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="4"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(35% 45%, 100% 45%, 100% 100%, 55% 100%);
+    --base-x: 75%;
+    --base-y: 70%;
+}
+
+/* Rebel 5-Person Layout */
+.cinematic-group-container.theme-rebel[data-count="5"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 50% 50%, 0 15%);
+    --base-x: 25%;
+    --base-y: 15%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="5"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 55%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="5"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% 55%, 100% 100%, 55% 100%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="5"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(55% 100%, 0 100%, 0 80%, 50% 50%);
+    --base-x: 25%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="5"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(0 15%, 50% 50%, 0 80%);
+    --base-x: 15%;
+    --base-y: 50%;
+}
+
+/* Rebel 6-Person Layout */
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 50% 50%, 0 15%);
+    --base-x: 25%;
+    --base-y: 20%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 20%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 15%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% 20%, 100% 80%, 50% 50%);
+    --base-x: 90%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(100% 80%, 100% 100%, 45% 100%, 50% 50%);
+    --base-x: 75%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(45% 100%, 0 100%, 0 85%, 50% 50%);
+    --base-x: 20%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-rebel[data-count="6"] .cinematic-slice:nth-child(6) {
+    clip-path: polygon(0 85%, 0 15%, 50% 50%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+
+/* ==========================================================================
+   THEME: COMIC (P4 Style) 
+   ========================================================================== */
+
+.cinematic-group-container.theme-comic {
+    background: #fff !important;
+}
+
+.cinematic-group-container.theme-comic .slice-bg {
+    background-color: var(--theme-color, #ffe600);
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(0, 0, 0, 0.1) 20px, rgba(0, 0, 0, 0.1) 40px);
+    border: none;
+    box-shadow: inset 0 0 50px rgba(255, 165, 0, 0.5);
+}
+
+.cinematic-group-container.theme-comic .cinematic-character {
+    filter: saturate(1.5) contrast(1.1) drop-shadow(20px 20px 0px var(--char-shadow-color, #000));
+}
+
+.cinematic-group-container.theme-comic.animate .cinematic-character {
+    animation: comic-char-slide 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes comic-char-slide {
+    0% {
+        transform: translate(calc(var(--final-x) + var(--zoom-x, 0px)), calc(100% + var(--zoom-y, 0px))) rotate(var(--char-rotate)) scale(calc(var(--mugshot-zoom, 1.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 1.0));
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(var(--final-x), var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        opacity: 1;
+    }
+}
+
+.cinematic-group-container.theme-comic .slice-text {
+    --text-geometry: rotate(-5deg);
+    background: var(--theme-color, #ffe600);
+    color: #000 !important;
+    border: 3px solid #000;
+    border-radius: 50% 50% 50% 0;
+    padding: 10px 20px;
+    box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.2);
+    font-weight: 900;
+    transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry);
+    transform-origin: center center;
+    clip-path: polygon(0% 0%, 100% 0%, 95% 100%, 5% 90%);
+    animation: comic-text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    animation-delay: calc(var(--delay) + 0.2s) !important;
+}
+
+@keyframes comic-text-pop {
+    0% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(3);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(1);
+    }
+}
+
+/* Comic Layouts (Physical Gaps Logic) */
+.cinematic-group-container.theme-comic[data-count="2"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, calc(60% - 5px) 0, calc(40% - 5px) 100%, 0 100%);
+    --base-x: 30%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-comic[data-count="2"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(calc(60% + 5px) 0, 100% 0, 100% 100%, calc(40% + 5px) 100%);
+    --base-x: 70%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-comic[data-count="3"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, calc(55% - 5px) 0, calc(45% - 5px) calc(50% - 5px), 0 calc(65% - 5px));
+    --base-x: 25%;
+    --base-y: 35%;
+}
+
+.cinematic-group-container.theme-comic[data-count="3"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(calc(55% + 5px) 0, 100% 0, 100% calc(55% - 5px), calc(45% + 5px) calc(50% - 5px));
+    --base-x: 75%;
+    --base-y: 30%;
+}
+
+.cinematic-group-container.theme-comic[data-count="3"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 calc(65% + 5px), calc(45% - 5px) calc(50% + 5px), 100% calc(55% + 5px), 100% 100%, 0 100%);
+    --base-x: 50%;
+    --base-y: 80%;
+}
+
+.cinematic-group-container.theme-comic[data-count="4"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, calc(60% - 6px) 0, calc(48% - 6px) calc(48% - 6px), 0 calc(55% - 6px));
+    --base-x: 25%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-comic[data-count="4"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(calc(60% + 6px) 0, 100% 0, 100% calc(45% - 6px), calc(48% + 6px) calc(48% - 6px));
+    --base-x: 75%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-comic[data-count="4"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 calc(55% + 6px), calc(48% - 6px) calc(48% + 6px), calc(55% - 6px) 100%, 0 100%);
+    --base-x: 25%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-comic[data-count="4"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(calc(48% + 6px) calc(48% + 6px), 100% calc(45% + 6px), 100% 100%, calc(55% + 6px) 100%);
+    --base-x: 75%;
+    --base-y: 75%;
+}
+
+/* Comic 5-Person Layout (Gaps) */
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice,
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice {
+    overflow: hidden !important;
+    filter: none !important;
+    background-color: transparent;
+}
+
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, calc(60% - 5px) 0, calc(50% - 5px) calc(50% - 5px), 0 10%);
+    --base-x: 25%;
+    --base-y: 15%;
+}
+
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(calc(60% + 5px) 0, 100% 0, 100% calc(40% - 5px), calc(50% + 5px) calc(50% - 5px));
+    --base-x: 75%;
+    --base-y: 20%;
+}
+
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% calc(40% + 5px), 100% 100%, calc(60% + 5px) 100%, calc(50% + 5px) calc(50% + 5px));
+    --base-x: 80%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(calc(60% - 5px) 100%, 0 100%, 0 90%, calc(50% - 5px) calc(50% + 5px));
+    --base-x: 25%;
+    --base-y: 90%;
+}
+
+.cinematic-group-container.theme-comic[data-count="5"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(0 calc(90% - 5px), 0 calc(10% + 5px), calc(50% - 8px) 50%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+/* Comic 6-Person Layout */
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, calc(48% - 5px) 0, calc(50% - 5px) calc(50% - 5px), 0 10%);
+    --base-x: 20%;
+    --base-y: 10%;
+}
+
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(calc(48% + 5px) 0, 100% 0, 100% calc(10% - 5px), calc(50% + 5px) calc(50% - 5px));
+    --base-x: 80%;
+    --base-y: 10%;
+}
+
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% calc(10% + 5px), 100% calc(90% - 5px), calc(50% + 8px) 50%);
+    --base-x: 85%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(100% calc(90% + 5px), 100% 100%, calc(52% + 5px) 100%, calc(50% + 5px) calc(50% + 5px));
+    --base-x: 75%;
+    --base-y: 90%;
+}
+
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(calc(52% - 5px) 100%, 0 100%, 0 90%, calc(50% - 5px) calc(50% + 5px));
+    --base-x: 25%;
+    --base-y: 90%;
+}
+
+.cinematic-group-container.theme-comic[data-count="6"] .cinematic-slice:nth-child(6) {
+    clip-path: polygon(0 calc(90% - 5px), 0 calc(10% + 5px), calc(50% - 8px) 50%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+
+/* ==========================================================================
+   THEME: URBAN (P3R Style)
+   ========================================================================== */
+
+.cinematic-group-container.theme-urban {
+    background: #111;
+}
+
+.cinematic-group-container.theme-urban .slice-bg {
+    background-color: var(--theme-color, #00d2ff);
+    background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0, 0, 0, 0.1) 5px, rgba(0, 0, 0, 0.1) 10px);
+    background-size: 200% 200%;
+    animation: urban-bg-scroll 10s linear infinite;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes urban-bg-scroll {
+    0% {
+        background-position: 0% 0%;
+    }
+
+    100% {
+        background-position: 100% 100%;
+    }
+}
+
+.cinematic-group-container.theme-urban .cinematic-character {
+    filter: drop-shadow(15px 15px 10px var(--char-shadow-color, rgba(0, 0, 0, 0.5))) contrast(1.1);
+}
+
+.cinematic-group-container.theme-urban.animate .cinematic-character {
+    animation: urban-char-slide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+.cinematic-group-container.theme-urban .cinematic-slice:nth-child(odd) .cinematic-character {
+    --start-y: 100%;
+}
+
+.cinematic-group-container.theme-urban .cinematic-slice:nth-child(even) .cinematic-character {
+    --start-y: -100%;
+}
+
+@keyframes urban-char-slide {
+    0% {
+        transform: translate(calc(var(--final-x) + var(--zoom-x, 0px)), calc(var(--start-y) + var(--zoom-y, 0px))) rotate(var(--char-rotate)) scale(calc(var(--mugshot-zoom, 1.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 1.0));
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(var(--final-x), var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        opacity: 1;
+    }
+}
+
+.cinematic-group-container.theme-urban .slice-text {
+    --text-geometry: skewX(-15deg);
+    background: #fff;
+    color: #000 !important;
+    padding: 2px 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 0 15px var(--theme-color);
+    border-left: 5px solid var(--theme-color);
+    transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry);
+    transform-origin: center center;
+    animation: urban-text-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    animation-delay: calc(var(--delay) + 0.2s) !important;
+}
+
+@keyframes urban-text-reveal {
+    0% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scaleX(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scaleX(1);
+    }
+}
+
+/* Urban Layouts */
+.cinematic-group-container.theme-urban[data-count="2"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 55% 0, 45% 100%, 0 100%);
+    --base-x: 30%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="2"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%);
+    --base-x: 70%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="3"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 40% 0, 30% 100%, 0 100%);
+    --base-x: 20%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="3"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(40% 0, 70% 0, 60% 100%, 30% 100%);
+    --base-x: 50%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="3"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(70% 0, 100% 0, 100% 100%, 60% 100%);
+    --base-x: 80%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="4"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 30% 0, 20% 100%, 0 100%);
+    --base-x: 15%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="4"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(30% 0, 55% 0, 45% 100%, 20% 100%);
+    --base-x: 40%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="4"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(55% 0, 80% 0, 70% 100%, 45% 100%);
+    --base-x: 65%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="4"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(80% 0, 100% 0, 100% 100%, 70% 100%);
+    --base-x: 90%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="5"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 22% 0, 18% 100%, 0 100%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="5"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(22% 0, 42% 0, 38% 100%, 18% 100%);
+    --base-x: 30%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="5"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(42% 0, 62% 0, 58% 100%, 38% 100%);
+    --base-x: 50%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="5"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(62% 0, 82% 0, 78% 100%, 58% 100%);
+    --base-x: 70%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="5"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(82% 0, 100% 0, 100% 100%, 78% 100%);
+    --base-x: 90%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 18% 0, 15% 100%, 0 100%);
+    --base-x: 8%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(18% 0, 35% 0, 32% 100%, 15% 100%);
+    --base-x: 25%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(35% 0, 52% 0, 49% 100%, 32% 100%);
+    --base-x: 42%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(52% 0, 69% 0, 66% 100%, 49% 100%);
+    --base-x: 59%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(69% 0, 86% 0, 83% 100%, 66% 100%);
+    --base-x: 76%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-urban[data-count="6"] .cinematic-slice:nth-child(6) {
+    clip-path: polygon(86% 0, 100% 0, 100% 100%, 83% 100%);
+    --base-x: 93%;
+    --base-y: 50%;
+}
+
+
+/* ==========================================================================
+   THEME: NOIR (High Contrast)
+   ========================================================================== */
+
+.cinematic-group-container.theme-noir {
+    background: #000000;
+}
+
+.cinematic-group-container.theme-noir::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.3;
+}
+
+.cinematic-group-container.theme-noir .slice-bg {
+    background-color: var(--theme-color, #ffffff);
+    background-image: radial-gradient(rgba(0, 0, 0, 0.8) 20%, transparent 21%);
+    background-size: 15px 15px;
+    border: 3px solid #000;
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+}
+
+.cinematic-group-container.theme-noir .cinematic-character {
+    mix-blend-mode: normal;
+    filter: contrast(1.3) saturate(1.2) drop-shadow(0 0 2px #fff) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+}
+
+.cinematic-group-container.theme-noir.animate .cinematic-character {
+    animation: noir-char-impact 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes noir-char-impact {
+    0% {
+        transform: translate(var(--final-x), 100%) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * 0.9 * var(--char-mirror-x, 1)), calc(var(--final-scale) * 0.9));
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(var(--final-x), var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        opacity: 1;
+    }
+}
+
+.cinematic-group-container.theme-noir .slice-text {
+    --text-geometry: rotate(-3deg);
+    background: #000;
+    color: var(--theme-color, #ffffff) !important;
+    font-family: 'Impact', sans-serif;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    padding: 5px 20px;
+    border: 3px solid var(--theme-color, #ffffff);
+    box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.5);
+    transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry);
+    transform-origin: center;
+    opacity: 0;
+    animation: noir-text-stamp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    animation-delay: calc(var(--delay) + 0.15s) !important;
+}
+
+@keyframes noir-text-stamp {
+    0% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(2);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px))) var(--text-geometry) scale(1);
+    }
+}
+
+/* Reuse Rebel Layouts for Noir */
+.cinematic-group-container.theme-noir[data-count="2"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 70% 0, 30% 100%, 0 100%);
+    --base-x: 35%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-noir[data-count="2"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(70% 0, 100% 0, 100% 100%, 30% 100%);
+    --base-x: 65%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-noir[data-count="3"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 60% 0, 50% 50%, 0 70%);
+    --base-x: 30%;
+    --base-y: 40%;
+}
+
+.cinematic-group-container.theme-noir[data-count="3"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(60% 0, 100% 0, 100% 70%, 50% 50%);
+    --base-x: 70%;
+    --base-y: 40%;
+}
+
+.cinematic-group-container.theme-noir[data-count="3"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 70%, 50% 50%, 100% 70%, 100% 100%, 0 100%);
+    --base-x: 50%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-noir[data-count="4"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 35% 45%, 0 35%);
+    --base-x: 30%;
+    --base-y: 30%;
+}
+
+.cinematic-group-container.theme-noir[data-count="4"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 45%, 35% 45%);
+    --base-x: 70%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-noir[data-count="4"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(0 35%, 35% 45%, 55% 100%, 0 100%);
+    --base-x: 25%;
+    --base-y: 70%;
+}
+
+.cinematic-group-container.theme-noir[data-count="4"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(35% 45%, 100% 45%, 100% 100%, 55% 100%);
+    --base-x: 75%;
+    --base-y: 70%;
+}
+
+.cinematic-group-container.theme-noir.animate .cinematic-slice {
+    animation: rebel-shard-pulse 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+.cinematic-group-container.theme-noir[data-count="5"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 50% 50%, 0 15%);
+    --base-x: 25%;
+    --base-y: 15%;
+}
+
+.cinematic-group-container.theme-noir[data-count="5"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 55%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 25%;
+}
+
+.cinematic-group-container.theme-noir[data-count="5"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% 55%, 100% 100%, 55% 100%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 75%;
+}
+
+.cinematic-group-container.theme-noir[data-count="5"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(55% 100%, 0 100%, 0 80%, 50% 50%);
+    --base-x: 25%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-noir[data-count="5"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(0 15%, 50% 50%, 0 80%);
+    --base-x: 15%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 65% 0, 50% 50%, 0 15%);
+    --base-x: 25%;
+    --base-y: 20%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(65% 0, 100% 0, 100% 20%, 50% 50%);
+    --base-x: 80%;
+    --base-y: 15%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(100% 20%, 100% 80%, 50% 50%);
+    --base-x: 90%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(100% 80%, 100% 100%, 45% 100%, 50% 50%);
+    --base-x: 75%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(45% 100%, 0 100%, 0 85%, 50% 50%);
+    --base-x: 20%;
+    --base-y: 85%;
+}
+
+.cinematic-group-container.theme-noir[data-count="6"] .cinematic-slice:nth-child(6) {
+    clip-path: polygon(0 85%, 0 15%, 50% 50%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+
+/* ==========================================================================
+   THEME: WANTED (REAL MUGSHOT LINEUP)
+   ========================================================================== */
+
+.cinematic-group-container.theme-wanted {
+    background: #0d0d0d;
+}
+
+/* 슬라이스 (투명) */
+.cinematic-group-container.theme-wanted .cinematic-slice {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    clip-path: none !important;
+    overflow: visible !important;
+    filter: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: none;
+    z-index: auto !important;
+}
+
+/* 격자 배경 */
+.cinematic-group-container.theme-wanted .slice-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--col-left, 0%);
+    width: var(--col-width, 100%);
+    background-image: url("../assets/tex_mugshot.png");
+    background-size: cover;
+    background-position: center;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+    transform: translateY(-100%);
+    z-index: -1 !important;
+}
+
+.cinematic-group-container.theme-wanted.animate .slice-bg {
+    animation: wanted-bg-drop 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes wanted-bg-drop {
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* 캐릭터 */
+.cinematic-group-container.theme-wanted .cinematic-character {
+    max-width: none !important;
+    width: auto !important;
+    height: 100% !important;
+    opacity: 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    filter: contrast(1.1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+}
+
+.cinematic-group-container.theme-wanted.animate .cinematic-character {
+    animation: wanted-grid-move var(--anim-duration, 2.0s) cubic-bezier(0.19, 1, 0.22, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes wanted-grid-move {
+    0% {
+        left: 50%;
+        bottom: 0;
+        transform: translate(calc(-50% + var(--zoom-x, 0px)), calc(10% + var(--zoom-y, 0px))) scale(calc(var(--mugshot-zoom, 2.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 2.0));
+        opacity: 0;
+        z-index: 9999;
+        filter: brightness(0) grayscale(1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+    }
+
+    10% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--zoom-x, 0px)), calc(10% + var(--zoom-y, 0px))) scale(calc(var(--mugshot-zoom, 2.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 2.0));
+        filter: brightness(3) grayscale(1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+    }
+
+    20% {
+        transform: translate(calc(-50% + var(--zoom-x, 0px)), calc(10% + var(--zoom-y, 0px))) scale(calc(var(--mugshot-zoom, 2.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 2.0));
+        filter: brightness(1) contrast(1.1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+    }
+
+    60% {
+        left: 50%;
+        bottom: 0;
+        transform: translate(calc(-50% + var(--zoom-x, 0px)), calc(10% + var(--zoom-y, 0px))) scale(calc(var(--mugshot-zoom, 2.0) * var(--char-mirror-x, 1)), var(--mugshot-zoom, 2.0));
+        z-index: 9999;
+        filter: brightness(1) contrast(1.1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+    }
+
+    100% {
+        left: var(--final-center-x);
+        bottom: 0;
+        transform: translate(calc(-50% + var(--char-x, 0px)), var(--char-y, 0px)) scale(calc(var(--char-scale) * var(--char-mirror-x, 1)), var(--char-scale));
+        opacity: 1;
+        z-index: 10;
+        filter: contrast(1.1) drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+    }
+}
+
+/* 이름표 */
+.cinematic-group-container.theme-wanted .slice-text {
+    background: #111;
+    color: #fff !important;
+    font-family: "Courier New", monospace, sans-serif;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 8px 15px;
+    border: 2px solid var(--theme-color, #fff);
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 100000 !important;
+    opacity: 0;
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    animation: wanted-text-move var(--anim-duration, 2.0s) cubic-bezier(0.19, 1, 0.22, 1) forwards !important;
+    animation-delay: calc(var(--delay) + 1.0s) !important;
+}
+
+@keyframes wanted-text-move {
+    0% {
+        left: 50%;
+        transform: translate(-50%, 20px) scale(1.5);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    60% {
+        left: 50%;
+        transform: translate(-50%, 0) scale(1.5);
+        opacity: 1;
+    }
+
+    100% {
+        left: var(--final-center-x);
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(0% + var(--text-y, 0px))) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ==========================================================================
+   THEME: ARCANE (Render-Stable & Ultra-Optimized)
+   ========================================================================== */
+
+/* 1. 메인 컨테이너 격리 - 렌더링 오류 방지의 핵심 */
+.cinematic-group-container.theme-arcane {
+    background: radial-gradient(circle at center, #1e3c72 0%, #050505 100%) !important;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    isolation: isolate;
+    /* 레이어 혼합 간섭 방지 */
+    contain: strict;
+    /* 브라우저에게 이 영역 외부는 신경 쓰지 말라고 명시 */
+}
+
+/* 2. 슬라이스 배경 - 단순화 및 레이어 고정 */
+.cinematic-group-container.theme-arcane .slice-bg {
+    background: linear-gradient(to top, var(--theme-color) 0%, rgba(0, 0, 0, 0) 90%);
+    opacity: 0.4;
+    overflow: hidden;
+    z-index: 1;
+    transform: translateZ(0);
+}
+
+/* 3. 입자 효과 - 고정된 비트맵처럼 처리하여 부하 감소 */
+.cinematic-group-container.theme-arcane .slice-bg::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200%;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.5) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.2) 2px, transparent 2px);
+    background-size: 100px 100px, 200px 200px;
+    will-change: transform;
+    animation: arcane-particle-flow 25s linear infinite;
+    pointer-events: none;
+}
+
+/* 4. 바닥 마법진 - 필터 중첩 최소화 (가장 오류가 많은 부분) */
+.cinematic-group-container.theme-arcane .cinematic-slice::before {
+    content: "";
+    position: absolute;
+    width: 140%;
+    padding-bottom: 140%;
+    left: -20%;
+    bottom: -140%;
+    background-image: url('../assets/magic_circle.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: invert(1) brightness(1.2);
+    /* 과한 drop-shadow 제거 */
+    opacity: 0.6;
+    z-index: 0;
+    transform: scaleY(0.3) rotate(0deg);
+    will-change: transform;
+}
+
+.cinematic-group-container.theme-arcane.animate .cinematic-slice::before {
+    animation: arcane-floor-spin 40s linear infinite;
+}
+
+/* 5. 캐릭터 실체화 - 렌더링 스택 안정화 */
+.cinematic-group-container.theme-arcane .cinematic-character {
+    opacity: 0;
+    transform-origin: bottom center;
+    z-index: 2;
+    will-change: transform, opacity;
+    /* 필터를 단순화하여 마지막 프레임 부하 감소 */
+    filter: brightness(0);
+}
+
+.cinematic-group-container.theme-arcane.animate .cinematic-character {
+    animation: arcane-char-materialize 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+/* 6. 중앙 텍스트 - 성능을 위해 drop-shadow 필터 대신 text-shadow 사용 */
+.cinematic-group-container.theme-arcane .center-main {
+    font-family: var(--cinematic-font), serif;
+    font-weight: bold;
+    letter-spacing: 4px;
+    /* 간격을 살짝 넓혀 마법적인 공간감 확보 */
+    background: linear-gradient(to bottom, #fff 20%, var(--center-main-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* [마법 광원] 여러 겹의 쉐도우로 깊이감 있는 발광 효과 */
+    text-shadow:
+        0 0 10px #fff,
+        0 0 20px var(--center-main-color),
+        0 0 40px var(--center-main-shadow);
+
+    opacity: 0;
+    transform: scale(1.1) translateZ(0);
+    /* 살짝 커진 상태에서 시작 */
+    will-change: transform, opacity, filter;
+
+    /* Bloom 연출: 빛나며 초점이 맞춰지는 애니메이션 */
+    animation: arcane-text-bloom 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation-delay: calc(var(--total-delay) + 0.1s);
+}
+
+.cinematic-group-container.theme-arcane .center-sub {
+    font-family: var(--cinematic-font), serif;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+
+    /* 장식선 강화 */
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 10px 60px;
+    margin-top: 20px;
+
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%);
+    color: var(--center-sub-color);
+    text-shadow: 0 0 10px var(--center-sub-shadow);
+
+    /* 가로로 슥 닦이며 나타나는 Wipe 효과 */
+    clip-path: inset(0 50% 0 50%);
+    opacity: 0;
+
+    transform: translateZ(0);
+    will-change: clip-path, opacity;
+
+    animation: arcane-sub-glow-wipe 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(var(--total-delay) + 0.4s);
+}
+
+/* 7. 시퀀스 종료 페이드 - 마지막 렌더링 튐 현상 방지 */
+.cinematic-group-container.theme-arcane.animate {
+    animation: arcane-master-exit 0.5s ease-in forwards;
+    animation-delay: 5s;
+    /* 전체 시퀀스 끝날 즈음 부드럽게 사라짐 */
+}
+
+/* ==========================================================================
+   STABLE KEYFRAMES
+   ========================================================================== */
+
+@keyframes arcane-master-exit {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(1.05);
+    }
+
+    /* 살짝 커지며 사라지는 게 자연스러움 */
+}
+
+@keyframes arcane-floor-spin {
+    from {
+        transform: scaleY(0.3) rotate(0deg) translateZ(0);
+    }
+
+    to {
+        transform: scaleY(0.3) rotate(360deg) translateZ(0);
+    }
+}
+
+@keyframes arcane-char-materialize {
+    0% {
+        opacity: 0;
+        transform: translateX(var(--final-x)) translateY(40px) scale(calc(0.8 * var(--char-mirror-x, 1)), 0.8);
+        filter: brightness(10);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateX(var(--final-x)) translateY(-5px) scale(calc(1.02 * var(--char-mirror-x, 1)), 1.02);
+        filter: brightness(5);
+    }
+
+    50% {
+        filter: brightness(1.2) contrast(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        filter: brightness(1.1);
+    }
+}
+
+@keyframes arcane-main-reveal {
+    0% {
+        opacity: 0;
+        transform: translateY(15px) scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes arcane-sub-wipe {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 50% 0 50%);
+    }
+
+    100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+@keyframes arcane-particle-flow {
+    0% {
+        transform: translateY(0) translateZ(0);
+    }
+
+    100% {
+        transform: translateY(-50%) translateZ(0);
+    }
+}
+
+/* 메인 텍스트: 빛의 덩어리에서 실체로 (Bloom Effect) */
+@keyframes arcane-text-bloom {
+    0% {
+        opacity: 0;
+        transform: scale(1.3) translateY(20px);
+        filter: blur(15px) brightness(3);
+        /* 처음엔 형태를 알 수 없는 빛 */
+    }
+
+    20% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-5px);
+        filter: blur(5px) brightness(2);
+        /* 서서히 상이 맺힘 */
+    }
+
+    50% {
+        filter: blur(0px) brightness(1.2);
+        /* 반짝이는 순간 */
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px) brightness(1);
+        /* 완전한 실체화 */
+    }
+}
+
+/* 서브 텍스트: 마력의 선이 그어지며 나타나는 효과 */
+@keyframes arcane-sub-glow-wipe {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 50% 0 50%);
+        letter-spacing: 20px;
+    }
+
+    100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+        letter-spacing: 8px;
+        /* 글자가 모여들며 안착 */
+    }
+}
+
+/* ==========================================================================
+   ARCANE THEME - VOTING MODE FIX
+   ========================================================================== */
+
+/* 1. 투표 대기 중: 그림자가 아닌 형체가 보이도록 보정 */
+.cinematic-group-container.theme-arcane.voting-mode .cinematic-character {
+    filter: brightness(1) grayscale(100%) !important;
+    /* 그림자가 아니라 흑백 상태로 보임 */
+    opacity: 1 !important;
+    transform: translateX(var(--final-x)) translateY(var(--final-y)) scale(var(--final-scale)) !important;
+}
+
+/* 2. 참여 완료(Ready): 마법 광원 효과와 함께 컬러로 전환 */
+.cinematic-group-container.theme-arcane.voting-mode .cinematic-slice.ready .cinematic-character {
+    filter: brightness(1.2) grayscale(0%) drop-shadow(0 0 15px var(--theme-color)) !important;
+    transition: filter 0.5s ease-out;
+}
+
+
+/* 4. 준비된 슬라이스의 바닥 마법진은 더 밝게 */
+.cinematic-group-container.theme-arcane.voting-mode .cinematic-slice.ready::before {
+    opacity: 0.8 !important;
+    filter: invert(1) brightness(1.5) drop-shadow(0 0 10px var(--theme-color)) !important;
+}
+
+/* ==========================================================================
+   THEME: LEGION (Tactical / Sci-Fi / HUD)
+   ========================================================================== */
+
+/* 1. 전체 배경: 디지털 격자 */
+.cinematic-group-container.theme-legion {
+    background: #050505;
+}
+
+.cinematic-group-container.theme-legion::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 204, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.3;
+    z-index: 0;
+}
+
+/* 2. 슬라이스 (패널): 각진 모서리와 간격 */
+.cinematic-group-container.theme-legion .cinematic-slice {
+    /* 레이아웃 변수 재정의: 패널 사이에 간격을 줌 */
+    left: calc(var(--col-left) + 5px) !important;
+    width: calc(var(--col-width) - 10px) !important;
+
+    /* SF적인 깎인 모서리 */
+    clip-path: polygon(0 0,
+            100% 0,
+            100% calc(100% - 30px),
+            calc(100% - 30px) 100%,
+            0 100%,
+            0 30px);
+
+    border: 1px solid var(--theme-color);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
+    background: rgba(0, 20, 10, 0.8);
+
+    /* 초기 상태: 높이가 0에서 시작 */
+    transform: scaleY(0);
+    transform-origin: center;
+}
+
+/* 3. 슬라이스 배경: 스캔라인 */
+.cinematic-group-container.theme-legion .slice-bg {
+    background: repeating-linear-gradient(0deg,
+            transparent,
+            transparent 2px,
+            var(--theme-color) 2px,
+            var(--theme-color) 4px);
+    opacity: 0.1;
+    animation: legion-scan-bg 2s linear infinite;
+}
+
+/* 4. 캐릭터: 홀로그램 효과 */
+.cinematic-group-container.theme-legion .cinematic-character {
+    /* 초기 위치: 중앙 하단 */
+    transform: translateX(var(--final-x)) translateY(100%) scale(var(--final-scale));
+    opacity: 0;
+
+    /* 홀로그램 필터: 밝기 증가 + 약간의 노이즈 느낌 */
+    filter: drop-shadow(0 0 5px var(--theme-color)) brightness(1.2) contrast(1.2);
+
+    /* 하단 페이드 (다리가 자연스럽게 끊기도록) */
+    mask-image: linear-gradient(to top, transparent 0%, black 20%);
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 20%);
+}
+
+/* 5. 개별 텍스트: 코드명 스타일 */
+.cinematic-group-container.theme-legion .slice-text {
+    bottom: 10% !important;
+    top: auto !important;
+    /* 하단 배치 */
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--theme-color) !important;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--theme-color);
+    padding: 5px 10px;
+    font-size: 2rem;
+    /* 조금 작게 */
+
+    transform: translateX(-50%);
+    /* 중앙 정렬 */
+    text-shadow: 0 0 5px var(--theme-color);
+
+    opacity: 0;
+}
+
+/* 장식용 넘버링 */
+.cinematic-group-container.theme-legion .slice-text::before {
+    content: "UNIT_0" counter(slice-counter);
+    /* CSS 카운터 활용 */
+    display: block;
+    font-size: 0.5em;
+    color: #fff;
+    margin-bottom: 2px;
+    opacity: 0.7;
+}
+
+.cinematic-group-container.theme-legion {
+    counter-reset: slice-counter;
+}
+
+.cinematic-group-container.theme-legion .cinematic-slice {
+    counter-increment: slice-counter;
+}
+
+
+/* 6. 중앙 텍스트: 경고 메시지 스타일 */
+.cinematic-group-container.theme-legion .center-main {
+    font-family: "Impact", sans-serif;
+    letter-spacing: 5px;
+    color: var(--center-main-color) !important;
+    text-shadow: 0 0 10px var(--center-main-shadow);
+
+    border: 2px solid var(--center-main-color);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 40px;
+
+    /* 박스 자체는 투명도만 조절 (글자는 따로 나옴) */
+    opacity: 0;
+    clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+}
+
+.cinematic-group-container.theme-legion .center-sub {
+    font-family: monospace;
+    background: var(--center-sub-shadow);
+    color: var(--center-sub-color) !important;
+    padding: 2px 50px;
+    margin-top: 5px;
+    font-weight: bold;
+    opacity: 0;
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+}
+
+/* ★ 글자별 스타일 (기본 숨김) */
+.cinematic-group-container.theme-legion .center-main span,
+.cinematic-group-container.theme-legion .center-sub span {
+    opacity: 0;
+    transform: scale(1.5);
+    /* 커진 상태에서 작아지며 등장 */
+    filter: blur(5px);
+}
+
+/* --- ANIMATIONS --- */
+
+/* 패널 전개 (위아래로 열림) */
+.cinematic-group-container.theme-legion.animate .cinematic-slice {
+    animation: legion-panel-open 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+/* 캐릭터 스캔 등장 */
+.cinematic-group-container.theme-legion.animate .cinematic-character {
+    animation: legion-char-scan 0.5s steps(10, end) forwards !important;
+    animation-delay: calc(var(--delay) + 0.2s) !important;
+}
+
+/* 텍스트 타이핑 효과 */
+.cinematic-group-container.theme-legion.animate .slice-text {
+    animation: legion-text-blink 0.5s steps(2, start) forwards !important;
+    animation-delay: calc(var(--delay) + 0.4s) !important;
+}
+
+/* 중앙 텍스트 */
+.cinematic-group-container.theme-legion.animate .center-main {
+    animation: legion-box-flicker 0.3s steps(3, end) forwards;
+    animation-delay: calc(var(--total-delay) + 0.1s);
+}
+
+.cinematic-group-container.theme-legion.animate .center-sub {
+    animation: legion-box-flicker 0.3s steps(3, end) forwards;
+    animation-delay: calc(var(--total-delay) + 0.3s);
+}
+
+/* 2. 글자 타자기 효과 (Main) */
+.cinematic-group-container.theme-legion.animate .center-main span {
+    animation: legion-type-char 0.1s forwards;
+    /* 박스 등장(0.1s) + (글자순서 * 0.05s) */
+    animation-delay: calc(var(--total-delay) + 0.4s + (var(--char-i) * 0.05s));
+}
+
+/* 3. 글자 타자기 효과 (Sub) - 메인보다 조금 늦게 시작 */
+.cinematic-group-container.theme-legion.animate .center-sub span {
+    animation: legion-type-char 0.1s forwards;
+    animation-delay: calc(var(--total-delay) + 0.8s + (var(--char-i) * 0.03s));
+    /* 서브는 좀 더 빠르게 */
+}
+
+/* --- KEYFRAMES --- */
+
+@keyframes legion-scan-bg {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 100px;
+    }
+}
+
+@keyframes legion-panel-open {
+    0% {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes legion-char-scan {
+    0% {
+        opacity: 0;
+        transform: translateX(var(--final-x)) translateY(50px) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        clip-path: inset(100% 0 0 0);
+        /* 아래에서 위로 스캔 */
+    }
+
+    50% {
+        opacity: 0.5;
+        filter: brightness(2) sepia(1) hue-rotate(90deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        clip-path: inset(0 0 0 0);
+        filter: drop-shadow(0 0 5px var(--theme-color));
+    }
+}
+
+@keyframes legion-text-blink {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    51% {
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes legion-center-expand {
+    0% {
+        transform: scaleX(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scaleX(1);
+        opacity: 1;
+    }
+}
+
+@keyframes legion-sub-up {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes legion-box-flicker {
+    0% {
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    40% {
+        opacity: 0;
+    }
+
+    60% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes legion-type-char {
+    0% {
+        opacity: 0;
+        transform: scale(2);
+        filter: blur(5px) brightness(2);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0) brightness(1);
+    }
+}
+
+/* 대기 상태: 패널이 열려있고 점선으로 표시됨 */
+.cinematic-group-container.theme-legion.voting-mode .cinematic-slice {
+    transform: scaleY(1) !important;
+    /* 높이 100% 강제 (열림) */
+    opacity: 1 !important;
+    /* 투명도 제거 */
+
+    background: rgba(0, 20, 10, 0.3);
+    /* 은은한 배경 */
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    /* 대기 중 점선 */
+    box-shadow: none;
+}
+
+/* 내부 배경 스캔라인은 은은하게 보이게 */
+.cinematic-group-container.theme-legion.voting-mode .slice-bg {
+    opacity: 0.2 !important;
+    animation: legion-scan-bg 2s linear infinite !important;
+    /* 배경 스캔은 계속 움직이게 허용 */
+}
+
+/* 캐릭터는 준비 전까지 숨김 */
+.cinematic-group-container.theme-legion.voting-mode .cinematic-character {
+    opacity: 0 !important;
+}
+
+/* [READY] 참가 완료 시: 실선 + 발광 + 캐릭터 등장 */
+.cinematic-group-container.theme-legion.voting-mode .cinematic-slice.ready {
+    background: rgba(0, 20, 10, 0.8);
+    border: 2px solid var(--theme-color);
+    /* 테마색 실선 */
+    box-shadow: 0 0 20px var(--theme-color), inset 0 0 20px rgba(0, 255, 204, 0.2);
+}
+
+.cinematic-group-container.theme-legion.voting-mode .cinematic-slice.ready .cinematic-character {
+    opacity: 1 !important;
+    /* 준비되면 스캔 효과로 등장 */
+    animation: legion-char-scan 0.5s steps(10, end) forwards !important;
+}
+
+/* ==========================================================================
+   CENTER TEXT STYLES (All Themes)
+   ========================================================================== */
+
+.cinematic-group-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+    z-index: 50000 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    text-align: center;
+}
+
+/* Wrapper divs for independent positioning */
+.cinematic-group-center-text .center-main-wrapper {
+    display: block;
+    position: relative;
+    transform: translate(var(--center-main-x, 0px), var(--center-main-y, 0px));
+}
+
+.cinematic-group-center-text .center-sub-wrapper {
+    display: block;
+    position: relative;
+    margin-top: 10px;
+    transform: translate(var(--center-sub-x, 0px), var(--center-sub-y, 0px));
+}
+
+.cinematic-group-center-text .center-main {
+    display: block;
+    position: relative;
+    font-family: var(--cinematic-font, 'Teko'), sans-serif;
+    color: var(--center-main-color, #ffffff);
+    font-size: var(--center-main-size, 10rem);
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;
+}
+
+.cinematic-group-center-text .center-sub {
+    display: block;
+    position: relative;
+    font-family: var(--cinematic-font, 'Teko'), sans-serif;
+    color: var(--center-sub-color, #ffffff);
+    font-size: var(--center-sub-size, 3rem);
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+}
+
+
+/* Rebel Center */
+.cinematic-group-container.theme-rebel .center-main {
+    -webkit-text-stroke: 3px var(--center-main-shadow, #000);
+    text-shadow: 5px 5px 0 #d00, 10px 10px 0 var(--center-main-shadow, #000);
+    transform: scale(3) rotate(-5deg);
+}
+
+.cinematic-group-container.theme-rebel .center-sub {
+    background: var(--center-sub-shadow, #000);
+    padding: 5px 20px;
+    transform: skewX(-15deg) rotate(-5deg);
+    border: 2px solid #fff;
+}
+
+.cinematic-group-container.theme-rebel.animate .center-main {
+    animation: center-slam-rebel 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    animation-delay: calc(var(--total-delay) + 0.5s);
+}
+
+.cinematic-group-container.theme-rebel.animate .center-sub {
+    animation: center-fade-rebel 0.4s ease-out forwards;
+    animation-delay: calc(var(--total-delay) + 0.7s);
+}
+
+@keyframes center-slam-rebel {
+    0% {
+        opacity: 0;
+        transform: scale(3) rotate(-5deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(-5deg);
+    }
+}
+
+@keyframes center-fade-rebel {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px) skewX(-15deg) rotate(-5deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) skewX(-15deg) rotate(-5deg);
+    }
+}
+
+/* Comic Center */
+.cinematic-group-container.theme-comic .center-main {
+    color: var(--center-main-color, #ffe600);
+    -webkit-text-stroke: 4px var(--center-main-shadow, #000);
+    text-shadow: 5px 5px 0 var(--center-main-shadow, #000);
+    transform: scale(0) rotate(10deg);
+    opacity: 0;
+}
+
+.cinematic-group-container.theme-comic .center-sub {
+    background: var(--center-sub-color, #ffe600);
+    color: var(--center-sub-shadow, #000) !important;
+
+    border: 3px solid var(--center-sub-shadow, #000);
+    box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+    transform: scale(0) rotate(10deg);
+    opacity: 0;
+}
+
+.cinematic-group-container.theme-comic.animate .center-main {
+    animation: center-pop-comic 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    animation-delay: calc(var(--total-delay) + 0.5s);
+}
+
+.cinematic-group-container.theme-comic.animate .center-sub {
+    animation: center-pop-comic 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    animation-delay: calc(var(--total-delay) + 0.7s);
+}
+
+@keyframes center-pop-comic {
+    0% {
+        opacity: 0;
+        transform: scale(0) rotate(10deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(10deg);
+    }
+}
+
+/* Urban Center */
+.cinematic-group-container.theme-urban .center-main {
+    text-shadow: 0 0 20px var(--center-main-shadow, #00d2ff);
+    letter-spacing: 10px;
+    transform: scaleY(0);
+}
+
+.cinematic-group-container.theme-urban .center-sub {
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #fff;
+    padding: 5px 40px;
+    transform: scaleX(0);
+}
+
+.cinematic-group-container.theme-urban.animate .center-main {
+    animation: center-stretch-urban 0.4s ease-out forwards;
+    animation-delay: 0.8s;
+}
+
+.cinematic-group-container.theme-urban.animate .center-sub {
+    animation: center-expand-urban 0.4s ease-out forwards;
+    animation-delay: 1.0s;
+}
+
+@keyframes center-stretch-urban {
+    0% {
+        opacity: 0;
+        transform: scaleY(0);
+        filter: blur(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scaleY(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes center-expand-urban {
+    0% {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+/* Slice Center (Added) */
+.cinematic-group-container.theme-slice .center-main {
+    text-shadow: 4px 4px 0 #e61c34, -2px -2px 0 var(--center-main-shadow, #000);
+    transform: scale(2) rotate(-5deg);
+}
+
+.cinematic-group-container.theme-slice .center-sub {
+    padding: 5px 40px;
+    border: 2px solid #fff;
+    transform: skewX(-20deg) translateX(-50px);
+    box-shadow: 5px 5px 0 #e61c34;
+}
+
+.cinematic-group-container.theme-slice.animate .center-main {
+    animation: slice-text-slam 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: calc(var(--total-delay) + 0.2s);
+}
+
+.cinematic-group-container.theme-slice.animate .center-sub {
+    animation: slice-sub-slide 0.4s ease-out forwards;
+    animation-delay: calc(var(--total-delay) + 0.4s);
+}
+
+@keyframes slice-text-slam {
+    0% {
+        opacity: 0;
+        transform: scale(3) rotate(-5deg);
+        filter: blur(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(-5deg);
+        filter: blur(0);
+    }
+}
+
+@keyframes slice-sub-slide {
+    0% {
+        opacity: 0;
+        transform: skewX(-20deg) translateX(-50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: skewX(-20deg) translateX(0);
+    }
+}
+
+/* Noir Center */
+.cinematic-group-container.theme-noir .center-main {
+    -webkit-text-stroke: 1px var(--center-main-shadow, #000);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 4px 4px 0 var(--center-main-shadow, #000);
+    transform: scale(2);
+    z-index: 100;
+}
+
+.cinematic-group-container.theme-noir .center-sub {
+    font-weight: bold;
+    letter-spacing: 5px;
+    padding: 5px 30px;
+    border: 1px solid var(--center-sub-color, #ffffff);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.cinematic-group-container.theme-noir.animate .center-main {
+    animation: noir-center-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: calc(var(--total-delay) + 0.5s);
+}
+
+.cinematic-group-container.theme-noir.animate .center-sub {
+    animation: noir-sub-slide 0.5s ease-out forwards;
+    animation-delay: calc(var(--total-delay) + 0.7s);
+}
+
+@keyframes noir-center-in {
+    0% {
+        opacity: 0;
+        transform: scale(3);
+        filter: blur(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: drop-shadow(4px 4px 0 #000);
+    }
+}
+
+@keyframes noir-sub-slide {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0);
+    }
+
+    100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* Wanted Center */
+.cinematic-group-container.theme-wanted .center-main {
+    -webkit-text-stroke: 2px #fff;
+    text-shadow: 5px 5px 0 var(--center-main-shadow, #000);
+    transform: rotate(-5deg) scale(3);
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px 50px;
+    border: 4px solid #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.cinematic-group-container.theme-wanted .center-sub {
+    border: 2px dashed var(--center-sub-shadow, #000);
+    padding: 5px 20px;
+    transform: rotate(-5deg) translateY(20px);
+}
+
+.cinematic-group-container.theme-wanted.animate .center-main {
+    animation: wanted-stamp-slam 0.4s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+    animation-delay: var(--total-delay);
+}
+
+.cinematic-group-container.theme-wanted.animate .center-sub {
+    animation: wanted-paper-flutter 0.5s ease-out forwards;
+    animation-delay: calc(var(--total-delay) + 0.2s);
+}
+
+@keyframes wanted-stamp-slam {
+    0% {
+        opacity: 0;
+        transform: rotate(-5deg) scale(4);
+        filter: blur(10px);
+    }
+
+    80% {
+        opacity: 1;
+        transform: rotate(-5deg) scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: rotate(-5deg) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes wanted-paper-flutter {
+    0% {
+        opacity: 0;
+        transform: rotate(-5deg) translateY(50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: rotate(-5deg) translateY(0);
+    }
+}
+
+
+/* ==========================================================================
+   VOTING MODE (Resonance / Wait State)
+   ========================================================================== */
+
+.cinematic-group-container.voting-mode {
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20000;
+}
+
+.cinematic-group-container.voting-mode .cinematic-slice {
+    filter: grayscale(100%) brightness(0.4);
+    transition: filter 0.3s ease-out, transform 0.2s;
+}
+
+.cinematic-group-container.voting-mode .cinematic-character {
+    opacity: 1 !important;
+    transform: translateX(var(--final-x)) translateY(var(--final-y)) rotate(var(--char-rotate)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale)) !important;
+    animation: none !important;
+}
+
+.cinematic-group-container.voting-mode .slice-text {
+    display: none;
+}
+
+.cinematic-group-container.voting-mode .cinematic-slice.ready {
+    filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 15px var(--theme-color));
+    z-index: 10;
+}
+
+.cinematic-group-container.voting-mode .cinematic-group-center-text,
+.cinematic-group-container.voting-mode .cinematic-group-flash {
+    display: none !important;
+}
+
+/* Theme specific voting fixes */
+.cinematic-group-container.theme-wanted.voting-mode .slice-bg {
+    transform: translateY(0) !important;
+}
+
+.cinematic-group-container.theme-wanted.voting-mode .cinematic-character {
+    left: var(--final-center-x) !important;
+}
+
+.cinematic-group-container.theme-wanted.voting-mode .cinematic-slice:not(.ready) .cinematic-character,
+.cinematic-group-container.theme-wanted.voting-mode .cinematic-slice:not(.ready) .slice-bg {
+    filter: grayscale(100%) brightness(0.4) !important;
+    transition: filter 0.3s ease-out;
+}
+
+.cinematic-group-container.theme-wanted.voting-mode .cinematic-slice.ready .cinematic-character {
+    filter: grayscale(0%) contrast(1.1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.5)) !important;
+    transform: scale(1.05);
+}
+
+.cinematic-group-container.theme-wanted.voting-mode .cinematic-slice.ready .slice-bg {
+    filter: grayscale(0%) !important;
+}
+
+/* Voting Buttons */
+.cinematic-vote-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30000;
+    background: #e61c34;
+    color: #fff;
+    border: 3px solid #fff;
+    padding: 20px 50px;
+    font-family: 'Teko', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    pointer-events: auto !important;
+    box-shadow: 0 0 20px #e61c34, 0 0 0 10px rgba(0, 0, 0, 0.5);
+    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+    transition: all 0.1s;
+}
+
+.cinematic-vote-btn:hover {
+    background: #fff;
+    color: #e61c34;
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.cinematic-vote-btn:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.cinematic-vote-btn.pulse {
+    animation: vote-btn-pulse 1s infinite;
+}
+
+@keyframes vote-btn-pulse {
+    0% {
+        box-shadow: 0 0 20px #e61c34;
+    }
+
+    50% {
+        box-shadow: 0 0 50px #e61c34, 0 0 0 15px rgba(230, 28, 52, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 0 20px #e61c34;
+    }
+}
+
+.cinematic-vote-btn.gm-force {
+    background: #ff9800;
+    box-shadow: 0 0 20px #ff9800, 0 0 0 10px rgba(0, 0, 0, 0.5);
+    border-color: #ffe0b2;
+}
+
+.cinematic-vote-btn.gm-force:hover {
+    background: #ffe0b2;
+    color: #e65100;
+}
+
+.cinematic-cancel-btn {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 30001;
+    background: rgba(0, 0, 0, 0.8);
+    color: #aaa;
+    border: 1px solid #555;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    pointer-events: auto !important;
+}
+
+.cinematic-cancel-btn:hover {
+    background: #333;
+    color: #ff6b6b;
+    border-color: #ff6b6b;
+}
+
+/* Config Preview Helper */
+.cinematic-group-container.hide-text .slice-text {
+    display: none !important;
+}
+
+
+
+/* ==========================================================================
+   THEME: DRAGON (Epic/Legendary Boss)
+   ========================================================================== */
+
+.cinematic-group-container.theme-dragon {
+    background: #0a0505;
+}
+
+/* Background Layer with Watermark */
+.cinematic-group-container.theme-dragon .slice-bg {
+    background-image: url("../assets/tex_dragon_paper.png");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.95;
+    box-shadow: inset 0 0 80px rgba(139, 0, 0, 0.6), inset 0 0 150px rgba(0, 0, 0, 0.8);
+    border: 2px solid #d4af37;
+    overflow: hidden;
+}
+
+.cinematic-group-container.theme-dragon .slice-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('../assets/tex_dragon_bg.png');
+    background-size: 45%;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.2;
+    mix-blend-mode: multiply;
+}
+
+.cinematic-group-container.theme-dragon .slice-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 30%, rgba(139, 0, 0, 0.4) 100%);
+    pointer-events: none;
+}
+
+/* Character Entry - Fire Glow */
+.cinematic-group-container.theme-dragon .cinematic-character {
+    filter: drop-shadow(0 0 10px rgba(139, 0, 0, 0.5)) contrast(1.2);
+    transform-origin: bottom center;
+}
+
+.cinematic-group-container.theme-dragon.animate .cinematic-character {
+    animation: dragon-char-rise 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards !important;
+    animation-delay: var(--delay) !important;
+}
+
+@keyframes dragon-char-rise {
+    0% {
+        opacity: 0;
+        transform: translateX(var(--final-x)) translateY(100%) scale(calc(var(--final-scale) * 0.9));
+        filter: brightness(0) drop-shadow(0 -20px 20px #ff4500);
+    }
+
+    40% {
+        opacity: 1;
+        filter: brightness(2) sepia(1) hue-rotate(-20deg) saturate(3) drop-shadow(0 0 30px #ffd700);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(var(--final-x)) translateY(var(--final-y)) scale(calc(var(--final-scale) * var(--char-mirror-x, 1)), var(--final-scale));
+        filter: brightness(1) contrast(1.1) drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+    }
+}
+
+/* Slice Text - Gold Styled */
+.cinematic-group-container.theme-dragon .slice-text {
+    background: linear-gradient(to right, rgba(139, 0, 0, 0.9), rgba(0, 0, 0, 0.9));
+    border: 1px solid #d4af37;
+    border-left: 5px solid #d4af37;
+    color: #fdfbd4 !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 5px 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+
+    /* Position adjustments */
+    transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px)));
+
+    animation: dragon-text-slash 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    animation-delay: calc(var(--delay) + 0.2s) !important;
+    opacity: 0;
+}
+
+@keyframes dragon-text-slash {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0);
+        transform: translate(calc(-50% + var(--text-x, 0px) - 50px), calc(-50% + var(--text-y, 0px)));
+    }
+
+    100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+        transform: translate(calc(-50% + var(--text-x, 0px)), calc(-50% + var(--text-y, 0px)));
+    }
+}
+
+/* Center Text - Epic Impact */
+.cinematic-group-container.theme-dragon .center-main {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: var(--center-main-color) !important;
+    text-shadow:
+        0 0 10px var(--center-main-shadow),
+        0 0 20px #ff4500,
+        0 0 40px #8b0000;
+
+    transform: scale(3);
+    opacity: 0;
+    filter: blur(10px);
+
+    animation: dragon-main-impact 0.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    animation-delay: calc(var(--total-delay) + 0.1s);
+}
+
+@keyframes dragon-main-impact {
+    0% {
+        opacity: 0;
+        transform: scale(3);
+        filter: blur(20px);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(0.9);
+        filter: blur(0px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px) drop-shadow(0 0 10px rgba(255, 69, 0, 0.5));
+    }
+}
+
+.cinematic-group-container.theme-dragon .center-sub {
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: var(--center-sub-color) !important;
+
+    border-top: 2px solid #d4af37;
+    border-bottom: 2px solid #d4af37;
+    padding: 10px 40px;
+    background: rgba(0, 0, 0, 0.6);
+
+    opacity: 0;
+    transform: translateY(20px);
+
+    animation: dragon-sub-rise 0.8s ease-out forwards;
+    animation-delay: calc(var(--total-delay) + 0.4s);
+}
+
+@keyframes dragon-sub-rise {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dragon Layouts - Equal Distribution with Diagonal Cuts */
+.cinematic-group-container.theme-dragon[data-count="2"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 60% 0, 40% 100%, 0 100%);
+    --base-x: 30%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="2"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%);
+    --base-x: 70%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="3"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 40% 0, 30% 100%, 0 100%);
+    --base-x: 20%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="3"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(40% 0, 70% 0, 60% 100%, 30% 100%);
+    --base-x: 50%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="3"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(70% 0, 100% 0, 100% 100%, 60% 100%);
+    --base-x: 80%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="4"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 30% 0, 22% 100%, 0 100%);
+    --base-x: 15%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="4"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(30% 0, 55% 0, 47% 100%, 22% 100%);
+    --base-x: 38%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="4"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(55% 0, 80% 0, 72% 100%, 47% 100%);
+    --base-x: 62%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="4"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(80% 0, 100% 0, 100% 100%, 72% 100%);
+    --base-x: 88%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="5"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 24% 0, 18% 100%, 0 100%);
+    --base-x: 12%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="5"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(24% 0, 44% 0, 38% 100%, 18% 100%);
+    --base-x: 31%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="5"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(44% 0, 64% 0, 58% 100%, 38% 100%);
+    --base-x: 50%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="5"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(64% 0, 84% 0, 78% 100%, 58% 100%);
+    --base-x: 70%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="5"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(84% 0, 100% 0, 100% 100%, 78% 100%);
+    --base-x: 90%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(1) {
+    clip-path: polygon(0 0, 20% 0, 15% 100%, 0 100%);
+    --base-x: 10%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(2) {
+    clip-path: polygon(20% 0, 37% 0, 32% 100%, 15% 100%);
+    --base-x: 26%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(3) {
+    clip-path: polygon(37% 0, 54% 0, 49% 100%, 32% 100%);
+    --base-x: 43%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(4) {
+    clip-path: polygon(54% 0, 71% 0, 66% 100%, 49% 100%);
+    --base-x: 58%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(5) {
+    clip-path: polygon(71% 0, 88% 0, 83% 100%, 66% 100%);
+    --base-x: 75%;
+    --base-y: 50%;
+}
+
+.cinematic-group-container.theme-dragon[data-count="6"] .cinematic-slice:nth-child(6) {
+    clip-path: polygon(88% 0, 100% 0, 100% 100%, 83% 100%);
+    --base-x: 92%;
+    --base-y: 50%;
+}
+
+/* Voting Mode - Dragon */
+.cinematic-group-container.theme-dragon.voting-mode .cinematic-slice {
+    filter: grayscale(100%) brightness(0.4);
+    transition: filter 0.3s ease-out;
+}
+
+.cinematic-group-container.theme-dragon.voting-mode .cinematic-slice.ready {
+    filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 20px #ff4500);
+    z-index: 100;
+}
