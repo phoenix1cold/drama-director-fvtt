@@ -533,11 +533,10 @@ class DramaDirector {
     const action = { hero: 'heroIntro', villain: 'villainIntro', genshin: 'genshinIntro' }[type];
     if (!action) return;
 
-    // GM sends via socket, non-GM runs locally
+    // Always run locally, GM also emits to others via socket
+    this._dispatchIntro(type, data);
     if (game.user.isGM) {
       game.socket.emit(SOCKET_EVENT, { action, data, targetUser: targetUser || null });
-    } else {
-      this._dispatchIntro(type, data);
     }
   }
 
