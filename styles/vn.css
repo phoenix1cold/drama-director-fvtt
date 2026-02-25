@@ -335,9 +335,10 @@
 .vn-panel-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; font-size: 13px; }
 
 .vn-panel-header { flex-shrink: 0; border-bottom: 1px solid #333; padding: 7px 10px 0; background: rgba(0,0,0,.35); }
-.vn-status-bar   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-.vn-status-on    { color: #6fcf6f; font-weight: bold; font-size: 12px; }
-.vn-status-off   { color: #888;    font-weight: bold; font-size: 12px; }
+.vn-status-bar   { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.vn-status-on    { color: #6fcf6f; font-weight: bold; font-size: 12px; flex: 1; }
+.vn-status-off   { color: #888;    font-weight: bold; font-size: 12px; flex: 1; }
+.vn-status-btns  { display: flex; align-items: center; gap: 6px; }
 
 .vn-tabs { display: flex; gap: 2px; }
 .vn-tab {

@@ -566,9 +566,9 @@ export class DDCutinPanel extends CutinHbs(CutinAppV2) {
   async _savePreset() {
     this._syncFromForm();
     const name = this.element.querySelector('#dd-preset-name')?.value?.trim();
-    if (!name) return ui.notifications.warn('Введите название пресета.');
+    if (!name) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.cutin.notifications.presetNameRequired'));
     await DDCutinPresets.save(name, this._data);
-    ui.notifications.info(`Пресет «${name}» сохранён.`);
+    ui.notifications.info(game.i18n.format('DRAMADIRECTOR.cutin.notifications.presetSaved', {name}));
     this.render();
   }
 
@@ -585,7 +585,7 @@ export class DDCutinPanel extends CutinHbs(CutinAppV2) {
     const name = this.element.querySelector('#dd-preset-select')?.value;
     if (!name) return;
     await DDCutinPresets.delete(name);
-    ui.notifications.info(`Пресет «${name}» удалён.`);
+    ui.notifications.info(game.i18n.format('DRAMADIRECTOR.cutin.notifications.presetDeleted', {name}));
     this.render();
   }
 
@@ -596,7 +596,7 @@ export class DDCutinPanel extends CutinHbs(CutinAppV2) {
       ? `// Показать пресет cut-in по имени\ngame.dramaDirector.cutin.playPreset(${JSON.stringify(presetName)});`
       : `// Показать cut-in с настройками\ngame.dramaDirector.cutin.play(${JSON.stringify(this._data, null, 2)});`;
     navigator.clipboard.writeText(macro)
-      .then(() => ui.notifications.info('Код макроса скопирован в буфер!'));
+      .then(() => ui.notifications.info(game.i18n.localize('DRAMADIRECTOR.cutin.notifications.macroCopied')));
   }
 
   _browse(type, selector) {
@@ -617,7 +617,7 @@ export const DDCutinAPI = {
   },
   playPreset(name) {
     const p = DDCutinPresets.get(name);
-    if (!p) return ui.notifications.warn(`Пресет «${name}» не найден.`);
+    if (!p) return ui.notifications.warn(game.i18n.format('DRAMADIRECTOR.cutin.notifications.presetNotFound', {name}));
     this.play(p);
   },
   stop() { DDCutinManager.stop(); },

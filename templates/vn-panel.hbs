@@ -1,65 +1,68 @@
 <div class="vn-panel-layout">
 
-  <!-- Статус + табы -->
+  <!-- Status + tabs -->
   <div class="vn-panel-header">
     <div class="vn-status-bar">
       {{#if open}}
-        <span class="vn-status-on"><i class="fas fa-circle"></i> VN АКТИВНА</span>
-        <button type="button" data-action="vn-close" class="vn-btn-danger"><i class="fas fa-stop"></i> Закрыть VN</button>
+        <span class="vn-status-on"><i class="fas fa-circle"></i> {{localize "DRAMADIRECTOR.vn.statusActive"}}</span>
+        <div class="vn-status-btns">
+          <button type="button" data-action="vn-close" class="vn-btn-danger"><i class="fas fa-stop"></i> {{localize "DRAMADIRECTOR.vn.close"}}</button>
+        </div>
       {{else}}
-        <span class="vn-status-off"><i class="fas fa-circle"></i> VN выключена</span>
-        <button type="button" data-action="vn-open" class="vn-btn-primary"><i class="fas fa-play"></i> Запустить VN</button>
-        <button type="button" data-action="vn-open-local" class="vn-btn-secondary" title="Открыть VN только для себя (без трансляции игрокам)"><i class="fas fa-eye"></i> Для себя</button>
+        <span class="vn-status-off"><i class="fas fa-circle"></i> {{localize "DRAMADIRECTOR.vn.statusInactive"}}</span>
+        <div class="vn-status-btns">
+          <button type="button" data-action="vn-open" class="vn-btn-primary"><i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.vn.launch"}}</button>
+          <button type="button" data-action="vn-open-local" class="vn-btn-secondary" title="{{localize "DRAMADIRECTOR.vn.launchLocalTitle"}}"><i class="fas fa-eye"></i> {{localize "DRAMADIRECTOR.vn.launchLocal"}}</button>
+        </div>
       {{/if}}
     </div>
     <div class="vn-tabs">
-      <button class="vn-tab" data-vtab="scene">   <i class="fas fa-image"></i> Фон</button>
-      <button class="vn-tab" data-vtab="chars">   <i class="fas fa-users"></i> Персонажи</button>
-      <button class="vn-tab" data-vtab="dialogue"><i class="fas fa-comment"></i> Диалог</button>
-      <button class="vn-tab" data-vtab="mic">     <i class="fas fa-microphone"></i> Микрофон{{#if micOn}} <span class="vn-mic-dot"></span>{{/if}}</button>
-      <button class="vn-tab" data-vtab="presets"> <i class="fas fa-bookmark"></i> Пресеты</button>
-      <button class="vn-tab" data-vtab="help">    <i class="fas fa-question-circle"></i> Справка</button>
+      <button class="vn-tab" data-vtab="scene">   <i class="fas fa-image"></i> {{localize "DRAMADIRECTOR.vn.tabBackground"}}</button>
+      <button class="vn-tab" data-vtab="chars">   <i class="fas fa-users"></i> {{localize "DRAMADIRECTOR.vn.tabCharacters"}}</button>
+      <button class="vn-tab" data-vtab="dialogue"><i class="fas fa-comment"></i> {{localize "DRAMADIRECTOR.vn.tabDialogue"}}</button>
+      <button class="vn-tab" data-vtab="mic">     <i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.tabMic"}}{{#if micOn}} <span class="vn-mic-dot"></span>{{/if}}</button>
+      <button class="vn-tab" data-vtab="presets"> <i class="fas fa-bookmark"></i> {{localize "DRAMADIRECTOR.vn.tabPresets"}}</button>
+      <button class="vn-tab" data-vtab="help">    <i class="fas fa-question-circle"></i> {{localize "DRAMADIRECTOR.vn.tabHelp"}}</button>
     </div>
   </div>
 
   <div class="vn-panel-body">
 
-    <!-- ═══ ФОН ═══════════════════════════════════════════════════════════ -->
+    <!-- ═══ BACKGROUND ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="scene">
 
       <section class="dd-section">
-        <h3><i class="fas fa-image"></i> Текущий фон</h3>
+        <h3><i class="fas fa-image"></i> {{localize "DRAMADIRECTOR.vn.bgSection"}}</h3>
         <div class="dd-row">
-          <input type="text" id="vn-bg-path" value="{{background}}" placeholder="Путь к фону или видео…" class="dd-input"/>
+          <input type="text" id="vn-bg-path" value="{{background}}" placeholder="{{localize "DRAMADIRECTOR.vn.bgPath"}}" class="dd-input"/>
           <button type="button" data-action="vn-browse-bg"><i class="fas fa-folder-open"></i></button>
         </div>
         <div class="dd-row" style="margin-top:5px;gap:10px">
-          <label class="dd-row-pair"><span>Заливка</span>
+          <label class="dd-row-pair"><span>{{localize "DRAMADIRECTOR.vn.bgFit"}}</span>
             <select id="vn-bg-fit" class="dd-select-sm">
               <option value="cover"   {{#if (eq bgFit "cover")}}selected{{/if}}>cover</option>
               <option value="contain" {{#if (eq bgFit "contain")}}selected{{/if}}>contain</option>
               <option value="fill"    {{#if (eq bgFit "fill")}}selected{{/if}}>fill</option>
             </select>
           </label>
-          <label class="dd-row-pair"><span>Цвет фона</span>
+          <label class="dd-row-pair"><span>{{localize "DRAMADIRECTOR.vn.bgColor"}}</span>
             <input type="color" id="vn-bg-color" value="{{bgColor}}" class="dd-color"/>
           </label>
-          <label class="dd-row-pair" style="flex:1"><span>Затемн. {{dimBg}}</span>
+          <label class="dd-row-pair" style="flex:1"><span>{{localize "DRAMADIRECTOR.vn.bgDim"}} {{dimBg}}</span>
             <input type="range" id="vn-dim" value="{{dimBg}}" min="0" max="1" step="0.05" style="flex:1;min-width:60px"/>
           </label>
         </div>
       </section>
 
-      <!-- Быстрый выбор фонов плитками -->
       <section class="dd-section">
         <div class="vn-bg-section-header">
-          <h3 style="margin:0"><i class="fas fa-th"></i> Быстрый выбор</h3>
+          <h3 style="margin:0"><i class="fas fa-th"></i> {{localize "DRAMADIRECTOR.vn.bgQuickSelect"}}</h3>
           <button type="button" data-action="vn-bg-add" class="vn-btn-add">
-            <i class="fas fa-plus"></i> Добавить
+            <i class="fas fa-plus"></i> {{localize "DRAMADIRECTOR.vn.bgAdd"}}
           </button>
         </div>
         <div class="vn-chars-search" style="margin-bottom:8px">
-          <input type="text" id="vn-bg-search" class="dd-input" placeholder="Поиск по фонам..."/>
+          <input type="text" id="vn-bg-search" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.vn.bgSearch"}}"/>
         </div>
 
         {{#each allBg}}
@@ -68,10 +71,10 @@
             <span class="vn-bg-group-name">{{this.name}}</span>
             {{#unless this._builtin}}
             <div class="vn-bg-group-actions">
-              <button type="button" data-bg-move="{{this.id}}:left"  class="vn-bg-move-btn" title="Влево"><i class="fas fa-arrow-left"></i></button>
-              <button type="button" data-bg-move="{{this.id}}:right" class="vn-bg-move-btn" title="Вправо"><i class="fas fa-arrow-right"></i></button>
-              <button type="button" data-bg-edit="{{this.id}}"   class="vn-bg-move-btn" title="Редактировать"><i class="fas fa-pencil-alt"></i></button>
-              <button type="button" data-bg-delete="{{this.id}}" class="vn-bg-move-btn vn-bg-delete-btn" title="Удалить"><i class="fas fa-trash"></i></button>
+              <button type="button" data-bg-move="{{this.id}}:left"  class="vn-bg-move-btn" title="{{localize "DRAMADIRECTOR.vn.bgMoveLeft"}}"><i class="fas fa-arrow-left"></i></button>
+              <button type="button" data-bg-move="{{this.id}}:right" class="vn-bg-move-btn" title="{{localize "DRAMADIRECTOR.vn.bgMoveRight"}}"><i class="fas fa-arrow-right"></i></button>
+              <button type="button" data-bg-edit="{{this.id}}"   class="vn-bg-move-btn" title="{{localize "DRAMADIRECTOR.vn.bgEdit"}}"><i class="fas fa-pencil-alt"></i></button>
+              <button type="button" data-bg-delete="{{this.id}}" class="vn-bg-move-btn vn-bg-delete-btn" title="{{localize "DRAMADIRECTOR.vn.bgDelete"}}"><i class="fas fa-trash"></i></button>
             </div>
             {{/unless}}
           </div>
@@ -93,19 +96,19 @@
       </section>
     </div>
 
-    <!-- ═══ ПЕРСОНАЖИ ══════════════════════════════════════════════════════ -->
+    <!-- ═══ CHARACTERS ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="chars">
       <div class="vn-chars-header">
         <span class="vn-chars-counts">◀ {{leftChars}}/10 &nbsp;&nbsp; {{rightChars}}/10 ▶</span>
         <div class="vn-chars-actions">
-          <button type="button" data-action="vn-deactivate-all" class="vn-btn-secondary"><i class="fas fa-eye-slash"></i> Все неактивны</button>
-          <button type="button" data-action="vn-char-add-left"  class="vn-btn-add"><i class="fas fa-arrow-left"></i> + Слева</button>
-          <button type="button" data-action="vn-char-add-right" class="vn-btn-add">+ Справа <i class="fas fa-arrow-right"></i></button>
+          <button type="button" data-action="vn-deactivate-all" class="vn-btn-secondary"><i class="fas fa-eye-slash"></i> {{localize "DRAMADIRECTOR.vn.charsDeactivateAll"}}</button>
+          <button type="button" data-action="vn-char-add-left"  class="vn-btn-add"><i class="fas fa-arrow-left"></i> {{localize "DRAMADIRECTOR.vn.charsAddLeft"}}</button>
+          <button type="button" data-action="vn-char-add-right" class="vn-btn-add">{{localize "DRAMADIRECTOR.vn.charsAddRight"}} <i class="fas fa-arrow-right"></i></button>
         </div>
       </div>
 
       <div class="vn-chars-search">
-        <input type="text" id="vn-char-search" class="dd-input" placeholder="Поиск по персонажам..."/>
+        <input type="text" id="vn-char-search" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.vn.charsSearch"}}"/>
       </div>
 
       <div class="vn-char-list">
@@ -120,20 +123,20 @@
           </div>
           <div class="vn-char-row-body">
             <div class="dd-row">
-              <input type="text" class="vn-char-name-inp dd-input" value="{{this.name}}"  placeholder="Имя…"/>
+              <input type="text" class="vn-char-name-inp dd-input" value="{{this.name}}"  placeholder="{{localize "DRAMADIRECTOR.vn.charName"}}"/>
               <input type="color" class="vn-char-ncolor dd-color"  value="{{this.nameColor}}"/>
-              <input type="text" class="vn-char-title-inp dd-input" value="{{this.title}}" placeholder="Титул…" style="max-width:140px"/>
+              <input type="text" class="vn-char-title-inp dd-input" value="{{this.title}}" placeholder="{{localize "DRAMADIRECTOR.vn.charTitle"}}" style="max-width:140px"/>
             </div>
             <div class="dd-row" style="margin-top:3px">
-              <input type="text" class="vn-char-img-inp dd-input" value="{{this.img}}" placeholder="Изображение…"/>
+              <input type="text" class="vn-char-img-inp dd-input" value="{{this.img}}" placeholder="{{localize "DRAMADIRECTOR.vn.charImage"}}"/>
               <button type="button" data-char-action="browse"><i class="fas fa-folder-open"></i></button>
             </div>
             <div class="dd-row" style="margin-top:3px">
-              <input type="text" class="vn-char-active-img-inp dd-input" value="{{this.activeImg}}" placeholder="Активный портрет (опционально)…"/>
+              <input type="text" class="vn-char-active-img-inp dd-input" value="{{this.activeImg}}" placeholder="{{localize "DRAMADIRECTOR.vn.charActiveImage"}}"/>
               <button type="button" data-char-action="browse-active"><i class="fas fa-folder-open"></i></button>
             </div>
             <div class="vn-char-params-row">
-              <label class="dd-param-group"><span>Масштаб</span>
+              <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.vn.charScale"}}</span>
                 <input type="range" class="vn-char-scale dd-input-sm" value="{{this.scale}}" min="0.1" max="3" step="0.05"/>
                 <span class="vn-slider-val">{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}</span>
               </label>
@@ -146,14 +149,14 @@
                 <span class="vn-slider-val">{{this.y}}</span>
               </label>
               <label class="dd-param-group dd-param-check">
-                <input type="checkbox" class="vn-char-mirror"  {{#if this.mirror}} checked{{/if}}/><span>Зеркало</span>
+                <input type="checkbox" class="vn-char-mirror"  {{#if this.mirror}} checked{{/if}}/><span>{{localize "DRAMADIRECTOR.vn.charMirror"}}</span>
               </label>
               <label class="dd-param-group dd-param-check">
-                <input type="checkbox" class="vn-char-visible" {{#if this.visible}}checked{{/if}}/><span>Виден</span>
+                <input type="checkbox" class="vn-char-visible" {{#if this.visible}}checked{{/if}}/><span>{{localize "DRAMADIRECTOR.vn.charVisible"}}</span>
               </label>
-              <label class="dd-param-group"><span>Игрок</span>
+              <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.vn.charPlayer"}}</span>
                 <select class="vn-char-player dd-select-sm" style="max-width:110px">
-                  <option value="">— нет —</option>
+                  <option value="">{{localize "DRAMADIRECTOR.vn.charNoPlayer"}}</option>
                   {{#each ../players}}
                   <option value="{{this.id}}" {{#if (eq ../../this.playerId this.id)}}selected{{/if}}>{{this.name}}</option>
                   {{/each}}
@@ -162,59 +165,59 @@
             </div>
           </div>
           <div class="vn-char-row-right">
-            <button type="button" data-char-action="active" class="vn-active-btn {{#if this.active}}vn-active-btn-on{{/if}}" title="Активировать"><i class="fas fa-lightbulb"></i></button>
-            <button type="button" data-char-action="switch-side" class="vn-side-btn" title="{{#if (eq this.side 'left')}}→ Вправо{{else}}← Влево{{/if}}"><i class="fas fa-exchange-alt"></i></button>
-            <button type="button" data-char-action="move-up"   class="vn-order-btn" title="Вверх"><i class="fas fa-arrow-up"></i></button>
-            <button type="button" data-char-action="move-down" class="vn-order-btn" title="Вниз"><i class="fas fa-arrow-down"></i></button>
-            <button type="button" data-char-action="remove" class="dd-btn-danger" title="Удалить"><i class="fas fa-times"></i></button>
+            <button type="button" data-char-action="active" class="vn-active-btn {{#if this.active}}vn-active-btn-on{{/if}}" title="{{localize "DRAMADIRECTOR.vn.charActivate"}}"><i class="fas fa-lightbulb"></i></button>
+            <button type="button" data-char-action="switch-side" class="vn-side-btn" title="{{localize "DRAMADIRECTOR.vn.charSwitchSide"}}"><i class="fas fa-exchange-alt"></i></button>
+            <button type="button" data-char-action="move-up"   class="vn-order-btn" title="{{localize "DRAMADIRECTOR.vn.charMoveUp"}}"><i class="fas fa-arrow-up"></i></button>
+            <button type="button" data-char-action="move-down" class="vn-order-btn" title="{{localize "DRAMADIRECTOR.vn.charMoveDown"}}"><i class="fas fa-arrow-down"></i></button>
+            <button type="button" data-char-action="remove" class="dd-btn-danger" title="{{localize "DRAMADIRECTOR.vn.charRemove"}}"><i class="fas fa-times"></i></button>
           </div>
         </div>
         {{else}}
-        <div class="dd-empty-layers">Персонажи не добавлены. Нажмите «+ Слева» или «+ Справа».</div>
+        <div class="dd-empty-layers">{{localize "DRAMADIRECTOR.vn.charEmpty"}}</div>
         {{/each}}
       </div>
 
       <div class="vn-chars-presets-bar">
         <select id="vn-chars-preset-select" class="dd-select" style="flex:1">
-          <option value="">— Загрузить ростер —</option>
+          <option value="">{{localize "DRAMADIRECTOR.vn.rosterLoad"}}</option>
           {{#each charPresets}}<option value="{{this}}">{{this}}</option>{{/each}}
         </select>
         <button type="button" data-action="vn-chars-load"><i class="fas fa-upload"></i></button>
         <button type="button" data-action="vn-chars-delete" class="dd-btn-danger"><i class="fas fa-trash"></i></button>
-        <input type="text" id="vn-chars-preset-name" placeholder="Имя ростера…" class="dd-input" style="flex:1"/>
+        <input type="text" id="vn-chars-preset-name" placeholder="{{localize "DRAMADIRECTOR.vn.rosterName"}}" class="dd-input" style="flex:1"/>
         <button type="button" data-action="vn-chars-save"><i class="fas fa-save"></i></button>
       </div>
     </div>
 
-    <!-- ═══ ДИАЛОГ ════════════════════════════════════════════════════════ -->
+    <!-- ═══ DIALOGUE ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="dialogue">
       <div class="vn-two-col">
         <section class="dd-section">
-          <h3><i class="fas fa-comment-dots"></i> Диалоговое окно</h3>
+          <h3><i class="fas fa-comment-dots"></i> {{localize "DRAMADIRECTOR.vn.dlgSection"}}</h3>
           <div class="dd-row dd-row-pair">
-            <label>Говорящий</label>
-            <input type="text" id="vn-dlg-name" value="{{dialogue.speakerName}}" placeholder="Имя…" class="dd-input"/>
+            <label>{{localize "DRAMADIRECTOR.vn.dlgSpeaker"}}</label>
+            <input type="text" id="vn-dlg-name" value="{{dialogue.speakerName}}" placeholder="{{localize "DRAMADIRECTOR.vn.dlgSpeakerPlaceholder"}}" class="dd-input"/>
             <input type="color" id="vn-dlg-color" value="{{dialogue.speakerColor}}" class="dd-color"/>
           </div>
           <textarea id="vn-dlg-text" rows="5" class="dd-textarea" style="margin-top:6px">{{dialogue.text}}</textarea>
           <div class="dd-row dd-row-pair" style="margin-top:5px">
-            <label>Авто-закрытие (с)</label>
+            <label>{{localize "DRAMADIRECTOR.vn.dlgAutoClose"}}</label>
             <input type="number" id="vn-dlg-auto" value="0" min="0" max="60" step="0.5" class="dd-input-sm"/>
           </div>
           <div class="dd-row" style="margin-top:6px;gap:5px">
-            <button type="button" data-action="vn-dlg-active"  class="vn-btn-secondary"><i class="fas fa-user-check"></i> От активного</button>
-            <button type="button" data-action="vn-dlg-hide"    class="vn-btn-secondary"><i class="fas fa-eye-slash"></i> Скрыть</button>
-            <button type="button" data-action="vn-dlg-show"    class="vn-btn-primary"  ><i class="fas fa-comment"></i> Показать</button>
+            <button type="button" data-action="vn-dlg-active"  class="vn-btn-secondary"><i class="fas fa-user-check"></i> {{localize "DRAMADIRECTOR.vn.dlgFromActive"}}</button>
+            <button type="button" data-action="vn-dlg-hide"    class="vn-btn-secondary"><i class="fas fa-eye-slash"></i> {{localize "DRAMADIRECTOR.vn.dlgHide"}}</button>
+            <button type="button" data-action="vn-dlg-show"    class="vn-btn-primary"  ><i class="fas fa-comment"></i> {{localize "DRAMADIRECTOR.vn.dlgShow"}}</button>
           </div>
         </section>
         <section class="dd-section">
-          <h3><i class="fas fa-user-tie"></i> GM от лица персонажа</h3>
-          <p class="dd-hint">Когда GM говорит — выбранный персонаж активируется. Субтитры идут от его имени.</p>
+          <h3><i class="fas fa-user-tie"></i> {{localize "DRAMADIRECTOR.vn.dlgGmSection"}}</h3>
+          <p class="dd-hint">{{localize "DRAMADIRECTOR.vn.dlgGmHint"}}</p>
           <select id="vn-gm-char" class="dd-select">
-            <option value="">— Выбрать —</option>
+            <option value="">{{localize "DRAMADIRECTOR.vn.dlgGmSelect"}}</option>
             {{#each chars}}
             <option value="{{this.id}}" {{#if (eq ../gmCharId this.id)}}selected{{/if}}>
-              {{#if this.name}}{{this.name}}{{else}}Без имени ({{this.side}}){{/if}}
+              {{#if this.name}}{{this.name}}{{else}}{{localize "DRAMADIRECTOR.vn.dlgGmNoName"}} ({{this.side}}){{/if}}
             </option>
             {{/each}}
           </select>
@@ -222,29 +225,29 @@
       </div>
     </div>
 
-    <!-- ═══ МИКРОФОН ══════════════════════════════════════════════════════ -->
+    <!-- ═══ MICROPHONE ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="mic">
       <div class="vn-two-col">
         <section class="dd-section">
-          <h3><i class="fas fa-microphone"></i> Микрофон</h3>
-          <p class="dd-hint">Микрофон включается автоматически при запуске VN. Каждый игрок разрешает доступ у себя.</p>
+          <h3><i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.micSection"}}</h3>
+          <p class="dd-hint">{{localize "DRAMADIRECTOR.vn.micHint"}}</p>
           {{#if micOn}}
-          <div class="vn-mic-active-badge"><i class="fas fa-microphone"></i> Микрофон активен</div>
-          <button type="button" data-action="vn-mic-stop" class="vn-btn-danger" style="width:100%;margin-top:8px"><i class="fas fa-microphone-slash"></i> Отключить</button>
+          <div class="vn-mic-active-badge"><i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.micActive"}}</div>
+          <button type="button" data-action="vn-mic-stop" class="vn-btn-danger" style="width:100%;margin-top:8px"><i class="fas fa-microphone-slash"></i> {{localize "DRAMADIRECTOR.vn.micDisable"}}</button>
           {{else}}
-          <button type="button" data-action="vn-mic-start" class="vn-btn-primary" style="width:100%"><i class="fas fa-microphone"></i> Включить вручную</button>
+          <button type="button" data-action="vn-mic-start" class="vn-btn-primary" style="width:100%"><i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.micEnableManual"}}</button>
           {{/if}}
           <div class="dd-row dd-row-pair" style="margin-top:8px">
-            <label>Порог ({{micThreshold}})</label>
+            <label>{{localize "DRAMADIRECTOR.vn.micThreshold"}} ({{micThreshold}})</label>
             <input type="range" id="vn-mic-threshold" value="{{micThreshold}}" min="5" max="60" style="flex:1"/>
             <span id="vn-mic-threshold-val">{{micThreshold}}</span>
           </div>
         </section>
         <section class="dd-section">
-          <h3><i class="fas fa-closed-captioning"></i> Распознавание речи</h3>
-          <p class="dd-hint">Текст распознаётся и показывается как субтитры внутри диалогового окна всем игрокам.</p>
+          <h3><i class="fas fa-closed-captioning"></i> {{localize "DRAMADIRECTOR.vn.micSpeechSection"}}</h3>
+          <p class="dd-hint">{{localize "DRAMADIRECTOR.vn.micSpeechHint"}}</p>
           <div class="dd-row dd-row-pair">
-            <label>Язык</label>
+            <label>{{localize "DRAMADIRECTOR.vn.micLanguage"}}</label>
             <select id="vn-mic-lang" class="dd-select">
               <option value="ru-RU" {{#if (eq micLang "ru-RU")}}selected{{/if}}>Русский</option>
               <option value="en-US" {{#if (eq micLang "en-US")}}selected{{/if}}>English</option>
@@ -257,159 +260,160 @@
       </div>
     </div>
 
-    <!-- ═══ ПРЕСЕТЫ СЦЕН ══════════════════════════════════════════════════ -->
+    <!-- ═══ PRESETS ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="presets">
       <section class="dd-section">
-        <h3><i class="fas fa-film"></i> Пресеты сцен</h3>
+        <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.vn.presetsSection"}}</h3>
         <div class="dd-row">
           <select id="vn-scene-select" class="dd-select" style="flex:1">
-            <option value="">— Загрузить —</option>
+            <option value="">{{localize "DRAMADIRECTOR.vn.presetsLoad"}}</option>
             {{#each scenePresets}}<option value="{{this}}">{{this}}</option>{{/each}}
           </select>
-          <button type="button" data-action="vn-scene-load"><i class="fas fa-upload"></i> Загрузить</button>
+          <button type="button" data-action="vn-scene-load"><i class="fas fa-upload"></i></button>
           <button type="button" data-action="vn-scene-delete" class="dd-btn-danger"><i class="fas fa-trash"></i></button>
         </div>
         <div class="dd-row" style="margin-top:5px">
-          <input type="text" id="vn-scene-name" placeholder="Название сцены…" class="dd-input"/>
-          <button type="button" data-action="vn-scene-save"><i class="fas fa-save"></i> Сохранить</button>
+          <input type="text" id="vn-scene-name" placeholder="{{localize "DRAMADIRECTOR.vn.presetsSceneName"}}" class="dd-input"/>
+          <button type="button" data-action="vn-scene-save"><i class="fas fa-save"></i> {{localize "DRAMADIRECTOR.vn.presetsSave"}}</button>
         </div>
       </section>
       <section class="dd-section" style="margin-top:8px">
-        <h3><i class="fas fa-code"></i> API</h3>
+        <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.vn.apiSection"}}</h3>
         <pre class="vn-macro-example">game.dramaDirector.vn.open();
 game.dramaDirector.vn.setBackground('path/bg.mp4');
-game.dramaDirector.vn.showDialogue('Имя', 'Текст…', '#ffe066');
+game.dramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066');
 game.dramaDirector.vn.activateExclusive('char-id');
 game.dramaDirector.vn.stop();</pre>
       </section>
     </div>
 
-    <!-- ═══ СПРАВКА ══════════════════════════════════════════════════════════ -->
+    <!-- ═══ HELP ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="help">
       <div class="vn-help-body">
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-play-circle"></i> Запуск Visual Novel</h3>
-          <p>Нажмите кнопку <strong>Запустить VN</strong> в шапке панели. Оверлей появится у всех игроков одновременно. Закрыть можно кнопкой <strong>Закрыть VN</strong> или красной кнопкой <i class="fas fa-stop"></i> прямо на оверлее.</p>
-          <p>Кнопка <strong>Для себя</strong> открывает VN только для вас (GM), без трансляции игрокам. Полезно для подготовки сцены перед показом.</p>
+          <h3><i class="fas fa-play-circle"></i> {{localize "DRAMADIRECTOR.vn.helpLaunchTitle"}}</h3>
+          <p>{{{localize "DRAMADIRECTOR.vn.helpLaunchText1"}}}</p>
+          <p>{{{localize "DRAMADIRECTOR.vn.helpLaunchText2"}}}</p>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-image"></i> Вкладка «Фон»</h3>
+          <h3><i class="fas fa-image"></i> {{localize "DRAMADIRECTOR.vn.helpBgTitle"}}</h3>
           <ul class="vn-help-list">
-            <li>Вставьте путь к файлу вручную или нажмите <i class="fas fa-folder-open"></i> для выбора через браузер файлов. Поддерживаются <strong>картинки</strong> (jpg, png, webp) и <strong>видео</strong> (mp4, webm).</li>
-            <li><strong>Заливка</strong> — как фон вписывается в экран: <em>cover</em> обрезает края, <em>contain</em> показывает целиком с полосами, <em>fill</em> растягивает.</li>
-            <li><strong>Цвет фона</strong> — цвет подложки, виден если картинка меньше экрана.</li>
-            <li><strong>Затемнение</strong> — полупрозрачный чёрный слой поверх фона (0 = нет, 1 = полностью чёрный).</li>
-            <li><strong>Быстрый выбор</strong> — кликните на плитку чтобы сразу применить фон. Активная плитка подсвечивается золотом. Используйте поле поиска для фильтрации.</li>
-            <li>Кнопка <strong>Добавить</strong> позволяет создать собственную группу фонов с несколькими вариациями (день/ночь и т.д.).</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem4"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem5"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpBgItem6"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-users"></i> Вкладка «Персонажи»</h3>
+          <h3><i class="fas fa-users"></i> {{localize "DRAMADIRECTOR.vn.helpCharsTitle"}}</h3>
           <ul class="vn-help-list">
-            <li>Кнопки <strong>+ Слева</strong> и <strong>+ Справа</strong> добавляют персонажа на соответствующую сторону экрана.</li>
-            <li>Поле <strong>Игрок</strong> — привязка персонажа к пользователю Foundry. Когда этот игрок говорит в микрофон — персонаж автоматически активируется.</li>
-            <li><strong>Видимость</strong> (галочка «Виден») — скрытые персонажи не отображаются на оверлее, но остаются в списке.</li>
-            <li><strong>Зеркало</strong> — отражает изображение по горизонтали.</li>
-            <li><strong>Масштаб, X, Y</strong> — позиционирование и размер персонажа на сцене.</li>
-            <li>Кнопка <i class="fas fa-lightbulb"></i> — <strong>активировать</strong> персонажа (он подсвечивается, остальные затемняются). Активный персонаж немного увеличивается.</li>
-            <li>Кнопка <i class="fas fa-exchange-alt"></i> — <strong>переместить</strong> персонажа с левой стороны на правую и обратно.</li>
-            <li>Кнопки <i class="fas fa-arrow-up"></i> <i class="fas fa-arrow-down"></i> — изменить порядок в ряду.</li>
-            <li><strong>Ростеры</strong> (снизу вкладки) — сохраните текущий набор персонажей под именем, загрузите позже за одно нажатие.</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem4"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem5"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem6"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem7"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem8"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpCharsItem9"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-comment"></i> Вкладка «Диалог»</h3>
+          <h3><i class="fas fa-comment"></i> {{localize "DRAMADIRECTOR.vn.helpDlgTitle"}}</h3>
           <ul class="vn-help-list">
-            <li>Заполните поля <strong>Говорящий</strong> и текст, затем нажмите <strong>Показать</strong> — диалоговое окно появится у всех игроков.</li>
-            <li>Кнопка <strong>От активного</strong> — автоматически подставит имя и цвет активного в данный момент персонажа.</li>
-            <li><strong>Авто-закрытие</strong> — диалог скроется через указанное количество секунд (0 = вручную).</li>
-            <li>Кнопка <strong>Скрыть</strong> — убирает диалоговое окно.</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDlgItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDlgItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDlgItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDlgItem4"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-microphone"></i> Вкладка «Микрофон»</h3>
+          <h3><i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.helpMicTitle"}}</h3>
           <ul class="vn-help-list">
-            <li>Микрофон включается <strong>автоматически</strong> при запуске VN. Каждый пользователь должен разрешить доступ браузеру.</li>
-            <li><strong>Порог громкости</strong> — минимальный уровень звука для определения речи. Увеличьте если персонаж активируется от фонового шума, уменьшите если не реагирует на тихий голос.</li>
-            <li>Когда игрок говорит — его персонаж (привязанный по полю «Игрок») автоматически <strong>подсвечивается</strong> на сцене у всех.</li>
-            <li>Распознанная речь отображается как <strong>субтитры</strong> внутри диалогового окна.</li>
-            <li>Кнопка <i class="fas fa-microphone"></i> в правом верхнем углу оверлея позволяет быстро включить/выключить микрофон прямо во время игры.</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpMicItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpMicItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpMicItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpMicItem4"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpMicItem5"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-th-large"></i> Левая панель GM <span class="vn-help-badge">только GM</span></h3>
-          <p>Появляется слева на экране только у Мастера когда VN активна.</p>
+          <h3><i class="fas fa-th-large"></i> {{localize "DRAMADIRECTOR.vn.helpGmBarTitle"}} <span class="vn-help-badge">{{localize "DRAMADIRECTOR.vn.helpGmBarBadge"}}</span></h3>
+          <p>{{localize "DRAMADIRECTOR.vn.helpGmBarText"}}</p>
           <ul class="vn-help-list">
-            <li><strong>Говорит</strong> — выбор персонажа от чьего лица говорит GM. Когда GM говорит в микрофон — этот персонаж подсвечивается и субтитры идут от его имени.</li>
-            <li>Кнопка <strong>Актёры</strong> — открывает/закрывает список всех персонажей сцены:
+            <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem2"}}}
               <ul class="vn-help-sublist">
-                <li><strong>ЛКМ</strong> по персонажу — показать / скрыть его на сцене</li>
-                <li><strong>ПКМ</strong> по персонажу — переместить с левой стороны на правую и обратно</li>
-                <li>Кнопка <i class="fas fa-lightbulb"></i> — активировать / деактивировать персонажа</li>
-                <li>Выпадающий список <strong>Игрок</strong> — привязать персонажа к пользователю прямо из левой панели</li>
+                <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem2a"}}}</li>
+                <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem2b"}}}</li>
+                <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem2c"}}}</li>
+                <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem2d"}}}</li>
               </ul>
             </li>
-            <li>Кнопка <strong>Фоны</strong> — открывает быстрый список всех фонов. Кликните на фон — он применится немедленно. Активный фон отмечен золотой полосой слева.</li>
-            <li>Оба раздела имеют <strong>поиск</strong> в реальном времени.</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpGmBarItem4"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-bars"></i> Правая панель (кнопки сверху)</h3>
+          <h3><i class="fas fa-bars"></i> {{localize "DRAMADIRECTOR.vn.helpQuickBarTitle"}}</h3>
           <ul class="vn-help-list">
-            <li>Кнопки в правом верхнем углу оверлея доступны всем пользователям.</li>
-            <li><i class="fas fa-microphone"></i> — включить/выключить микрофон</li>
-            <li><i class="fas fa-comments"></i> — открыть <strong>Чат</strong> в отдельном окне</li>
-            <li><i class="fas fa-users"></i> — открыть <strong>Актёры</strong> в отдельном окне</li>
-            <li><i class="fas fa-map"></i> — открыть <strong>Сцены</strong> в отдельном окне</li>
-            <li><i class="fas fa-music"></i> — открыть <strong>Музыка</strong> в отдельном окне</li>
-            <li><i class="fas fa-suitcase"></i> — открыть <strong>Предметы</strong> в отдельном окне</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem4"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem5"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem6"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpQuickBarItem7"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-bookmark"></i> Вкладка «Пресеты»</h3>
+          <h3><i class="fas fa-bookmark"></i> {{localize "DRAMADIRECTOR.vn.helpPresetsTitle"}}</h3>
           <ul class="vn-help-list">
-            <li><strong>Пресеты сцен</strong> — сохраняют полное состояние VN: фон, всех персонажей с настройками, параметры диалога. Удобно для заготовленных сцен.</li>
-            <li><strong>Ростеры персонажей</strong> (на вкладке «Персонажи») — сохраняют только состав персонажей без фона.</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpPresetsItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpPresetsItem2"}}}</li>
           </ul>
         </section>
 
         <section class="vn-help-section">
-          <h3><i class="fas fa-code"></i> Макросы (API)</h3>
-          <p>Можно управлять VN из макросов Foundry:</p>
-          <pre class="vn-macro-example">// Открыть VN для всех
+          <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.vn.helpApiTitle"}}</h3>
+          <p>{{localize "DRAMADIRECTOR.vn.helpApiText"}}</p>
+          <pre class="vn-macro-example">// Open VN for all
 game.dramaDirector.vn.open();
 
-// Открыть VN только для себя (GM-only)
+// Open VN for yourself only (GM-only)
 game.dramaDirector.vn.openLocal();
 
-// Установить фон
+// Set background
 game.dramaDirector.vn.setBackground('path/to/bg.mp4');
 
-// Показать диалог
-game.dramaDirector.vn.showDialogue('Имя', 'Текст…', '#ffe066', 5);
+// Show dialogue
+game.dramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066', 5);
 
-// Активировать персонажа по его ID
+// Activate character by ID
 game.dramaDirector.vn.activateExclusive('char-id');
 
-// Деактивировать всех
+// Deactivate all
 game.dramaDirector.vn.deactivateAll();
 
-// Закрыть VN (для всех)
+// Close VN (for all)
 game.dramaDirector.vn.stop(true);
 
-// Закрыть VN локально (только для себя)
+// Close VN locally (yourself only)
 game.dramaDirector.vn.stopLocal();</pre>
         </section>
 
       </div>
     </div>
 
-
+  </div>
+</div>

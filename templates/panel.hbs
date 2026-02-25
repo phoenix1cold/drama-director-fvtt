@@ -4,7 +4,7 @@
   <div class="dd-target-bar">
     <i class="fas fa-users"></i>
     <select id="dd-target-user">
-      <option value="">Все игроки</option>
+      <option value="">{{localize "DRAMADIRECTOR.allPlayers"}}</option>
       {{#each users}}
       <option value="{{id}}" style="color:{{color}}">{{name}}</option>
       {{/each}}
@@ -13,346 +13,269 @@
 
   {{!-- Tabs --}}
   <div class="dd-tabs">
-    <button class="dd-tab active" data-tab="intro"><i class="fas fa-film"></i> Вступление</button>
-    <button class="dd-tab" data-tab="presentations"><i class="fas fa-user-circle"></i> Персонажи</button>
-    <button class="dd-tab" data-tab="endings"><i class="fas fa-door-open"></i> Эндинги</button>
-    <button class="dd-tab" data-tab="effects"><i class="fas fa-magic"></i> Эффекты</button>
-    <button class="dd-tab" data-tab="video"><i class="fas fa-video"></i> Видео</button>
-    <button class="dd-tab" data-tab="cutin"><i class="fas fa-bolt"></i> Cut-Ins</button>
-    <button class="dd-tab" data-tab="vn"><i class="fas fa-book-open"></i> VN</button>
+    <button class="dd-tab active" data-tab="intro"><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.tabs.intro"}}</button>
+    <button class="dd-tab" data-tab="presentations"><i class="fas fa-user-circle"></i> {{localize "DRAMADIRECTOR.tabs.presentations"}}</button>
+    <button class="dd-tab" data-tab="endings"><i class="fas fa-door-open"></i> {{localize "DRAMADIRECTOR.tabs.endings"}}</button>
+    <button class="dd-tab" data-tab="effects"><i class="fas fa-magic"></i> {{localize "DRAMADIRECTOR.tabs.effects"}}</button>
+    <button class="dd-tab" data-tab="video"><i class="fas fa-video"></i> {{localize "DRAMADIRECTOR.tabs.video"}}</button>
+    <button class="dd-tab" data-tab="cutin"><i class="fas fa-bolt"></i> {{localize "DRAMADIRECTOR.tabs.cutin"}}</button>
+    <button class="dd-tab" data-tab="vn"><i class="fas fa-book-open"></i> {{localize "DRAMADIRECTOR.tabs.vn"}}</button>
   </div>
 
-  {{!-- ═══════════ INTRO TAB ═══════════ --}}
+  {{!-- INTRO TAB --}}
   <div class="dd-tab-content" data-content="intro">
     <div class="dd-panel-section">
-      <h3><i class="fas fa-info-circle"></i> О вступлениях</h3>
-      <p class="dd-hint-block">
-        <i class="fas fa-users"></i>
-        Вступления показываются всем игрокам одновременно. Портреты берутся из персонажей активных игроков.
-      </p>
+      <label class="dd-label"><i class="fas fa-heading"></i> {{localize "DRAMADIRECTOR.intro.campaignName"}}</label>
+      <input type="text" id="dd-campaign-name" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.intro.campaignPlaceholder"}}">
     </div>
 
     <div class="dd-panel-section">
-      <label class="dd-label"><i class="fas fa-heading"></i> Название кампании</label>
-      <input type="text" id="dd-campaign-name" class="dd-input" placeholder="Название кампании (появится в конце)...">
-    </div>
-
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-film"></i> Город Грехов <span class="dd-badge" style="background:rgba(139,0,0,0.2);color:#cc2222;border-color:rgba(139,0,0,0.4);">Sin City</span></h3>
-      <p class="dd-card-desc">
-        Вступление в стиле «Города Грехов». Название кампании под углом огромными буквами, затем каждый персонаж плавно проплывает в строгом Ч/Б силуэте, имя красным с белой обводкой. Финал — «Directed by» с именем ГМ.
-      </p>
+      <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.intro.sincityTitle"}} <span class="dd-badge" style="background:rgba(139,0,0,0.2);color:#cc2222;border-color:rgba(139,0,0,0.4);">Sin City</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.intro.sincityDesc"}}</p>
       <button type="button" class="dd-ending-btn" style="background:linear-gradient(135deg,#1a0000,#0a0000);border-color:rgba(139,0,0,0.5);color:#cc2222;" data-action="run-sincity">
-        <i class="fas fa-play"></i> Запустить «Город Грехов»
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.intro.sincityBtn"}}
       </button>
     </div>
 
     <div class="dd-panel-section">
-      <h3><i class="fas fa-fist-raised"></i> Снэтч <span class="dd-badge" style="background:rgba(255,200,0,0.15);color:#ffc800;border-color:rgba(255,200,0,0.3);">Guy Ritchie</span></h3>
-      <p class="dd-card-desc">
-        Вступление в стиле «Снэтч». Сначала название кампании, затем каждый персонаж: портрет с мгновенным переходом в дуотон на случайном цветном фоне, карточка с именем. Финал — «Directed by» с именем ГМ.
-        Музыка стартует с 0:50. В конце — название кампании.
-      </p>
+      <h3><i class="fas fa-fist-raised"></i> {{localize "DRAMADIRECTOR.intro.snatchTitle"}} <span class="dd-badge" style="background:rgba(255,200,0,0.15);color:#ffc800;border-color:rgba(255,200,0,0.3);">Guy Ritchie</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.intro.snatchDesc"}}</p>
       <button type="button" class="dd-ending-btn" style="background:linear-gradient(135deg,#111,#080808);border-color:rgba(255,200,0,0.4);color:#ffc800;" data-action="run-snatch">
-        <i class="fas fa-play"></i> Запустить «Снэтч»
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.intro.snatchBtn"}}
       </button>
     </div>
 
     <div class="dd-panel-section">
-      <h3><i class="fas fa-film"></i> Кинопрокат <span class="dd-badge" style="background:rgba(212,130,30,0.2);color:#d4821e;border-color:rgba(212,130,30,0.4);">Grindhouse</span></h3>
-      <p class="dd-card-desc">
-        Кинопрокатное вступление в стиле Grindhouse 70-х. Обратный отсчёт плёнки, тёплая amber-палитра, лобби-карты персонажей с царапинами плёнки и сигаретными ожогами при переходах. Финал — «Directed by» с именем ГМ.
-      </p>
+      <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.intro.macheteTitle"}} <span class="dd-badge" style="background:rgba(212,130,30,0.2);color:#d4821e;border-color:rgba(212,130,30,0.4);">Grindhouse</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.intro.macheteDesc"}}</p>
       <button type="button" class="dd-ending-btn" style="background:linear-gradient(135deg,#1a0e00,#0a0600);border-color:rgba(200,146,10,0.5);color:#c8920a;" data-action="run-machete">
-        <i class="fas fa-play"></i> Запустить «Кинопрокат»
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.intro.macheteBtn"}}
       </button>
     </div>
 
     <div class="dd-panel-section">
-      <h3><i class="fas fa-tint"></i> Мачете <span class="dd-badge" style="background:rgba(139,0,0,0.25);color:#cc2222;border-color:rgba(139,0,0,0.5);">Blood</span></h3>
-      <p class="dd-card-desc">
-        Экран медленно заливает кровью сверху вниз — потёки разной толщины стекают до полного покрытия.
-        Сопровождается злым смехом из <code>evil_laugh.ogg</code>.
-      </p>
+      <h3><i class="fas fa-tint"></i> {{localize "DRAMADIRECTOR.intro.macheteBloodTitle"}} <span class="dd-badge" style="background:rgba(139,0,0,0.25);color:#cc2222;border-color:rgba(139,0,0,0.5);">Blood</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.intro.macheteBloodDesc"}}</p>
       <button type="button" class="dd-ending-btn" style="background:linear-gradient(135deg,#1a0000,#080000);border-color:rgba(139,0,0,0.6);color:#cc2222;" data-action="run-machete-blood">
-        <i class="fas fa-play"></i> Запустить «Кровь»
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.intro.macheteBloodBtn"}}
       </button>
     </div>
   </div>
 
-  {{!-- ═══════════ PRESENTATIONS TAB ═══════════ --}}
+  {{!-- PRESENTATIONS TAB --}}
   <div class="dd-tab-content hidden" data-content="presentations">
     <div class="dd-panel-section">
-      <h3><i class="fas fa-info-circle"></i> Как использовать</h3>
+      <h3><i class="fas fa-info-circle"></i> {{localize "DRAMADIRECTOR.presentations.section"}}</h3>
       <p class="dd-hint-block">
         <i class="fas fa-mouse-pointer"></i>
-        Выберите токен на карте, затем нажмите нужный стиль представления.
-        Модуль автоматически возьмёт портрет, имя и класс персонажа.
+        {{localize "DRAMADIRECTOR.presentations.hint"}}
       </p>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-sun"></i> Герой <span class="dd-badge">Persona 5</span></h3>
-      <p class="dd-card-desc">Диагональная полоса белое/чёрное, портрет вылетает слева, имя справа с красной линией.</p>
+      <h3><i class="fas fa-sun"></i> {{localize "DRAMADIRECTOR.presentations.heroTitle"}} <span class="dd-badge">{{localize "DRAMADIRECTOR.presentations.heroBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.heroDesc"}}</p>
       <button type="button" class="dd-intro-card-btn hero" data-intro-type="hero">
-        <i class="fas fa-play"></i> Запустить для выбранного токена
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.heroBtn"}}
       </button>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-skull"></i> Злодей <span class="dd-badge villain-badge">Тёмный</span></h3>
-      <p class="dd-card-desc">Чёрный фон, кровавые слэши, портрет из темноты, красное свечение и частицы.</p>
+      <h3><i class="fas fa-skull"></i> {{localize "DRAMADIRECTOR.presentations.villainTitle"}} <span class="dd-badge villain-badge">{{localize "DRAMADIRECTOR.presentations.villainBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.villainDesc"}}</p>
       <button type="button" class="dd-intro-card-btn villain" data-intro-type="villain">
-        <i class="fas fa-play"></i> Запустить для выбранного токена
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.villainBtn"}}
       </button>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-diamond"></i> Геншин <span class="dd-badge genshin-badge">Genshin</span></h3>
-      <p class="dd-card-desc">Светлый баннер с круглым портретом, золотой футер, иконка стихии определяется автоматически.</p>
+      <h3><i class="fas fa-diamond"></i> {{localize "DRAMADIRECTOR.presentations.genshinTitle"}} <span class="dd-badge genshin-badge">{{localize "DRAMADIRECTOR.presentations.genshinBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.genshinDesc"}}</p>
       <button type="button" class="dd-intro-card-btn genshin" data-intro-type="genshin">
-        <i class="fas fa-play"></i> Запустить для выбранного токена
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.genshinBtn"}}
       </button>
     </div>
   </div>
 
-  {{!-- ═══════════ ENDINGS TAB ═══════════ --}}
+  {{!-- ENDINGS TAB --}}
   <div class="dd-tab-content hidden" data-content="endings">
     <div class="dd-panel-section">
-      <h3><i class="fas fa-info-circle"></i> Об эндингах</h3>
+      <h3><i class="fas fa-info-circle"></i> {{localize "DRAMADIRECTOR.endings.section"}}</h3>
       <p class="dd-hint-block">
         <i class="fas fa-users"></i>
-        Эндинги показываются всем игрокам одновременно. Данные о персонажах
-        берутся из активных игроков сессии.
+        {{localize "DRAMADIRECTOR.endings.hint"}}
       </p>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-arrow-right"></i> To Be Continued <span class="dd-badge tbc-badge">Roundabout</span></h3>
-      <p class="dd-card-desc">
-        Экран замерзает в сепии, появляется надпись «To Be Continued», звучит Roundabout.
-        Затем — слайды с портретами всех персонажей, имя игрока, имя персонажа.
-        В конце — «ПРОДОЛЖЕНИЕ СЛЕДУЕТ».
-      </p>
+      <h3><i class="fas fa-arrow-right"></i> {{localize "DRAMADIRECTOR.endings.tbcTitle"}} <span class="dd-badge tbc-badge">{{localize "DRAMADIRECTOR.endings.tbcBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.endings.tbcDesc"}}</p>
       <button type="button" class="dd-ending-btn tbc-btn" data-ending-type="tbc">
-        <i class="fas fa-play"></i> Запустить TBC
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.endings.tbcBtn"}}
       </button>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-film"></i> Directed By <span class="dd-badge dirby-badge">Титры</span></h3>
-      <p class="dd-card-desc">
-        Чёрный экран с кинематографическими титрами: Режиссёр → Исполнительный продюсер →
-        В главных ролях (все игроки с персонажами) → Спасибо за игру.
-      </p>
+      <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.endings.dirbyTitle"}} <span class="dd-badge dirby-badge">{{localize "DRAMADIRECTOR.endings.dirbyBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.endings.dirbyDesc"}}</p>
       <button type="button" class="dd-ending-btn dirby-btn" data-ending-type="dirby">
-        <i class="fas fa-play"></i> Запустить Directed By
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.endings.dirbyBtn"}}
       </button>
     </div>
   </div>
 
-  {{!-- ═══════════ EFFECTS TAB ═══════════ --}}
+  {{!-- EFFECTS TAB --}}
   <div class="dd-tab-content hidden" data-content="effects">
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-sliders-h"></i> Базовые эффекты</h3>
+      <h3><i class="fas fa-sliders-h"></i> {{localize "DRAMADIRECTOR.basicEffects"}}</h3>
       <div class="dd-grid">
         {{#each effects.basic}}
-        <button type="button" class="dd-btn" data-toggle="{{id}}">
-          <i class="{{icon}}"></i>{{name}}
-        </button>
+        <button type="button" class="dd-btn" data-toggle="{{id}}"><i class="{{icon}}"></i>{{name}}</button>
         {{/each}}
       </div>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-camera-retro"></i> Фильтры</h3>
+      <h3><i class="fas fa-camera-retro"></i> {{localize "DRAMADIRECTOR.filterEffects"}}</h3>
       <div class="dd-grid" style="grid-template-columns:repeat(3,1fr)">
         {{#each effects.filter}}
-        <button type="button" class="dd-btn filter" data-toggle="{{id}}">
-          <i class="{{icon}}"></i>{{name}}
-        </button>
+        <button type="button" class="dd-btn filter" data-toggle="{{id}}"><i class="{{icon}}"></i>{{name}}</button>
         {{/each}}
       </div>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-star"></i> Аниме</h3>
+      <h3><i class="fas fa-star"></i> {{localize "DRAMADIRECTOR.animeEffects"}}</h3>
       <div class="dd-grid">
         {{#each effects.anime}}
-        <button type="button" class="dd-btn anime" data-effect="{{id}}">
-          <i class="{{icon}}"></i>{{name}}
-        </button>
+        <button type="button" class="dd-btn anime" data-effect="{{id}}"><i class="{{icon}}"></i>{{name}}</button>
         {{/each}}
       </div>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-user-injured"></i> Состояния</h3>
+      <h3><i class="fas fa-user-injured"></i> {{localize "DRAMADIRECTOR.statusEffects"}}</h3>
       <div class="dd-grid">
         {{#each effects.status}}
-        <button type="button" class="dd-btn status" data-toggle="{{id}}">
-          <i class="{{icon}}"></i>{{name}}
-        </button>
+        <button type="button" class="dd-btn status" data-toggle="{{id}}"><i class="{{icon}}"></i>{{name}}</button>
         {{/each}}
       </div>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-skull-crossbones"></i> Спецэффекты</h3>
+      <h3><i class="fas fa-skull-crossbones"></i> {{localize "DRAMADIRECTOR.specialEffects"}}</h3>
       <div class="dd-grid" style="grid-template-columns:repeat(2,1fr)">
-        <button type="button" class="dd-btn special" data-effect="blood">
-          <i class="fas fa-tint"></i>Кровь
-        </button>
-        <button type="button" class="dd-btn special" data-toggle="glitch">
-          <i class="fas fa-bolt"></i>Глитч
-        </button>
+        <button type="button" class="dd-btn special" data-effect="blood"><i class="fas fa-tint"></i>{{localize "DRAMADIRECTOR.blood"}}</button>
+        <button type="button" class="dd-btn special" data-toggle="glitch"><i class="fas fa-bolt"></i>{{localize "DRAMADIRECTOR.glitch"}}</button>
       </div>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-comment-dots"></i> Текст на экране</h3>
-      <textarea id="dd-custom-text" placeholder="Введите текст..."></textarea>
+      <h3><i class="fas fa-comment-dots"></i> {{localize "DRAMADIRECTOR.customText"}}</h3>
+      <textarea id="dd-custom-text" placeholder="{{localize "DRAMADIRECTOR.textPlaceholder"}}"></textarea>
       <div id="dd-subtitle-row" class="dd-row" style="display:none">
-        <input type="text" id="dd-text-subtitle" class="dd-input" placeholder="Подзаголовок главы...">
+        <input type="text" id="dd-text-subtitle" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.textSubtitlePlaceholder"}}">
       </div>
       <div class="dd-row">
         <select id="dd-text-style" class="dd-select">
-          <optgroup label="Положение">
-            <option value="default">По центру</option>
-            <option value="left-block">◀ Левый блок</option>
-            <option value="right-block">Правый блок ▶</option>
-            <option value="bottom">▼ Субтитры</option>
-            <option value="chapter">✦ Глава + подзаголовок</option>
-          </optgroup>
-          <optgroup label="Стиль">
-            <option value="horror">Ужас</option>
-            <option value="anime">Аниме</option>
-          </optgroup>
+          <option value="default">{{localize "DRAMADIRECTOR.textStyleCenter"}}</option>
+          <option value="left-block">{{localize "DRAMADIRECTOR.textStyleLeft"}}</option>
+          <option value="right-block">{{localize "DRAMADIRECTOR.textStyleRight"}}</option>
+          <option value="bottom">{{localize "DRAMADIRECTOR.textStyleBottom"}}</option>
+          <option value="chapter">{{localize "DRAMADIRECTOR.textStyleChapter"}}</option>
+          <option value="horror">{{localize "DRAMADIRECTOR.textStyleHorror"}}</option>
+          <option value="anime">{{localize "DRAMADIRECTOR.textStyleAnime"}}</option>
         </select>
         <select id="dd-text-animation" class="dd-select">
-          <option value="fade">Плавно</option>
-          <option value="zoom">Увеличение</option>
-          <option value="shake">Тряска</option>
-          <option value="impact">Удар</option>
+          <option value="fade">{{localize "DRAMADIRECTOR.textAnimFade"}}</option>
+          <option value="zoom">{{localize "DRAMADIRECTOR.textAnimZoom"}}</option>
+          <option value="shake">{{localize "DRAMADIRECTOR.textAnimShake"}}</option>
+          <option value="impact">{{localize "DRAMADIRECTOR.textAnimImpact"}}</option>
         </select>
       </div>
       <div class="dd-duration-input">
         <input type="number" id="dd-text-duration" value="4000" min="1000" max="15000" step="500">
-        <span>мс</span>
+        <span>{{localize "DRAMADIRECTOR.textDuration"}}</span>
       </div>
       <button type="button" class="dd-show-btn" data-action="show-text" style="margin-top:.5rem">
-        <i class="fas fa-play"></i> Показать текст
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.showText"}}
       </button>
     </div>
-
     <div class="dd-panel-section">
-      <h3><i class="fas fa-volume-up"></i> Звуки</h3>
+      <h3><i class="fas fa-volume-up"></i> {{localize "DRAMADIRECTOR.sounds"}}</h3>
       <div class="dd-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:.5rem">
         {{#each sounds}}
-        <button type="button" class="dd-btn" data-sound="{{id}}">
-          <i class="{{icon}}"></i>{{name}}
-        </button>
+        <button type="button" class="dd-btn" data-sound="{{id}}"><i class="{{icon}}"></i>{{name}}</button>
         {{/each}}
       </div>
       <div class="dd-sound-custom">
         <div class="dd-sound-picker">
-          <input type="text" id="dd-custom-sound" class="dd-input" placeholder="Путь к аудиофайлу...">
-          <button type="button" class="dd-icon-btn" data-action="browse-sound" title="Выбрать файл">
-            <i class="fas fa-folder-open"></i>
-          </button>
-          <button type="button" class="dd-icon-btn dd-play-btn" data-action="play-custom-sound" title="Воспроизвести">
-            <i class="fas fa-play"></i>
-          </button>
-          <button type="button" class="dd-icon-btn dd-stop-btn" data-action="stop-custom-sound" title="Стоп">
-            <i class="fas fa-stop"></i>
-          </button>
+          <input type="text" id="dd-custom-sound" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.customSoundPath"}}">
+          <button type="button" class="dd-icon-btn" data-action="browse-sound"><i class="fas fa-folder-open"></i></button>
+          <button type="button" class="dd-icon-btn dd-play-btn" data-action="play-custom-sound"><i class="fas fa-play"></i></button>
+          <button type="button" class="dd-icon-btn dd-stop-btn" data-action="stop-custom-sound"><i class="fas fa-stop"></i></button>
         </div>
         <label class="dd-checkbox-label">
           <input type="checkbox" id="dd-sound-broadcast">
-          <span>Воспроизвести для всех</span>
+          <span>{{localize "DRAMADIRECTOR.customSoundBroadcast"}}</span>
         </label>
       </div>
     </div>
-
     <div class="dd-panel-section">
       <button type="button" class="dd-clear-btn" data-action="clear">
-        <i class="fas fa-times-circle"></i> Сбросить все эффекты
+        <i class="fas fa-times-circle"></i> {{localize "DRAMADIRECTOR.clearEffects"}}
       </button>
     </div>
-
   </div>
 
-  {{!-- ═══════════ VIDEO TAB ═══════════ --}}
+  {{!-- VIDEO TAB --}}
   <div class="dd-tab-content hidden" data-content="video">
     <div class="dd-panel-section">
-      <h3><i class="fas fa-video"></i> Видеоплеер</h3>
-      <p class="dd-hint-block">
-        <i class="fas fa-info-circle"></i>
-        Видео показывается поверх экрана у всех игроков (или только у выбранного).
-        GM видит кнопку ✕ для закрытия.
-      </p>
+      <h3><i class="fas fa-video"></i> {{localize "DRAMADIRECTOR.video.section"}}</h3>
+      <p class="dd-hint-block"><i class="fas fa-info-circle"></i> {{localize "DRAMADIRECTOR.video.hint"}}</p>
       <div class="dd-video-form">
-        <label class="dd-label">Видеофайл</label>
+        <label class="dd-label">{{localize "DRAMADIRECTOR.video.file"}}</label>
         <div class="dd-sound-picker">
-          <input type="text" id="dd-video-url" class="dd-input" placeholder="Путь к видеофайлу...">
-          <button type="button" class="dd-icon-btn" data-action="browse-video" title="Выбрать файл">
-            <i class="fas fa-folder-open"></i>
-          </button>
+          <input type="text" id="dd-video-url" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.video.filePlaceholder"}}">
+          <button type="button" class="dd-icon-btn" data-action="browse-video"><i class="fas fa-folder-open"></i></button>
         </div>
         <div class="dd-row" style="margin-top:.5rem; align-items:center; gap:1rem">
           <label class="dd-checkbox-label">
             <input type="checkbox" id="dd-video-loop">
-            <span>Зациклить</span>
+            <span>{{localize "DRAMADIRECTOR.video.loop"}}</span>
           </label>
           <div style="display:flex; align-items:center; gap:.4rem; flex:1">
-            <span class="dd-label" style="margin:0; white-space:nowrap">Громкость</span>
+            <span class="dd-label" style="margin:0; white-space:nowrap">{{localize "DRAMADIRECTOR.video.volume"}}</span>
             <input type="range" id="dd-video-volume" min="0" max="1" step="0.05" value="0.8" style="flex:1">
             <span id="dd-video-vol-label" class="dd-label" style="margin:0; min-width:2rem">0.8</span>
           </div>
         </div>
         <div class="dd-row" style="margin-top:.5rem">
           <button type="button" class="dd-show-btn" data-action="play-video" style="flex:1">
-            <i class="fas fa-play"></i> Воспроизвести
+            <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.video.play"}}
           </button>
           <button type="button" class="dd-video-stop-btn" data-action="stop-video">
-            <i class="fas fa-stop"></i> Стоп
+            <i class="fas fa-stop"></i> {{localize "DRAMADIRECTOR.video.stop"}}
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ═══ CUT-INS TAB ═══════════════════════════════════════════════════════ -->
+  {{!-- CUT-INS TAB --}}
   <div class="dd-tab-content hidden" data-content="cutin">
-    <div class="dd-section-header"><i class="fas fa-bolt"></i> Текстовые Cut-Ins</div>
+    <div class="dd-section-header"><i class="fas fa-bolt"></i> {{localize "DRAMADIRECTOR.cutin.section"}}</div>
     <div style="padding: 8px; color: #aaa; font-size: 12px; line-height: 1.7">
-      Кат-сцены с текстом, персонажами и эффектами.<br>
-      • 21 тема оформления (Brush, Cyber, Royal, Yakuza и др.)<br>
-      • Поддержка изображений и видео для персонажей<br>
-      • Кастомные слои с blend-режимами<br>
-      • Сохранение пресетов для быстрого доступа
+      {{localize "DRAMADIRECTOR.cutin.desc"}}<br>
+      {{{localize "DRAMADIRECTOR.cutin.features"}}}
     </div>
     <div style="padding: 8px">
       <button type="button" data-action="open-cutin-panel" class="dd-show-btn" style="width:100%">
-        <i class="fas fa-external-link-alt"></i> Открыть Cut-In редактор
+        <i class="fas fa-external-link-alt"></i> {{localize "DRAMADIRECTOR.cutin.openPanel"}}
       </button>
     </div>
   </div>
 
-  <!-- ═══ VISUAL NOVEL TAB ═════════════════════════════════════════════════ -->
+  {{!-- VISUAL NOVEL TAB --}}
   <div class="dd-tab-content hidden" data-content="vn">
-    <div class="dd-section-header"><i class="fas fa-book-open"></i> Режим Визуальной Новеллы</div>
+    <div class="dd-section-header"><i class="fas fa-book-open"></i> {{localize "DRAMADIRECTOR.vn.section"}}</div>
     <div style="padding: 8px; color: #aaa; font-size: 12px; line-height: 1.7">
-      Полноэкранный VN-оверлей поверх сцены.<br>
-      • До 20 персонажей (10 слева, 10 справа)<br>
-      • Автоактивация по микрофону — подсвечивает говорящего<br>
-      • Распознавание речи → субтитры для всех игроков<br>
-      • Пресеты фонов, ростеров и полных сцен
+      {{localize "DRAMADIRECTOR.vn.desc"}}<br>
+      {{{localize "DRAMADIRECTOR.vn.features"}}}
     </div>
     <div style="padding: 8px">
       <button type="button" data-action="open-vn-panel" class="dd-show-btn" style="width:100%">
-        <i class="fas fa-external-link-alt"></i> Открыть Visual Novel редактор
+        <i class="fas fa-external-link-alt"></i> {{localize "DRAMADIRECTOR.vn.openPanel"}}
       </button>
     </div>
   </div>

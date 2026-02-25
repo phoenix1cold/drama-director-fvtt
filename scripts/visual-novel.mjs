@@ -10,46 +10,55 @@ function deepClone(o) { return foundry.utils.deepClone(o); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 // ─── Встроенные фоны ─────────────────────────────────────────────────────────
-export const VN_BUILTIN_BACKGROUNDS = [
+// Built-in backgrounds — names are resolved lazily via i18n keys so they
+// work regardless of language load order.
+const _BUILTIN_BG_DEFS = [
   {
-    id: 'citybank',
-    name: 'Банк',
+    id: 'citybank', _nameKey: 'DRAMADIRECTOR.vn.bg.citybank',
     variants: [
-      { id: 'citybank-day',   name: 'Банк',       src: 'modules/drama-director/assets/vn-assets/CityBank.mp4' },
-      { id: 'citybank-night', name: 'Банк ночь',  src: 'modules/drama-director/assets/vn-assets/CityBankNight.mp4' },
+      { id: 'citybank-day',   _nameKey: 'DRAMADIRECTOR.vn.bg.citybankDay',   src: 'modules/drama-director/assets/vn-assets/CityBank.mp4' },
+      { id: 'citybank-night', _nameKey: 'DRAMADIRECTOR.vn.bg.citybankNight', src: 'modules/drama-director/assets/vn-assets/CityBankNight.mp4' },
     ],
   },
   {
-    id: 'forest',
-    name: 'Грибной лес',
+    id: 'forest', _nameKey: 'DRAMADIRECTOR.vn.bg.forest',
     variants: [
-      { id: 'forest-day',   name: 'Гриб. лес',       src: 'modules/drama-director/assets/vn-assets/Fungal-Forest.mp4' },
-      { id: 'forest-night', name: 'Гриб. лес ночь',  src: 'modules/drama-director/assets/vn-assets/Fungal-Forest-Night.mp4' },
+      { id: 'forest-day',   _nameKey: 'DRAMADIRECTOR.vn.bg.forestDay',   src: 'modules/drama-director/assets/vn-assets/Fungal-Forest.mp4' },
+      { id: 'forest-night', _nameKey: 'DRAMADIRECTOR.vn.bg.forestNight', src: 'modules/drama-director/assets/vn-assets/Fungal-Forest-Night.mp4' },
     ],
   },
   {
-    id: 'church',
-    name: 'Монастырь',
+    id: 'church', _nameKey: 'DRAMADIRECTOR.vn.bg.church',
     variants: [
-      { id: 'church', name: 'Монастырь', src: 'modules/drama-director/assets/vn-assets/GrandChurchInterior.mp4' },
+      { id: 'church', _nameKey: 'DRAMADIRECTOR.vn.bg.church', src: 'modules/drama-director/assets/vn-assets/GrandChurchInterior.mp4' },
     ],
   },
   {
-    id: 'sawmill',
-    name: 'Заброшка',
+    id: 'sawmill', _nameKey: 'DRAMADIRECTOR.vn.bg.sawmill',
     variants: [
-      { id: 'sawmill-day',   name: 'Заброшка',       src: 'modules/drama-director/assets/vn-assets/Sawmill.mp4' },
-      { id: 'sawmill-night', name: 'Заброшка ночь',  src: 'modules/drama-director/assets/vn-assets/Sawmill_Night.mp4' },
+      { id: 'sawmill-day',   _nameKey: 'DRAMADIRECTOR.vn.bg.sawmillDay',   src: 'modules/drama-director/assets/vn-assets/Sawmill.mp4' },
+      { id: 'sawmill-night', _nameKey: 'DRAMADIRECTOR.vn.bg.sawmillNight', src: 'modules/drama-director/assets/vn-assets/Sawmill_Night.mp4' },
     ],
   },
   {
-    id: 'sewer',
-    name: 'Водостоки',
+    id: 'sewer', _nameKey: 'DRAMADIRECTOR.vn.bg.sewer',
     variants: [
-      { id: 'sewer', name: 'Водостоки', src: 'modules/drama-director/assets/vn-assets/Sewer_Lair.mp4' },
+      { id: 'sewer', _nameKey: 'DRAMADIRECTOR.vn.bg.sewer', src: 'modules/drama-director/assets/vn-assets/Sewer_Lair.mp4' },
     ],
   },
 ];
+
+// Resolve i18n names at call-time (game.i18n is ready by then)
+function _resolveBgNames(defs) {
+  return defs.map(bg => ({
+    ...bg,
+    name: game.i18n.localize(bg._nameKey),
+    _builtin: true,
+    variants: bg.variants.map(v => ({ ...v, name: game.i18n.localize(v._nameKey) })),
+  }));
+}
+
+export const VN_BUILTIN_BACKGROUNDS = _BUILTIN_BG_DEFS;
 
 export function newChar(side = 'left', slot = 0) {
   return { id: uid(), name: '', title: '', img: '', activeImg: '', side, slot,
@@ -99,30 +108,30 @@ export class DDVNOverlay {
       </div>
       <div class="vn-gm-controls" id="vn-gm-bar" style="display:none">
         <span class="vn-gm-label"><i class="fas fa-book-open"></i> VN</span>
-        <button id="vn-ctrl-panel" title="Настройки"><i class="fas fa-cog"></i></button>
-        <button id="vn-ctrl-stop" class="vn-btn-danger"><i class="fas fa-stop"></i> Закрыть</button>
+        <button id="vn-ctrl-panel" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.settings')}"><i class="fas fa-cog"></i></button>
+        <button id="vn-ctrl-stop" class="vn-btn-danger"><i class="fas fa-stop"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.overlay.close')}</button>
       </div>
       <div class="vn-quick-bar" id="vn-quick-bar" style="display:none">
         <div class="vn-mic-indicator" id="vn-mic-indicator">
-          <button id="vn-mic-toggle" class="vn-quick-btn" title="Микрофон">
+          <button id="vn-mic-toggle" class="vn-quick-btn" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.mic')}">
             <i class="fas fa-microphone"></i>
           </button>
           <span class="vn-mic-dot"></span>
         </div>
         <div class="vn-quick-sep"></div>
-        <button class="vn-quick-btn" data-sidebar-tab="chat" title="Чат">
+        <button class="vn-quick-btn" data-sidebar-tab="chat" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.chat')}">
           <i class="fas fa-comments"></i>
         </button>
-        <button class="vn-quick-btn" data-sidebar-tab="actors" title="Актёры">
+        <button class="vn-quick-btn" data-sidebar-tab="actors" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.actors')}">
           <i class="fas fa-users"></i>
         </button>
-        <button class="vn-quick-btn" data-sidebar-tab="scenes" title="Сцены">
+        <button class="vn-quick-btn" data-sidebar-tab="scenes" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.scenes')}">
           <i class="fas fa-map"></i>
         </button>
-        <button class="vn-quick-btn" data-sidebar-tab="playlists" title="Музыка">
+        <button class="vn-quick-btn" data-sidebar-tab="playlists" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.playlists')}">
           <i class="fas fa-music"></i>
         </button>
-        <button class="vn-quick-btn" data-sidebar-tab="items" title="Предметы">
+        <button class="vn-quick-btn" data-sidebar-tab="items" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.items')}">
           <i class="fas fa-suitcase"></i>
         </button>
       </div>
@@ -357,16 +366,16 @@ export class DDVNOverlay {
               <div class="vn-char-img-wrap">
                 <img class="vn-char-img-base ${isActive ? 'vn-img-hidden' : ''}"
                      src="${char.img}"
-                     alt="${char.name || 'Персонаж'}"
+                     alt="${char.name || ''}"
                      onerror="this.style.display='none'"/>
                 <img class="vn-char-img-active ${isActive ? 'vn-img-visible' : ''}"
                      src="${char.activeImg}"
-                     alt="${char.name || 'Персонаж'}"
+                     alt="${char.name || ''}"
                      onerror="this.style.display='none'"/>
               </div>`;
           } else {
             // Только одно изображение
-            portraitHtml = `<img src="${mainSrc}" alt="${char.name || 'Персонаж'}" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
+            portraitHtml = `<img src="${mainSrc}" alt="${char.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
           }
         } else {
           portraitHtml = `<div class="vn-char-empty"><i class="fas fa-user"></i></div>`;
@@ -374,7 +383,7 @@ export class DDVNOverlay {
 
         const nameHtml = char.name?.trim()
           ? `<div class="vn-char-label" style="color:${charColor}">${char.name}${char.title ? `<br><span class="vn-char-title">${char.title}</span>` : ''}</div>`
-          : `<div class="vn-char-label" style="color:#888;font-style:italic;">Без имени</div>`;
+          : `<div class="vn-char-label" style="color:#888;font-style:italic;">${game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</div>`;
 
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 
@@ -506,26 +515,26 @@ export class DDVNGMBar {
     bar.innerHTML = `
       <div class="vn-gml-inner">
 
-        <!-- Голос GM -->
+        <!-- GM Voice -->
         <div class="vn-gml-section vn-gml-voice">
-          <span class="vn-gml-label"><i class="fas fa-comment-alt"></i> Говорит</span>
+          <span class="vn-gml-label"><i class="fas fa-comment-alt"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.speaking')}</span>
           <select id="vn-gml-voice-sel" class="vn-gml-select">
-            <option value="">— никто —</option>
-            ${chars.map(c => `<option value="${c.id}" ${this._gmCharId === c.id ? 'selected' : ''}>${c.name || 'Без имени'}</option>`).join('')}
+            <option value="">${game.i18n.localize('DRAMADIRECTOR.vn.gml.noOne')}</option>
+            ${chars.map(c => `<option value="${c.id}" ${this._gmCharId === c.id ? 'selected' : ''}>${c.name || game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</option>`).join('')}
           </select>
         </div>
 
-        <!-- Актёры -->
+        <!-- Actors -->
         <div class="vn-gml-section">
           <button class="vn-gml-toggle-btn ${this._charsOpen ? 'open' : ''}" id="vn-gml-chars-btn">
-            <i class="fas fa-users"></i> Актёры
+            <i class="fas fa-users"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.actors')}
             <span class="vn-gml-count">${chars.length}</span>
             <i class="fas fa-chevron-${this._charsOpen ? 'up' : 'down'} vn-gml-chev"></i>
           </button>
           <div class="vn-gml-dropdown ${this._charsOpen ? 'open' : ''}" id="vn-gml-chars-drop">
             <div class="vn-gml-search-row">
               <input type="text" class="vn-gml-search" id="vn-gml-char-search"
-                placeholder="Поиск…" value="${this._charQuery}"/>
+                placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.gml.search')}" value="${this._charQuery}"/>
             </div>
             <div class="vn-gml-list" id="vn-gml-char-list">
               ${this._renderCharList(chars, this._charQuery)}
@@ -533,16 +542,16 @@ export class DDVNGMBar {
           </div>
         </div>
 
-        <!-- Фоны -->
+        <!-- Backgrounds -->
         <div class="vn-gml-section">
           <button class="vn-gml-toggle-btn ${this._bgsOpen ? 'open' : ''}" id="vn-gml-bgs-btn">
-            <i class="fas fa-image"></i> Фоны
+            <i class="fas fa-image"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.backgrounds')}
             <i class="fas fa-chevron-${this._bgsOpen ? 'up' : 'down'} vn-gml-chev"></i>
           </button>
           <div class="vn-gml-dropdown ${this._bgsOpen ? 'open' : ''}" id="vn-gml-bgs-drop">
             <div class="vn-gml-search-row">
               <input type="text" class="vn-gml-search" id="vn-gml-bg-search"
-                placeholder="Поиск…" value="${this._bgQuery}"/>
+                placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.gml.search')}" value="${this._bgQuery}"/>
             </div>
             <div class="vn-gml-list" id="vn-gml-bg-list">
               ${this._renderBgList(allBg, state.background, this._bgQuery)}
@@ -550,21 +559,21 @@ export class DDVNGMBar {
           </div>
         </div>
 
-        <!-- Пресеты -->
+        <!-- Presets -->
         <div class="vn-gml-section">
           <button class="vn-gml-toggle-btn ${this._presetsOpen ? 'open' : ''}" id="vn-gml-presets-btn">
-            <i class="fas fa-bookmark"></i> Пресеты
+            <i class="fas fa-bookmark"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.presets')}
             <i class="fas fa-chevron-${this._presetsOpen ? 'up' : 'down'} vn-gml-chev"></i>
           </button>
           <div class="vn-gml-dropdown ${this._presetsOpen ? 'open' : ''}" id="vn-gml-presets-drop">
             <div class="vn-gml-preset-section">
-              <div class="vn-gml-preset-header"><i class="fas fa-film"></i> Сцены</div>
+              <div class="vn-gml-preset-header"><i class="fas fa-film"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.scenes')}</div>
               <div class="vn-gml-preset-list">
                 ${this._renderScenePresets(scenePresets)}
               </div>
             </div>
             <div class="vn-gml-preset-section">
-              <div class="vn-gml-preset-header"><i class="fas fa-users"></i> Ростеры</div>
+              <div class="vn-gml-preset-header"><i class="fas fa-users"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.rosters')}</div>
               <div class="vn-gml-preset-list">
                 ${this._renderCharPresets(charPresets)}
               </div>
@@ -584,7 +593,7 @@ export class DDVNGMBar {
       (c.title || '').toLowerCase().includes(q)
     ) : chars;
 
-    if (!filtered.length) return `<div class="vn-gml-empty">Нет персонажей</div>`;
+    if (!filtered.length) return `<div class="vn-gml-empty">${game.i18n.localize('DRAMADIRECTOR.notifications.noChars')}</div>`;
 
     // Список игроков (не-GM)
     const players = (game.users?.contents || []).filter(u => !u.isGM);
@@ -603,19 +612,19 @@ export class DDVNGMBar {
 
       return `
         <div class="vn-gml-char-item ${isActive ? 'gml-active' : ''} ${isVisible ? '' : 'gml-hidden-char'}"
-             data-char-id="${c.id}" title="ЛКМ: показать/скрыть | ПКМ: сменить сторону">
+             data-char-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.charTooltip')}">
           <div class="vn-gml-char-thumb">${imgHtml}</div>
           <div class="vn-gml-char-info">
-            <span class="vn-gml-char-name" style="color:${c.nameColor || '#ffe066'}">${c.name || 'Без имени'}</span>
+            <span class="vn-gml-char-name" style="color:${c.nameColor || '#ffe066'}">${c.name || game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</span>
             <div class="vn-gml-char-player-row">
-              <span class="vn-gml-char-meta">${sideIcon} ${c.side === 'left' ? 'Лево' : 'Право'}${c.title ? ' · ' + c.title : ''}</span>
-              <select class="vn-gml-player-sel" data-player-for="${c.id}" title="Привязать игрока">
-                <option value="">— игрок —</option>
+              <span class="vn-gml-char-meta">${sideIcon} ${c.side === 'left' ? game.i18n.localize('DRAMADIRECTOR.vn.gml.left') : game.i18n.localize('DRAMADIRECTOR.vn.gml.right')}${c.title ? ' · ' + c.title : ''}</span>
+              <select class="vn-gml-player-sel" data-player-for="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.assignPlayer')}">
+                <option value="">${game.i18n.localize('DRAMADIRECTOR.vn.gml.playerNone')}</option>
                 ${playerOpts}
               </select>
             </div>
           </div>
-          <button class="vn-gml-active-btn ${isActive ? 'on' : ''}" data-activate-id="${c.id}" title="Активировать">
+          <button class="vn-gml-active-btn ${isActive ? 'on' : ''}" data-activate-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.charActivate')}">
             <i class="fas fa-lightbulb"></i>
           </button>
         </div>`;
@@ -642,27 +651,27 @@ export class DDVNGMBar {
           </div>`;
       }
     }
-    return html || `<div class="vn-gml-empty">Ничего не найдено</div>`;
+    return html || `<div class="vn-gml-empty">${game.i18n.localize("DRAMADIRECTOR.notifications.nothingFound")}</div>`;
   }
 
   static _renderScenePresets(scenePresets) {
-    if (!scenePresets.length) return `<div class="vn-gml-empty">Нет сохранённых сцен</div>`;
+    if (!scenePresets.length) return `<div class="vn-gml-empty">${game.i18n.localize("DRAMADIRECTOR.notifications.noSavedScenes")}</div>`;
     return scenePresets.map(name => `
-      <div class="vn-gml-preset-item" data-scene-preset="${name}" title="Загрузить сцену">
+      <div class="vn-gml-preset-item" data-scene-preset="${name}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.loadScene')}">
         <i class="fas fa-film vn-gml-preset-icon"></i>
         <span class="vn-gml-preset-name">${name}</span>
-        <i class="fas fa-play vn-gml-preset-load" title="Загрузить"></i>
+        <i class="fas fa-play vn-gml-preset-load"></i>
       </div>
     `).join('');
   }
 
   static _renderCharPresets(charPresets) {
-    if (!charPresets.length) return `<div class="vn-gml-empty">Нет сохранённых ростеров</div>`;
+    if (!charPresets.length) return `<div class="vn-gml-empty">${game.i18n.localize("DRAMADIRECTOR.notifications.noSavedRosters")}</div>`;
     return charPresets.map(name => `
-      <div class="vn-gml-preset-item" data-char-preset="${name}" title="Загрузить ростер">
+      <div class="vn-gml-preset-item" data-char-preset="${name}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.loadRoster')}">
         <i class="fas fa-users vn-gml-preset-icon"></i>
         <span class="vn-gml-preset-name">${name}</span>
-        <i class="fas fa-play vn-gml-preset-load" title="Загрузить"></i>
+        <i class="fas fa-play vn-gml-preset-load"></i>
       </div>
     `).join('');
   }
@@ -807,7 +816,7 @@ export class DDVNGMBar {
         const name = item.dataset.scenePreset;
         const scene = DDVNPresets.getScene(name);
         if (!scene) {
-          ui.notifications?.warn(`Сцена "${name}" не найдена`);
+          ui.notifications?.warn(game.i18n.format("DRAMADIRECTOR.notifications.sceneNotFound", {name}));
           return;
         }
         // Применяем состояние сцены
@@ -824,7 +833,7 @@ export class DDVNGMBar {
         }
         DDVNManager.broadcast();
         DDVNOverlay.ensureOpen();
-        ui.notifications?.info(`Сцена "${name}" загружена`);
+        ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.sceneLoaded", {name}));
       });
     });
 
@@ -834,7 +843,7 @@ export class DDVNGMBar {
         const name = item.dataset.charPreset;
         const chars = DDVNPresets.getChars(name);
         if (!chars) {
-          ui.notifications?.warn(`Ростер "${name}" не найден`);
+          ui.notifications?.warn(game.i18n.format("DRAMADIRECTOR.notifications.rosterNotFound", {name}));
           return;
         }
         _state.chars = deepClone(chars);
@@ -845,7 +854,7 @@ export class DDVNGMBar {
         }
         DDVNManager.broadcast();
         DDVNOverlay.ensureOpen();
-        ui.notifications?.info(`Ростер "${name}" загружен (${chars.length} персонажей)`);
+        ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.rosterLoaded", {name, count: chars.length}));
       });
     });
   }
@@ -878,7 +887,7 @@ export class DDVNMic {
       this._startSpeech();
       DDVNOverlay.updateMicIndicator();
     } catch (e) {
-      ui.notifications?.warn('VN: Нет доступа к микрофону. ' + e.message);
+      ui.notifications?.warn(game.i18n.format('DRAMADIRECTOR.notifications.micNoAccess', {error: e.message}));
     }
   }
 
@@ -922,7 +931,7 @@ export class DDVNMic {
       if (final) DDVNManager.onSpeechResult(text);
     };
 
-    rec.onerror = e => { if (e.error === 'not-allowed') ui.notifications?.warn('VN: Микрофон не разрешён.'); };
+    rec.onerror = e => { if (e.error === 'not-allowed') ui.notifications?.warn(game.i18n.localize('DRAMADIRECTOR.notifications.micDenied')); };
     rec.onend   = () => { if (this._active) { try { rec.start(); } catch(_) {} } };
     try { rec.start(); } catch(_) {}
     this._recognition = rec;
@@ -965,7 +974,7 @@ export class DDVNPresets {
 
   // Получить все фоны (встроенные + пользовательские)
   static getAllBg() {
-    const builtin  = VN_BUILTIN_BACKGROUNDS.map(b => ({ ...b, _builtin: true }));
+    const builtin  = _resolveBgNames(VN_BUILTIN_BACKGROUNDS);
     const custom   = this.listBg().map(b => ({ ...b, _builtin: false }));
     return [...builtin, ...custom];
   }
@@ -1010,7 +1019,7 @@ export class DDVNManager {
     // Автозапуск микрофона
     DDVNMic.start();
     DDVNPanel._instance?.render();
-    ui.notifications?.info('VN открыта только для вас (режим GM-only)');
+    ui.notifications?.info(game.i18n.localize('DRAMADIRECTOR.notifications.vnGmOnly'));
   }
 
   static stop(bcast = false) {
@@ -1308,7 +1317,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       const name = el.querySelector('#vn-chars-preset-name')?.value?.trim();
       if (!name) return;
       await DDVNPresets.saveChars(name, deepClone(this._chars));
-      ui.notifications.info(`Ростер «${name}» сохранён.`);
+      ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.rosterSaved', {name}));
       this.render();
     });
     el.querySelector('[data-action="vn-chars-load"]')?.addEventListener('click', () => {
@@ -1337,7 +1346,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     el.querySelector('[data-action="vn-dlg-hide"]')?.addEventListener('click', () => DDVNManager.hideDialogue());
     el.querySelector('[data-action="vn-dlg-active"]')?.addEventListener('click', () => {
       const active = _state.chars.find(c => c.active);
-      if (!active) return ui.notifications.warn('Нет активного персонажа.');
+      if (!active) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.noActiveChar'));
       const text = el.querySelector('#vn-dlg-text')?.value || '';
       DDVNManager.showDialogue(active.name, text, active.nameColor);
     });
@@ -1369,7 +1378,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       const name = el.querySelector('#vn-scene-name')?.value?.trim();
       if (!name) return;
       await DDVNPresets.saveScene(name, { ...deepClone(_state), chars: deepClone(this._chars) });
-      ui.notifications.info(`Сцена «${name}» сохранена.`);
+      ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneLoaded', {name}));
       this.render();
     });
     el.querySelector('[data-action="vn-scene-load"]')?.addEventListener('click', () => {
@@ -1406,18 +1415,18 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     form.innerHTML = `
       <div class="vn-bgedit-overlay">
         <div class="vn-bgedit-box">
-          <h4>${editId ? 'Редактировать фон' : 'Добавить фон'}</h4>
+          <h4>${editId ? game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleEdit') : game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleAdd')}</h4>
           <input type="hidden" id="vn-bgedit-id" value="${editId || ''}"/>
-          <div class="dd-row"><label>Название</label>
+          <div class="dd-row"><label>${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.name')}</label>
             <input type="text" id="vn-bgedit-name" class="dd-input" value="${editData?.name || ''}"/>
           </div>
           <div id="vn-bgedit-variants">${varRows}</div>
           <button type="button" id="vn-bgedit-add-var" class="vn-btn-secondary" style="margin-top:4px">
-            <i class="fas fa-plus"></i> Добавить вариацию (макс. 3)
+            <i class="fas fa-plus"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.addVariant')}
           </button>
           <div class="vn-bgedit-actions">
-            <button type="button" data-action="vn-bg-edit-cancel" class="vn-btn-secondary">Отмена</button>
-            <button type="button" data-action="vn-bg-edit-save" class="vn-btn-primary">Сохранить</button>
+            <button type="button" data-action="vn-bg-edit-cancel" class="vn-btn-secondary">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.cancel')}</button>
+            <button type="button" data-action="vn-bg-edit-save" class="vn-btn-primary">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.save')}</button>
           </div>
         </div>
       </div>`;
@@ -1429,7 +1438,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     form.querySelector('#vn-bgedit-add-var')?.addEventListener('click', () => {
       const container = form.querySelector('#vn-bgedit-variants');
       const count = container.querySelectorAll('.vn-bgedit-var-row').length;
-      if (count >= 3) return ui.notifications.warn('Максимум 3 вариации.');
+      if (count >= 3) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxVariants'));
       container.insertAdjacentHTML('beforeend', this._variantRowHtml(count));
       this._bindVarBrowse(form);
     });
@@ -1439,8 +1448,8 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   _variantRowHtml(idx, v = null) {
     return `<div class="vn-bgedit-var-row">
       <span class="vn-bgedit-var-num">${idx + 1}.</span>
-      <input type="text" class="vn-bgedit-var-name dd-input" placeholder="Название вариации…" value="${v?.name || ''}"/>
-      <input type="text" class="vn-bgedit-var-src dd-input" placeholder="Путь к файлу…" value="${v?.src || ''}"/>
+      <input type="text" class="vn-bgedit-var-name dd-input" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantName')}" value="${v?.name || ''}"/>
+      <input type="text" class="vn-bgedit-var-src dd-input" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantPath')}" value="${v?.src || ''}"/>
       <button type="button" class="vn-bgedit-browse-var"><i class="fas fa-folder-open"></i></button>
     </div>`;
   }
@@ -1464,7 +1473,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const editId = form.querySelector('#vn-bgedit-id')?.value?.trim();
     const name   = form.querySelector('#vn-bgedit-name')?.value?.trim();
-    if (!name) return ui.notifications.warn('Введите название фона.');
+    if (!name) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgNameRequired'));
 
     const variants = [];
     form.querySelectorAll('.vn-bgedit-var-row').forEach((row, i) => {
@@ -1472,7 +1481,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       const vSrc  = row.querySelector('.vn-bgedit-var-src')?.value?.trim();
       if (vSrc) variants.push({ id: uid(), name: vName || name, src: vSrc });
     });
-    if (!variants.length) return ui.notifications.warn('Добавьте хотя бы одну вариацию с файлом.');
+    if (!variants.length) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgVariantRequired'));
 
     const id = editId || uid();
     await DDVNPresets.saveBg(id, { name, variants });
@@ -1573,7 +1582,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _addChar(side) {
     const sideCount = this._chars.filter(c => c.side === side).length;
-    if (sideCount >= 10) { ui.notifications.warn('Максимум 10 персонажей с каждой стороны.'); return; }
+    if (sideCount >= 10) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars')); return; }
     this._chars.push(newChar(side, sideCount));
     DDVNManager.setChars(this._chars);
     this.render();

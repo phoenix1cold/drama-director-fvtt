@@ -42,21 +42,52 @@ class DramaDirector {
   }
 
   _registerSettings() {
+    // Language override — must be first so other settings can use it
+    game.settings.register(MODULE_ID, 'language', {
+      name: 'DRAMADIRECTOR.settings.language',
+      hint: 'DRAMADIRECTOR.settings.languageHint',
+      scope: 'client', config: true, type: String,
+      choices: {
+        auto: 'DRAMADIRECTOR.settings.languageAuto',
+        en:   'English',
+        ru:   'Русский',
+      },
+      default: 'auto',
+      onChange: () => window.location.reload(),
+    });
+
     game.settings.register(MODULE_ID, 'vignetteIntensity', {
-      name: 'Интенсивность виньетки', scope: 'world', config: true, type: Number,
-      range: { min: 0, max: 100, step: 5 }, default: 50
+      name: 'DRAMADIRECTOR.settings.vignetteIntensity',
+      hint: 'DRAMADIRECTOR.settings.vignetteIntensityHint',
+      scope: 'world', config: true, type: Number,
+      range: { min: 0, max: 100, step: 5 }, default: 50,
     });
     game.settings.register(MODULE_ID, 'defaultTextDuration', {
-      name: 'Длительность текста по умолчанию (мс)', scope: 'world', config: true, type: Number,
-      range: { min: 1000, max: 15000, step: 500 }, default: 4000
+      name: 'DRAMADIRECTOR.settings.textDuration',
+      hint: 'DRAMADIRECTOR.settings.textDurationHint',
+      scope: 'world', config: true, type: Number,
+      range: { min: 1000, max: 15000, step: 500 }, default: 4000,
     });
     game.settings.register(MODULE_ID, 'enableSounds', {
-      name: 'Включить звуки', scope: 'client', config: true, type: Boolean, default: true
+      name: 'DRAMADIRECTOR.settings.enableSounds',
+      hint: 'DRAMADIRECTOR.settings.enableSoundsHint',
+      scope: 'client', config: true, type: Boolean, default: true,
     });
     game.settings.register(MODULE_ID, 'soundVolume', {
-      name: 'Громкость звуков', scope: 'client', config: true, type: Number,
-      range: { min: 0, max: 1, step: 0.1 }, default: 0.7
+      name: 'DRAMADIRECTOR.settings.soundVolume',
+      hint: 'DRAMADIRECTOR.settings.soundVolumeHint',
+      scope: 'client', config: true, type: Number,
+      range: { min: 0, max: 1, step: 0.1 }, default: 0.7,
     });
+
+    // Apply language override: load the chosen lang file and merge into i18n
+    const langPref = game.settings.get(MODULE_ID, 'language');
+    if (langPref !== 'auto') {
+      fetch(`modules/${MODULE_ID}/lang/${langPref}.json`)
+        .then(r => r.json())
+        .then(data => foundry.utils.mergeObject(game.i18n.translations, data))
+        .catch(e => console.warn(`Drama Director | Failed to load language '${langPref}':`, e));
+    }
   }
 
   _createOverlays() {
@@ -495,7 +526,7 @@ class DramaDirector {
   async triggerIntroduction(type, targetUser = null) {
     const data = getSelectedTokenData();
     if (!data) {
-      ui.notifications.warn('Выберите токен на карте!');
+      ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.noToken'));
       return;
     }
 
@@ -655,26 +686,32 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
   static PARTS = { main: { template: `modules/${MODULE_ID}/templates/panel.hbs` } };
 
   async _prepareContext() {
+    const loc = k => game.i18n.localize(k);
     return {
       users: game.users.map(u => ({ id: u.id, name: u.name, color: u.color })),
       effects: {
-        basic:   [{ id:'vignette',name:'Виньетка',icon:'fas fa-circle-notch'},{ id:'grayscale',name:'Ч/Б',icon:'fas fa-adjust'}],
-        filter:  [{ id:'sepia',name:'Сепия',icon:'fas fa-sun'},{ id:'film',name:'Плёнка',icon:'fas fa-film'},{ id:'sketch',name:'Набросок',icon:'fas fa-pencil-alt'}],
-        anime:   [{ id:'sakura',name:'Сакура',icon:'fas fa-spa'},{ id:'hearts',name:'Сердца',icon:'fas fa-heart'}],
-        status:  [{ id:'drunk',name:'Пьяный',icon:'fas fa-wine-bottle'},{ id:'high',name:'Под кайфом',icon:'fas fa-cannabis'}],
+        basic:  [{ id:'vignette', name:loc('DRAMADIRECTOR.vignette'),  icon:'fas fa-circle-notch'},
+                 { id:'grayscale',name:loc('DRAMADIRECTOR.grayscale'), icon:'fas fa-adjust'}],
+        filter: [{ id:'sepia',    name:loc('DRAMADIRECTOR.sepia'),     icon:'fas fa-sun'},
+                 { id:'film',     name:loc('DRAMADIRECTOR.film'),      icon:'fas fa-film'},
+                 { id:'sketch',   name:loc('DRAMADIRECTOR.sketch'),    icon:'fas fa-pencil-alt'}],
+        anime:  [{ id:'sakura',   name:loc('DRAMADIRECTOR.sakura'),    icon:'fas fa-spa'},
+                 { id:'hearts',   name:loc('DRAMADIRECTOR.hearts'),    icon:'fas fa-heart'}],
+        status: [{ id:'drunk',    name:loc('DRAMADIRECTOR.drunk'),     icon:'fas fa-wine-bottle'},
+                 { id:'high',     name:loc('DRAMADIRECTOR.high'),      icon:'fas fa-cannabis'}],
       },
       sounds: [
-        { id:'chord', name:'Аккорд', icon:'fas fa-music' },
-        { id:'impact',name:'Удар',   icon:'fas fa-gavel' },
-        { id:'sweep', name:'Свип',   icon:'fas fa-wave-square' }
+        { id:'chord',  name:loc('DRAMADIRECTOR.soundChord'),  icon:'fas fa-music' },
+        { id:'impact', name:loc('DRAMADIRECTOR.soundImpact'), icon:'fas fa-gavel' },
+        { id:'sweep',  name:loc('DRAMADIRECTOR.soundSweep'),  icon:'fas fa-wave-square' },
       ],
       introStyles: [
-        { id:'epic',   name:'⚔ Эпичный' },
-        { id:'horror', name:'💀 Ужас'    },
-        { id:'royal',  name:'👑 Роял'    },
-        { id:'minimal',name:'✦ Минимал' },
-        { id:'war',    name:'🔥 Война'   },
-      ]
+        { id:'epic',    name:loc('DRAMADIRECTOR.intro.styleEpic')    },
+        { id:'horror',  name:loc('DRAMADIRECTOR.intro.styleHorror')  },
+        { id:'royal',   name:loc('DRAMADIRECTOR.intro.styleRoyal')   },
+        { id:'minimal', name:loc('DRAMADIRECTOR.intro.styleMinimal') },
+        { id:'war',     name:loc('DRAMADIRECTOR.intro.styleWar')     },
+      ],
     };
   }
 
