@@ -3,7 +3,7 @@ name: Build and Release Module
 on:
   push:
     tags:
-      - "v*"
+      - "v*"  # запускается на любой тег вида vX.Y.Z
 
 permissions:
   contents: write
@@ -16,15 +16,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create ZIP archive
+      - name: Create fixed ZIP archive
         run: |
-          zip -r drama-director-${GITHUB_REF_NAME}.zip . \
-          -x "*.git*" \
-          -x ".github/*"
+          # Создаём ZIP с фиксированным именем drama-director.zip
+          zip -r drama-director.zip . -x "*.git*" -x ".github/*"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: drama-director-${{ github.ref_name }}.zip
+          files: drama-director.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
