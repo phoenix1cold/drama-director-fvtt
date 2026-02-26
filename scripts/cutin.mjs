@@ -1,6 +1,6 @@
 /**
  * Drama Director —  Cut-In
- *  (ironmonk88)
+ * 
  */
 
 const MODULE_ID   = 'drama-director';

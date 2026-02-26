@@ -22,7 +22,7 @@ async function waitMs(ms, isSkip) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TBC — CSS 1:1 showstopper (Cinzel + Cormorant Garamond, all animations)
+// 
 // ══════════════════════════════════════════════════════════════════════════════
 injectStyles('dd-tbc-styles', `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
@@ -105,7 +105,7 @@ injectStyles('dd-tbc-styles', `
 }
 `);
 
-// ─── TBC Config (exact from showstopper) ─────────────────────────────────────
+// ─── TBC Config (exact from ) ─────────────────────────────────────
 const TBC_CONFIG = {
   soundPath:      `modules/${MODULE_ID}/assets/sounds/roundabout-long.ogg`,
   imagePath:      `modules/${MODULE_ID}/assets/tbc.webp`,
@@ -115,7 +115,7 @@ const TBC_CONFIG = {
   fadeTime:       1000,
 };
 
-// ─── Collect credits data (mirrors showstopper credits.mjs) ──────────────────
+// ─── Collect credits data () ──────────────────
 async function getTBCCreditsData() {
   const playerCredits = [];
   let gmCredit = null;
@@ -148,7 +148,7 @@ async function getTBCCreditsData() {
   return { playerCredits, gmCredit };
 }
 
-// ─── Slide HTML (mirrors showstopper slides.mjs exactly) ─────────────────────
+// ─── Slide HTML  ─────────────────────
 function createPlayerSlide(credit, left) {
   return `<div class="tbc-credit-slide ${left ? 'layout-left' : 'layout-right'}">
     <div class="tbc-portrait-wrapper">
@@ -199,7 +199,7 @@ function createFinalSlide() {
   </div>`;
 }
 
-// ─── Credits sequence (mirrors showstopper credits.mjs) ──────────────────────
+// ─── Credits sequence  ──────────────────────
 async function playTBCCredits(container, isSkip) {
   const { playerCredits, gmCredit } = await getTBCCreditsData();
   const { slideDuration, fadeTime } = TBC_CONFIG;
@@ -283,13 +283,13 @@ export async function executeTBCEnding() {
     src: soundPath, volume: 0.8, autoplay: true, loop: false
   }, false);
 
-  // Sepia rgba overlay (same as showstopper — mix-blend-mode: multiply)
+  // Sepia rgba overlay
   const overlay = document.createElement('div');
   overlay.id = 'tbc-sepia-overlay';
   overlay.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(112,66,20,.4);mix-blend-mode:multiply;pointer-events:none;z-index:9998;opacity:0;transition:opacity .5s ease-in-out;`;
   document.body.appendChild(overlay);
 
-  // TBC image (bottom-right, same as showstopper)
+  // TBC image ()
   const img = document.createElement('img');
   img.id = 'tbc-image'; img.src = imagePath;
   img.style.cssText = `position:fixed;bottom:50px;right:50px;max-width:1050px;max-height:300px;z-index:10001;opacity:0;transition:opacity .5s ease-in-out;filter:drop-shadow(4px 4px 8px rgba(0,0,0,.8));`;
