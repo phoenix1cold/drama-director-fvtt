@@ -15,6 +15,47 @@ import { initVNSystem, DDVNApi } from './visual-novel.mjs';
 const MODULE_ID = 'drama-director';
 const SOCKET_EVENT = `module.${MODULE_ID}`;
 
+// ── Language override ────────────────────────────────────────────────────────
+// Stored as a Promise so _prepareContext can await it before rendering.
+let _ddLangPromise = Promise.resolve();
+
+function _ddDeepMerge(target, src) {
+  for (const key of Object.keys(src)) {
+    const val = src[key];
+    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      if (typeof target[key] !== 'object' || target[key] === null) target[key] = {};
+      _ddDeepMerge(target[key], val);
+    } else {
+      target[key] = val;
+    }
+  }
+}
+
+// i18nInit fires after Foundry loads its own lang files — ideal place to inject ours.
+// NOTE: Foundry does NOT await async hooks, so we store a Promise instead of using async.
+// By this point 'init' has already fired, so game.settings.get() works fine.
+Hooks.once('i18nInit', () => {
+  let langPref = 'auto';
+  try {
+    langPref = game.settings.get(MODULE_ID, 'language') ?? 'auto';
+  } catch(e) {
+    // Fallback: try reading raw localStorage with multiple possible key formats
+    langPref = localStorage.getItem(`${MODULE_ID}.language`)
+            ?? localStorage.getItem(`client.${MODULE_ID}.language`)
+            ?? 'auto';
+  }
+
+  if (langPref === 'auto') return;
+
+  _ddLangPromise = fetch(`modules/${MODULE_ID}/lang/${langPref}.json`)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(data => {
+      _ddDeepMerge(game.i18n.translations, data);
+      console.log(`Drama Director | Language override applied: ${langPref}`);
+    })
+    .catch(e => console.warn(`Drama Director | Language load failed (${langPref}):`, e));
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MAP EFFECTS (DramaDirector)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -39,19 +80,8 @@ class DramaDirector {
   }
 
   _registerSettings() {
-    // Language override — must be first so other settings can use it
-    game.settings.register(MODULE_ID, 'language', {
-      name: 'DRAMADIRECTOR.settings.language',
-      hint: 'DRAMADIRECTOR.settings.languageHint',
-      scope: 'client', config: true, type: String,
-      choices: {
-        auto: 'DRAMADIRECTOR.settings.languageAuto',
-        en:   'English',
-        ru:   'Русский',
-      },
-      default: 'auto',
-      onChange: () => window.location.reload(),
-    });
+    // Note: 'language' setting is registered in the 'init' hook (see bottom of file)
+    // to ensure it's available early enough for the i18nInit override below.
 
     game.settings.register(MODULE_ID, 'vignetteIntensity', {
       name: 'DRAMADIRECTOR.settings.vignetteIntensity',
@@ -82,14 +112,6 @@ class DramaDirector {
       scope: 'world', config: false, type: Array, default: [],
     });
 
-    // Apply language override: load the chosen lang file and merge into i18n
-    const langPref = game.settings.get(MODULE_ID, 'language');
-    if (langPref !== 'auto') {
-      fetch(`modules/${MODULE_ID}/lang/${langPref}.json`)
-        .then(r => r.json())
-        .then(data => foundry.utils.mergeObject(game.i18n.translations, data))
-        .catch(e => console.warn(`Drama Director | Failed to load language '${langPref}':`, e));
-    }
   }
 
   _createOverlays() {
@@ -814,6 +836,8 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
   static PARTS = { main: { template: `modules/${MODULE_ID}/templates/panel.hbs` } };
 
   async _prepareContext() {
+    // Wait for language override to finish loading before localizing
+    await _ddLangPromise;
     const loc = k => game.i18n.localize(k);
     return {
       users: game.users.map(u => ({ id: u.id, name: u.name, color: u.color })),
@@ -1163,6 +1187,21 @@ Hooks.once('init', () => {
   // Helpers for VN templates
   Handlebars.registerHelper('isVideo', src => /\.(webm|mp4|ogv)$/i.test(src || ''));
   Handlebars.registerHelper('add', (a, b) => (Number(a) + Number(b)));
+
+  // Register the language setting early (during init) so it's available for the override
+  game.settings.register(MODULE_ID, 'language', {
+    name: 'DRAMADIRECTOR.settings.language',
+    hint: 'DRAMADIRECTOR.settings.languageHint',
+    scope: 'client', config: true, type: String,
+    choices: {
+      auto: 'DRAMADIRECTOR.settings.languageAuto',
+      en:   'English',
+      ru:   'Русский',
+      fr:   'Français',
+    },
+    default: 'auto',
+    onChange: () => window.location.reload(),
+  });
 });
 
 Hooks.on('getSceneControlButtons', (controls) => {

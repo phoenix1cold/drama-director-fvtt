@@ -72,7 +72,11 @@
       "jojoDesc": "Classic anime-style ending: freeze frame, character portraits, credits with player names and GM production credit.",
       "jojoBtn": "▶ Run JoJo ED",
       "jojoProduction": "PRODUCTION",
-      "jojoTbc": "TO BE CONTINUED..."
+      "jojoTbc": "TO BE CONTINUED...",
+      "tbc": "TO BE CONTINUED",
+      "credDirector": "Director",
+      "credExecProd": "Executive Producer",
+      "credProducer": "Producer"
     },
     "vignette": "Vignette",
     "grayscale": "Grayscale",

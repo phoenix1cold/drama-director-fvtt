@@ -396,6 +396,27 @@ injectStyles('dd-jojo-styles', `
   background: linear-gradient(90deg, transparent, rgba(255,215,60,0.28));
   margin: clamp(6px, 1vh, 12px) 0 0 auto;
 }
+/* ── Japanese subtitles ────────────────────────────────────────────────── */
+.jojo-cred-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(1.1rem, 2.1vw, 2.6rem);
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.0; text-align: right;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.95), 0 0 44px rgba(255,215,50,0.2);
+  letter-spacing: 0.04em; word-break: break-word;
+  margin-top: 2px;
+}
+.jojo-prod-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(1rem, 1.7vw, 2.1rem);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.22em;
+  text-shadow: 0 2px 22px rgba(0,0,0,0.9), 0 0 60px rgba(255,215,50,0.14);
+  display: block;
+  margin-top: 6px;
+}
 
 /* ── Production line — top center, white ──────────────────────────────── */
 .jojo-production {
@@ -562,6 +583,7 @@ export async function executeJojoEnding() {
   production.innerHTML = `
     <span class="jojo-prod-label">${game.i18n.localize('DRAMADIRECTOR.endings.jojoProduction') || 'PRODUCTION'}</span>
     <div class="jojo-prod-name">${gmName}</div>
+    <span class="jojo-prod-jp">製作会社</span>
   `;
 
   const grain = document.createElement('div');
@@ -633,8 +655,10 @@ export async function executeJojoEnding() {
     await new Promise(r => setTimeout(r, 60)); // brief gap for transition reset
     credEntry.innerHTML = `
       <div class="jojo-cred-char">${p.characterName}</div>
+      <div class="jojo-cred-jp">キャラクター名</div>
       <div class="jojo-cred-role-label">― ${game.i18n.localize('DRAMADIRECTOR.endings.asRole') || 'played by'} ―</div>
       <div class="jojo-cred-player">${p.playerName}</div>
+      <div class="jojo-cred-jp">プレイヤーの名前</div>
       <div class="jojo-cred-divider"></div>
     `;
 
