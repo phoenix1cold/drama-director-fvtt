@@ -1,6 +1,5 @@
 /**
  * Drama Director - Introductions
- * CSS 1:1 from showstopper: persona-* (hero), villain-* (villain), h-* (genshin)
  * + Gentlemen & Snatch cinematic intros
  */
 

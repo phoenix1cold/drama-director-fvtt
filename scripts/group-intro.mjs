@@ -1,6 +1,5 @@
 /**
  * Drama Director — Group Character Intro System
- * Ports renderCinematic from cinematic-cut-ins (ironmonk88)
  * Themes: rebel, comic, urban, noir, wanted, slice, arcane, legion, dragon
  */
 

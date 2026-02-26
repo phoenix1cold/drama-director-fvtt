@@ -1,6 +1,6 @@
 /**
  * Drama Director – Endings
- * CSS 1:1 from showstopper. Socket via game.dramaDirector.emit()
+ * Socket via game.dramaDirector.emit()
  */
 
 const MODULE_ID = 'drama-director';

@@ -1,6 +1,6 @@
 /**
- * Drama Director — Система текстовых Cut-In
- * Темы адаптированы из cinematic-cut-ins (ironmonk88)
+ * Drama Director —  Cut-In
+ *  (ironmonk88)
  */
 
 const MODULE_ID   = 'drama-director';

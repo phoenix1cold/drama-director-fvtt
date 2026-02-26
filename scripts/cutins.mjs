@@ -1,6 +1,6 @@
 /**
  * Drama Director — Cut-in Text/Presentation System
- * Ported and adapted from cinematic-cut-ins by phoenix1cold
+ * 
  */
 
 const MODULE_ID = 'drama-director';
