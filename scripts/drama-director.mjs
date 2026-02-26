@@ -4,8 +4,6 @@
  */
 
 import {
-  getSelectedTokenData,
-  executeHeroIntro, executeVillainIntro, executeGenshinIntro,
   executeSinCityIntro, skipSinCityIntro,
   executeMacheteIntro, skipMacheteIntro,
   executeMacheteBloodIntro, skipMacheteBloodIntro,
@@ -145,9 +143,6 @@ class DramaDirector {
         case 'stopSound':       this.stopCustomSound(false); break;
         case 'video':           this._showVideo(data.url, data.options); break;
         case 'stopVideo':       this._stopVideo(); break;
-        case 'heroIntro':       executeHeroIntro(data.data); break;
-        case 'villainIntro':    executeVillainIntro(data.data); break;
-        case 'genshinIntro':    executeGenshinIntro(data.data); break;
         case 'sinCityIntro':     executeSinCityIntro(data.campaignName ?? ''); break;
         case 'snatchIntro':     executeSnatchIntro(data.campaignName ?? ''); break;
         case 'sinCitySkip':     skipSinCityIntro(); break;
@@ -518,31 +513,6 @@ class DramaDirector {
     }
   }
 
-  // ─── Introductions (token-based) ──────────────────────────────────────────
-
-  async triggerIntroduction(type, targetUser = null) {
-    const data = getSelectedTokenData();
-    if (!data) {
-      ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.noToken'));
-      return;
-    }
-
-    const action = { hero: 'heroIntro', villain: 'villainIntro', genshin: 'genshinIntro' }[type];
-    if (!action) return;
-
-    // Always run locally, GM also emits to others via socket
-    this._dispatchIntro(type, data);
-    if (game.user.isGM) {
-      game.socket.emit(SOCKET_EVENT, { action, data, targetUser: targetUser || null });
-    }
-  }
-
-  _dispatchIntro(type, data) {
-    if (type === 'hero')    executeHeroIntro(data);
-    if (type === 'villain') executeVillainIntro(data);
-    if (type === 'genshin') executeGenshinIntro(data);
-  }
-
   // ─── Endings ──────────────────────────────────────────────────────────────
 
   async triggerEnding(type, targetUser = null) {
@@ -753,15 +723,6 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       game.dramaDirector.triggerSnatchIntro(name);
     });
 
-    // ── PRESENTATIONS TAB ─────────────────────────────────────────────────
-    html.querySelectorAll('[data-intro-type]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const type = e.currentTarget.dataset.introType;
-        const targetUser = html.querySelector('#dd-target-user')?.value || null;
-        game.dramaDirector.triggerIntroduction(type, targetUser);
-      });
-    });
-
     // ── ENDINGS TAB ───────────────────────────────────────────────────────
     html.querySelectorAll('[data-ending-type]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -856,6 +817,8 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       game.dramaDirector.stopVideo(targetUser);
     });
 
+    // ── ГРУППОВОЕ ИНТРО TAB ───────────────────────────────────────────────
+
     // ── VISUAL NOVEL TAB ──────────────────────────────────────────────────
     html.querySelector('[data-action="open-vn-panel"]')?.addEventListener('click', () => {
       DDVNApi.openPanel();
@@ -899,13 +862,12 @@ Hooks.once('ready', () => {
     audio:  (url, opts) => game.dramaDirector.playCustomSound(url, opts),
     stop:   (all) => game.dramaDirector.stopCustomSound(all),
     video:  (url, opts, user) => game.dramaDirector.showVideo(url, opts, user),
-    intro:  (type, user) => game.dramaDirector.triggerIntroduction(type, user),
     sincity:      (name) => game.dramaDirector.triggerSinCityIntro(name),
     machete:      (name) => game.dramaDirector.triggerMacheteIntro(name),
     macheteBlood: (name) => game.dramaDirector.triggerMacheteBloodIntro(name),
     snatch:       (name) => game.dramaDirector.triggerSnatchIntro(name),
     ending:       (type) => game.dramaDirector.triggerEnding(type),
-
+    // Group intros
     // Visual Novel
     vn: DDVNApi,
   };
