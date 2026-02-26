@@ -213,10 +213,13 @@ export async function executeWBRBEnding() {
 
   wrap.classList.add('wbrb-white'); // text-shadow → none за .35s
 
-  // ── Ещё 0.5s до полных 3s ───────────────────────────────────────────────
-  if (await waitMs(500, isSkip)) { wbrbCleanup(); return; }
+  // ── Ждём пока обводка уйдёт ─────────────────────────────────────────────
+  if (await waitMs(450, isSkip)) { wbrbCleanup(); return; }
 
-  // ── Висим 2 секунды ─────────────────────────────────────────────────────
+  // ── Возвращаем чёрную обводку ────────────────────────────────────────────
+  wrap.classList.remove('wbrb-white');
+
+  // ── Висим 2 секунды с вернувшейся обводкой ──────────────────────────────
   if (await waitMs(2000, isSkip)) { wbrbCleanup(); return; }
 
   // ── Плавный fade-out (0.5s) ─────────────────────────────────────────────

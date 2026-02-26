@@ -12,7 +12,6 @@ import {
   executeSnatchIntro, skipSnatchIntro,
 } from './introductions.mjs';
 import { executeWBRBEnding, skipWBRBEnding } from './endings.mjs';
-import { initCutinSystem, DDCutinAPI, DDCutinPanel } from './cutin.mjs';
 import { initVNSystem, DDVNApi } from './visual-novel.mjs';
 
 const MODULE_ID = 'drama-director';
@@ -857,11 +856,6 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       game.dramaDirector.stopVideo(targetUser);
     });
 
-    // ── CUT-INS TAB ───────────────────────────────────────────────────────
-    html.querySelector('[data-action="open-cutin-panel"]')?.addEventListener('click', () => {
-      DDCutinAPI.openPanel();
-    });
-
     // ── ГРУППОВОЕ ИНТРО TAB ───────────────────────────────────────────────
 
     // ── VISUAL NOVEL TAB ──────────────────────────────────────────────────
@@ -899,7 +893,6 @@ Hooks.on('getSceneControlButtons', (controls) => {
 
 Hooks.once('ready', () => {
   game.dramaDirector.init();
-  initCutinSystem();
   initVNSystem();
   window.DramaDirector = {
     effect: (id, opts, user) => game.dramaDirector.applyEffect(id, opts, user),
@@ -914,10 +907,6 @@ Hooks.once('ready', () => {
     macheteBlood: (name) => game.dramaDirector.triggerMacheteBloodIntro(name),
     snatch:       (name) => game.dramaDirector.triggerSnatchIntro(name),
     ending:       (type) => game.dramaDirector.triggerEnding(type),
-    // Text cut-ins
-    cutin:       (data) => DDCutinAPI.play(data),
-    cutinPreset: (name) => DDCutinAPI.playPreset(name),
-    cutinStop:   ()     => DDCutinAPI.stop(),
     // Group intros
     // Visual Novel
     vn: DDVNApi,
