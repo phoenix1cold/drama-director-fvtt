@@ -907,7 +907,7 @@ Hooks.once('ready', () => {
     macheteBlood: (name) => game.dramaDirector.triggerMacheteBloodIntro(name),
     snatch:       (name) => game.dramaDirector.triggerSnatchIntro(name),
     ending:       (type) => game.dramaDirector.triggerEnding(type),
-    // Group intros
+
     // Visual Novel
     vn: DDVNApi,
   };
