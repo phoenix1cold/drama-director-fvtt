@@ -390,7 +390,7 @@ export async function executeSinCityIntro(campaignName = '') {
   if (game.user?.isGM) {
     const skipBtn = document.createElement('button');
     skipBtn.className = 'sc-skip-btn';
-    skipBtn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    skipBtn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     document.body.appendChild(skipBtn);
     setTimeout(() => skipBtn?.classList.add('sc-on'), 1400);
     skipBtn.addEventListener('click', () => {
@@ -403,7 +403,7 @@ export async function executeSinCityIntro(campaignName = '') {
   const curtain = overlay.querySelector('#sc-curtain');
 
   // ── PHASE 1: Title card ───────────────────────────────────────────────
-  const titleText = (campaignName?.trim() || 'Наша Кампания').toUpperCase();
+  const titleText = (campaignName?.trim() || game.i18n.localize('DRAMADIRECTOR.intro.defaultCampaign')).toUpperCase();
   const titleCard = document.createElement('div');
   titleCard.className = 'sc-title-card';
   titleCard.innerHTML = `
@@ -741,7 +741,7 @@ export async function executeSnatchIntro(campaignName = '') {
 
   const players = await getSnatchPlayersData();
   const gmUser  = game.users.find(u => u.isGM && u.active) || game.users.find(u => u.isGM);
-  const gmName  = gmUser?.name || 'Мастер';
+  const gmName  = gmUser?.name || game.i18n.localize('DRAMADIRECTOR.intro.gmDefault');
 
   // Audio at 0:50
   snatchAudio = new Audio(`modules/${MODULE_ID}/assets/sounds/snatch.ogg`);
@@ -770,7 +770,7 @@ export async function executeSnatchIntro(campaignName = '') {
   if (game.user?.isGM) {
     skipBtn = document.createElement('button');
     skipBtn.className = 'sn-skip-btn';
-    skipBtn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    skipBtn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     document.body.appendChild(skipBtn);
     setTimeout(() => skipBtn?.classList.add('sn-on'), 800);
     skipBtn.addEventListener('click', () => {
@@ -811,7 +811,7 @@ export async function executeSnatchIntro(campaignName = '') {
   await waitMs(300);
   if (isSkip()) { snatchCleanup(); return; }
 
-  const titleText = (campaignName?.trim() || 'Наша Кампания').toUpperCase();
+  const titleText = (campaignName?.trim() || game.i18n.localize('DRAMADIRECTOR.intro.defaultCampaign')).toUpperCase();
   const titleCard = makeNamecard(titleText, '', true, true, false);
   if (await showCard(titleCard, 2000, isSkip)) { snatchCleanup(); return; }
 
@@ -1125,7 +1125,7 @@ export function executeVillainIntro(data) {
         <div class="villain-shadow-tendrils"></div>
       </div>
       <div class="villain-text-section">
-        <div class="villain-threat-text">— УГРОЗА ПРИБЛИЖАЕТСЯ —</div>
+        <div class="villain-threat-text">${game.i18n.localize('DRAMADIRECTOR.intro.villainThreat')}</div>
         <div class="villain-title-wrapper"><span class="villain-title">${data.title||''}</span></div>
         <div class="villain-name-wrapper">
           <h1 class="villain-name">${data.name}</h1>
@@ -1246,7 +1246,7 @@ export function executeGenshinIntro(data) {
           <div class="h-title-box">${data.title||''}</div>
           ${data.description ? `<div class="h-description">${data.description.slice(0,120)}</div>` : ''}
         </div>
-        <div class="h-footer-strip"><span class="h-footer-text">Нажмите, чтобы продолжить</span></div>
+        <div class="h-footer-strip"><span class="h-footer-text">${game.i18n.localize('DRAMADIRECTOR.intro.clickToContinue')}</span></div>
       </div>
     </div>`;
     const overlay = el.firstElementChild;
@@ -1649,7 +1649,7 @@ export async function executeMacheteIntro(campaignName = '') {
   if (game.user?.isGM) {
     const skipBtn = document.createElement('button');
     skipBtn.className = 'mch-skip-btn';
-    skipBtn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    skipBtn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     document.body.appendChild(skipBtn);
     setTimeout(() => skipBtn?.classList.add('mch-on'), 1200);
     skipBtn.addEventListener('click', () => {
@@ -1694,7 +1694,7 @@ export async function executeMacheteIntro(campaignName = '') {
   await waitMs(120);
 
   // ── PHASE 2: Title card ───────────────────────────────────────────────
-  const titleText = (campaignName?.trim() || 'Наша Кампания').toUpperCase();
+  const titleText = (campaignName?.trim() || game.i18n.localize('DRAMADIRECTOR.intro.defaultCampaign')).toUpperCase();
   const titleCard = document.createElement('div');
   titleCard.className = 'mch-title-card';
   titleCard.innerHTML = `
@@ -2378,7 +2378,7 @@ export async function executeMacheteBloodIntro(campaignName = '') {
   if (game.user?.isGM) {
     const skipBtn = document.createElement('button');
     skipBtn.className = 'mchb-skip-btn';
-    skipBtn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    skipBtn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     document.body.appendChild(skipBtn);
     setTimeout(() => skipBtn?.classList.add('mchb-on'), 800);
     skipBtn.addEventListener('click', () => {
@@ -2463,17 +2463,17 @@ export async function executeMacheteBloodIntro(campaignName = '') {
   if (await waitSkippable(900, isSkip)) { mchbCleanup(); return; }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // PHASE 2 — «ИМЯ ГМ» / «ПРЕДСТАВЛЯЕТ» на красном
+  // PHASE 2 — «ИМЯ ГМ» / «${game.i18n.localize('DRAMADIRECTOR.intro.presents').toUpperCase()}» на красном
   // ═══════════════════════════════════════════════════════════════════════
   const gmUser = game.users.find(u => u.isGM && u.active) || game.users.find(u => u.isGM);
   const gmName = gmUser?.name || 'Game Master';
-  const title  = (campaignName?.trim() || game.world?.title || 'Наша Кампания').toUpperCase();
+  const title  = (campaignName?.trim() || game.world?.title || game.i18n.localize('DRAMADIRECTOR.intro.defaultCampaign')).toUpperCase();
 
   const presentsEl = document.createElement('div');
   presentsEl.className = 'mchb-presents';
   presentsEl.innerHTML = `
     <div class="mchb-gm-name">${gmName.toUpperCase()}</div>
-    <div class="mchb-presents-word">ПРЕДСТАВЛЯЕТ</div>
+    <div class="mchb-presents-word">${game.i18n.localize('DRAMADIRECTOR.intro.presents').toUpperCase()}</div>
   `;
   stage.appendChild(presentsEl);
 
@@ -2658,10 +2658,10 @@ export async function executeMacheteBloodIntro(campaignName = '') {
   const titlesEl = document.createElement('div');
   titlesEl.className = 'mchb-titles';
   [
-    'основано на нереальных событиях',
-    'сессия содержит концентрированный трэш',
-    'нецензурная лексика в полном объёме',
-    `производство "${gmName}"`,
+    game.i18n.localize('DRAMADIRECTOR.intro.bloodTitle1'),
+    game.i18n.localize('DRAMADIRECTOR.intro.bloodTitle2'),
+    game.i18n.localize('DRAMADIRECTOR.intro.bloodTitle3'),
+    game.i18n.format('DRAMADIRECTOR.intro.bloodTitle4', {name: gmName}),
   ].forEach(t => {
     const line = document.createElement('div');
     line.className = 'mchb-title-line';

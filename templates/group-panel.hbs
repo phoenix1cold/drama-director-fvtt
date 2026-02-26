@@ -1,56 +1,56 @@
 <div class="ddg-layout">
 
-  <!-- ═══ ЛЕВАЯ КОЛОНКА ════════════════════════════════════════════════════ -->
+  <!-- LEFT COLUMN -->
   <div class="ddg-left">
 
     <section class="dd-section">
-      <h3><i class="fas fa-bookmark"></i> Пресеты</h3>
+      <h3><i class="fas fa-bookmark"></i> {{localize "DRAMADIRECTOR.group.presets"}}</h3>
       <div class="dd-row">
         <select id="ddg-preset-select" class="dd-select">
-          <option value="">— Выбрать пресет —</option>
+          <option value="">{{localize "DRAMADIRECTOR.group.presetSelectPlaceholder"}}</option>
           {{#each presets}}<option value="{{this}}">{{this}}</option>{{/each}}
         </select>
-        <button type="button" data-action="dd-group-preset-load" title="Загрузить"><i class="fas fa-upload"></i></button>
-        <button type="button" data-action="dd-group-preset-delete" title="Удалить" class="dd-btn-danger"><i class="fas fa-trash"></i></button>
+        <button type="button" data-action="dd-group-preset-load" title="{{localize 'DRAMADIRECTOR.group.btnLoad'}}"><i class="fas fa-upload"></i></button>
+        <button type="button" data-action="dd-group-preset-delete" title="{{localize 'DRAMADIRECTOR.group.btnDelete'}}" class="dd-btn-danger"><i class="fas fa-trash"></i></button>
       </div>
       <div class="dd-row">
-        <input type="text" id="ddg-preset-name" placeholder="Название пресета…" class="dd-input" value="{{data._name}}"/>
-        <button type="button" data-action="dd-group-preset-save"><i class="fas fa-save"></i> Сохранить</button>
+        <input type="text" id="ddg-preset-name" placeholder="{{localize 'DRAMADIRECTOR.group.presetNamePlaceholder'}}" class="dd-input" value="{{data._name}}"/>
+        <button type="button" data-action="dd-group-preset-save"><i class="fas fa-save"></i> {{localize "DRAMADIRECTOR.group.btnSave"}}</button>
       </div>
     </section>
 
     <section class="dd-section">
-      <h3><i class="fas fa-palette"></i> Тема</h3>
+      <h3><i class="fas fa-palette"></i> {{localize "DRAMADIRECTOR.group.theme"}}</h3>
       <select id="ddg-theme" class="dd-select" style="margin-bottom:6px">
         {{#each themes}}
         <option value="{{this.id}}" {{#if (eq ../data.theme this.id)}}selected{{/if}}>{{this.label}}</option>
         {{/each}}
       </select>
       <div class="dd-row dd-row-pair">
-        <label>Шрифт</label>
+        <label>{{localize "DRAMADIRECTOR.group.font"}}</label>
         <input type="text" id="ddg-font" value="{{data.fontFamily}}" class="dd-input" placeholder="Teko"/>
       </div>
       <div class="dd-row dd-row-pair">
-        <label>Время (с, 0=авто)</label>
+        <label>{{localize "DRAMADIRECTOR.group.displayTime"}}</label>
         <input type="number" id="ddg-display-time" value="{{data.displayTime}}" min="0" max="30" step="0.5" class="dd-input-sm"/>
       </div>
       <div class="dd-row dd-row-pair">
         <label>
           <input type="checkbox" id="ddg-show-names" {{#if data.showNames}}checked{{/if}}/>
-          Показывать имена
+          {{localize "DRAMADIRECTOR.group.showNames"}}
         </label>
       </div>
     </section>
 
     <section class="dd-section">
-      <h3><i class="fas fa-align-center"></i> Центральный текст</h3>
-      <label class="dd-label">Основной</label>
+      <h3><i class="fas fa-align-center"></i> {{localize "DRAMADIRECTOR.group.centerText"}}</h3>
+      <label class="dd-label">{{localize "DRAMADIRECTOR.group.centerMain"}}</label>
       <div class="dd-row">
         <input type="text" id="ddg-center-main" value="{{data.centerMainText}}" class="dd-input" placeholder="ALL-OUT ATTACK"/>
         <input type="color" id="ddg-center-main-color" value="{{data.centerMainColor}}" class="dd-color"/>
         <input type="number" id="ddg-center-main-size" value="{{data.centerMainSize}}" min="1" max="30" step="0.5" class="dd-input-sm"/>
       </div>
-      <label class="dd-label">Подпись</label>
+      <label class="dd-label">{{localize "DRAMADIRECTOR.group.centerSub"}}</label>
       <div class="dd-row">
         <input type="text" id="ddg-center-sub" value="{{data.centerSubText}}" class="dd-input" placeholder="TIME TO FINISH IT!"/>
         <input type="color" id="ddg-center-sub-color" value="{{data.centerSubColor}}" class="dd-color"/>
@@ -59,41 +59,41 @@
     </section>
 
     <section class="dd-section">
-      <h3><i class="fas fa-code"></i> Макрос</h3>
+      <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.group.macro"}}</h3>
       <button type="button" data-action="dd-group-macro-copy" class="dd-btn-wide">
-        <i class="fas fa-copy"></i> Скопировать код макроса
+        <i class="fas fa-copy"></i> {{localize "DRAMADIRECTOR.group.macroCopy"}}
       </button>
     </section>
 
     <div class="dd-actions">
       <button type="button" data-action="dd-group-stop" class="dd-btn-stop">
-        <i class="fas fa-stop"></i> Стоп
+        <i class="fas fa-stop"></i> {{localize "DRAMADIRECTOR.group.stop"}}
       </button>
       <button type="button" data-action="dd-group-play" class="dd-btn-play">
-        <i class="fas fa-play"></i> Показать всем
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.group.showAll"}}
       </button>
     </div>
 
   </div>
 
-  <!-- ═══ ПРАВАЯ КОЛОНКА — Участники ══════════════════════════════════════ -->
+  <!-- RIGHT COLUMN — Participants -->
   <div class="ddg-right">
     <div class="ddg-participants-header">
-      <h3 style="margin:0"><i class="fas fa-users"></i> Участники ({{participants.length}})</h3>
+      <h3 style="margin:0"><i class="fas fa-users"></i> {{localize "DRAMADIRECTOR.group.participants"}} ({{participants.length}})</h3>
       <div class="ddg-header-btns">
-        <button type="button" data-action="dd-group-fill-tokens" class="ddg-fill-btn" title="Заполнить из выбранных токенов на сцене">
-          <i class="fas fa-map-marker-alt"></i> Из токенов
+        <button type="button" data-action="dd-group-fill-tokens" class="ddg-fill-btn" title="{{localize 'DRAMADIRECTOR.group.fillTokensTitle'}}">
+          <i class="fas fa-map-marker-alt"></i> {{localize "DRAMADIRECTOR.group.fillTokens"}}
         </button>
-        <button type="button" data-action="dd-group-fill-players" class="ddg-fill-btn" title="Заполнить из активных игроков">
-          <i class="fas fa-users"></i> Из игроков
+        <button type="button" data-action="dd-group-fill-players" class="ddg-fill-btn" title="{{localize 'DRAMADIRECTOR.group.fillPlayersTitle'}}">
+          <i class="fas fa-users"></i> {{localize "DRAMADIRECTOR.group.fillPlayers"}}
         </button>
         <button type="button" data-action="dd-group-add-participant" class="dd-btn-add-layer">
-          <i class="fas fa-plus"></i> Добавить
+          <i class="fas fa-plus"></i> {{localize "DRAMADIRECTOR.group.addParticipant"}}
         </button>
       </div>
     </div>
 
-    <p class="dd-hint">Порядок появления рандомизируется (кроме Wanted). До 5 участников — оптимально.</p>
+    <p class="dd-hint">{{localize "DRAMADIRECTOR.group.hint"}}</p>
 
     {{#if participants}}
     <div class="ddg-participants-list">
@@ -101,47 +101,47 @@
       <div class="ddg-part-row" data-part-idx="{{this._idx}}">
         <div class="ddg-part-header">
           <span class="ddg-part-num">#{{this._num}}</span>
-          <input type="text" class="ddg-part-img dd-input" value="{{this.img}}" placeholder="Изображение…"/>
-          <button type="button" data-part-action="browse-img" title="Выбрать изображение"><i class="fas fa-image"></i></button>
-          <button type="button" data-part-action="from-actor" title="Из актора Foundry"><i class="fas fa-user"></i></button>
-          <button type="button" data-part-action="remove" class="dd-btn-danger" title="Удалить"><i class="fas fa-times"></i></button>
+          <input type="text" class="ddg-part-img dd-input" value="{{this.img}}" placeholder="{{localize 'DRAMADIRECTOR.group.partImgPlaceholder'}}"/>
+          <button type="button" data-part-action="browse-img" title="{{localize 'DRAMADIRECTOR.group.partBrowseImg'}}"><i class="fas fa-image"></i></button>
+          <button type="button" data-part-action="from-actor" title="{{localize 'DRAMADIRECTOR.group.partFromActor'}}"><i class="fas fa-user"></i></button>
+          <button type="button" data-part-action="remove" class="dd-btn-danger" title="{{localize 'DRAMADIRECTOR.group.partRemove'}}"><i class="fas fa-times"></i></button>
         </div>
         <div class="ddg-part-body">
           <div class="dd-row">
-            <label class="dd-label" style="margin:0;flex:0 0 40px">Текст</label>
-            <input type="text" class="ddg-part-text dd-input" value="{{this.text}}" placeholder="Имя / надпись…"/>
-            <label class="dd-label" style="margin:0">Цвет фона</label>
+            <label class="dd-label" style="margin:0;flex:0 0 40px">{{localize "DRAMADIRECTOR.group.partText"}}</label>
+            <input type="text" class="ddg-part-text dd-input" value="{{this.text}}" placeholder="{{localize 'DRAMADIRECTOR.group.partTextPlaceholder'}}"/>
+            <label class="dd-label" style="margin:0">{{localize "DRAMADIRECTOR.group.partBgColor"}}</label>
             <input type="color" class="ddg-part-color dd-color" value="{{this.color}}"/>
-            <label class="dd-label" style="margin:0">Цвет текста</label>
+            <label class="dd-label" style="margin:0">{{localize "DRAMADIRECTOR.group.partTextColor"}}</label>
             <input type="color" class="ddg-part-tcolor dd-color" value="{{this.textColor}}"/>
           </div>
           <div class="ddg-part-params">
-            <label class="dd-param-group"><span>Масштаб</span>
+            <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.group.partScale"}}</span>
               <input type="number" class="ddg-part-scale dd-input-sm" value="{{this.scale}}" min="0.1" max="5" step="0.05"/>
             </label>
-            <label class="dd-param-group"><span>Сдвиг X</span>
+            <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.group.partOffsetX"}}</span>
               <input type="number" class="ddg-part-x dd-input-sm" value="{{this.x}}" step="10"/>
             </label>
-            <label class="dd-param-group"><span>Сдвиг Y</span>
+            <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.group.partOffsetY"}}</span>
               <input type="number" class="ddg-part-y dd-input-sm" value="{{this.y}}" step="10"/>
             </label>
-            <label class="dd-param-group"><span>Поворот°</span>
+            <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.group.partRotation"}}</span>
               <input type="number" class="ddg-part-rot dd-input-sm" value="{{this.rotation}}" min="-360" max="360" step="5"/>
             </label>
             <label class="dd-param-group dd-param-check">
               <input type="checkbox" class="ddg-part-mirror" {{#if this.mirror}}checked{{/if}}/>
-              <span>Зеркало</span>
+              <span>{{localize "DRAMADIRECTOR.group.partMirror"}}</span>
             </label>
           </div>
           <div class="dd-row" style="margin-top:4px">
-            <label class="dd-label" style="margin:0;flex:0 0 40px;font-size:10px">Звук</label>
-            <input type="text" class="ddg-part-sound dd-input" value="{{this.sound}}" placeholder="Звук при появлении…" style="font-size:11px"/>
-            <button type="button" data-part-action="browse-sound" title="Выбрать" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
+            <label class="dd-label" style="margin:0;flex:0 0 40px;font-size:10px">{{localize "DRAMADIRECTOR.group.partSound"}}</label>
+            <input type="text" class="ddg-part-sound dd-input" value="{{this.sound}}" placeholder="{{localize 'DRAMADIRECTOR.group.partSoundPlaceholder'}}" style="font-size:11px"/>
+            <button type="button" data-part-action="browse-sound" title="{{localize 'DRAMADIRECTOR.group.browse'}}" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
           </div>
           <div class="dd-row">
             <label class="dd-label" style="margin:0;flex:0 0 40px;font-size:10px">SFX</label>
-            <input type="text" class="ddg-part-sfx dd-input" value="{{this.sfx}}" placeholder="Доп. эффект…" style="font-size:11px"/>
-            <button type="button" data-part-action="browse-sfx" title="Выбрать" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
+            <input type="text" class="ddg-part-sfx dd-input" value="{{this.sfx}}" placeholder="{{localize 'DRAMADIRECTOR.group.partSfxPlaceholder'}}" style="font-size:11px"/>
+            <button type="button" data-part-action="browse-sfx" title="{{localize 'DRAMADIRECTOR.group.browse'}}" style="flex:0 0 24px;font-size:11px"><i class="fas fa-folder-open"></i></button>
           </div>
         </div>
       </div>
@@ -150,8 +150,8 @@
     {{else}}
     <div class="dd-empty-layers">
       <i class="fas fa-users" style="font-size:2em;opacity:.2;display:block;text-align:center;margin-bottom:8px"></i>
-      <p style="text-align:center;color:#777">Участники не добавлены</p>
-      <p class="dd-hint" style="text-align:center">Нажмите «Из токенов», «Из игроков» или «Добавить»</p>
+      <p style="text-align:center;color:#777">{{localize "DRAMADIRECTOR.group.emptyParticipants"}}</p>
+      <p class="dd-hint" style="text-align:center">{{localize "DRAMADIRECTOR.group.emptyHint"}}</p>
     </div>
     {{/if}}
   </div>

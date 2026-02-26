@@ -132,16 +132,16 @@ async function getTBCCreditsData() {
         img:  t.actor.img || t.document.texture.src,
       }));
       if (!portraits.length) {
-        portraits.push({ name: 'Мастер Подземелья', img: user.avatar || 'icons/svg/mystery-man.svg' });
+        portraits.push({ name: game.i18n.localize('DRAMADIRECTOR.endings.dungeonMaster'), img: user.avatar || 'icons/svg/mystery-man.svg' });
       }
       gmCredit = { userName: user.name, portraits };
     } else {
       const ch = user.character;
       playerCredits.push({
         userName:      user.name,
-        characterName: ch?.name || 'Неизвестный герой',
+        characterName: ch?.name || game.i18n.localize('DRAMADIRECTOR.endings.unknownHero'),
         portrait:      ch?.img  || user.avatar || 'icons/svg/mystery-man.svg',
-        role:          'в роли',
+        role:          game.i18n.localize('DRAMADIRECTOR.endings.asRole'),
       });
     }
   }
@@ -180,20 +180,20 @@ function createGMSlide(gm) {
   return `<div class="tbc-gm-slide">
     <div class="tbc-gm-header">
       <div class="tbc-gm-crown">✦</div>
-      <h3 class="tbc-gm-title">Мастер Подземелья</h3>
+      <h3 class="tbc-gm-title">${game.i18n.localize('DRAMADIRECTOR.endings.dungeonMaster')}</h3>
       <h1 class="tbc-gm-name">${gm.userName}</h1>
       <div class="tbc-gm-divider"></div>
-      <p class="tbc-gm-subtitle">В роли...</p>
+      <p class="tbc-gm-subtitle">${game.i18n.localize('DRAMADIRECTOR.endings.asRoleDots')}</p>
     </div>
     <div class="tbc-gm-portraits">${portraits}</div>
-    <p class="tbc-gm-others">...и многих других</p>
+    <p class="tbc-gm-others">${game.i18n.localize('DRAMADIRECTOR.endings.andOthers')}</p>
   </div>`;
 }
 
 function createFinalSlide() {
   return `<div class="tbc-final-slide">
     <div class="tbc-final-decoration"></div>
-    <h1 class="tbc-final-title">ПРОДОЛЖЕНИЕ СЛЕДУЕТ</h1>
+    <h1 class="tbc-final-title">${game.i18n.localize('DRAMADIRECTOR.endings.tbc')}</h1>
     <div class="tbc-final-line"></div>
     <p class="tbc-final-subtitle">To Be Continued...</p>
   </div>`;
@@ -304,7 +304,7 @@ export async function executeTBCEnding() {
   if (game.user.isGM) {
     const btn = document.createElement('button');
     btn.id = 'tbc-skip-btn'; btn.className = 'tbc-skip-button';
-    btn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    btn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     btn.addEventListener('click', () => {
       tbcSkipFlag = true;
       // Broadcast skip to players
@@ -415,7 +415,7 @@ async function getDirbyData() {
     playerName:    u.name,
     characterName: u.character?.name || '—',
   }));
-  return { gmName: gm?.name || 'Мастер Подземелья', players };
+  return { gmName: gm?.name || game.i18n.localize('DRAMADIRECTOR.endings.dungeonMaster'), players };
 }
 
 export async function executeDirectedByEnding() {
@@ -434,7 +434,7 @@ export async function executeDirectedByEnding() {
   if (game.user.isGM) {
     const btn = document.createElement('button');
     btn.id = 'dirby-skip-btn'; btn.className = 'dirby-skip-button';
-    btn.innerHTML = '<i class="fa-solid fa-forward"></i> Пропустить';
+    btn.innerHTML = `<i class="fa-solid fa-forward"></i> ${game.i18n.localize('DRAMADIRECTOR.intro.skip')}`;
     btn.addEventListener('click', () => {
       dirbySkipFlag = true;
       game.socket.emit(`module.${MODULE_ID}`, { action: 'dirbySkip' });
@@ -452,9 +452,9 @@ export async function executeDirectedByEnding() {
 
   // Three GM slides
   const gmSlides = [
-    { label: 'Режиссёр', name: gmName },
-    { label: 'Исполнительный продюсер', name: gmName },
-    { label: 'Продюсер', name: gmName },
+    { label: game.i18n.localize('DRAMADIRECTOR.endings.credDirector'), name: gmName },
+    { label: game.i18n.localize('DRAMADIRECTOR.endings.credExecProd'), name: gmName },
+    { label: game.i18n.localize('DRAMADIRECTOR.endings.credProducer'), name: gmName },
   ];
 
   for (const slide of gmSlides) {
@@ -475,10 +475,10 @@ export async function executeDirectedByEnding() {
   if (!isSkip() && players.length) {
     const grid = document.createElement('div');
     grid.className = 'dirby-starring-grid';
-    grid.innerHTML = `<div class="dirby-starring-title">В главных ролях</div>` +
+    grid.innerHTML = `<div class="dirby-starring-title">${game.i18n.localize('DRAMADIRECTOR.endings.starring')}</div>` +
       players.map(p => `<div class="dirby-starring-item">
         <span class="dirby-starring-player">${p.playerName}</span>
-        <span class="dirby-starring-as">в роли</span>
+        <span class="dirby-starring-as">${game.i18n.localize('DRAMADIRECTOR.endings.asRole')}</span>
         <span class="dirby-starring-char">${p.characterName}</span>
       </div>`).join('');
     overlay.innerHTML = ''; overlay.appendChild(grid);
@@ -496,7 +496,7 @@ export async function executeDirectedByEnding() {
   if (!isSkip()) {
     const thanks = document.createElement('div');
     thanks.className = 'dirby-thanks';
-    thanks.innerHTML = `<div class="dirby-thanks-title">Спасибо за игру!</div><div class="dirby-thanks-line"></div><div class="dirby-thanks-sub">До следующей сессии...</div>`;
+    thanks.innerHTML = `<div class="dirby-thanks-title">${game.i18n.localize('DRAMADIRECTOR.endings.thanks')}</div><div class="dirby-thanks-line"></div><div class="dirby-thanks-sub">${game.i18n.localize('DRAMADIRECTOR.endings.untilNext')}</div>`;
     overlay.innerHTML = ''; overlay.appendChild(thanks);
     await new Promise(r => setTimeout(r, 100));
     if (isSkip()) { dirbyCleanup(); return; }

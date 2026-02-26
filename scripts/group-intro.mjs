@@ -26,7 +26,7 @@ export const DD_GROUP_THEMES = [
   { id: 'comic',  label: 'Comic  (Persona 4)' },
   { id: 'urban',  label: 'Urban  (Persona 3)' },
   { id: 'noir',   label: 'Noir'               },
-  { id: 'wanted', label: 'Wanted (Разыскивается)' },
+  { id: 'wanted', label: game.i18n?.localize('DRAMADIRECTOR.group.themeWanted') || 'Wanted' },
   { id: 'slice',  label: 'Slice'              },
   { id: 'arcane', label: 'Arcane'             },
   { id: 'legion', label: 'Legion'             },
@@ -334,7 +334,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
   static DEFAULT_OPTIONS = {
     id: 'dd-group-panel', tag: 'div',
     classes: ['drama-director', 'dd-group-panel'],
-    window: { title: 'Drama Director — Групповое Интро', icon: 'fas fa-users', resizable: true },
+    window: { title: game.i18n.localize('DRAMADIRECTOR.group.windowTitle'), icon: 'fas fa-users', resizable: true },
     position: { width: 860, height: 700 },
   };
 
@@ -447,12 +447,12 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
     if (!this._data.participants[idx]) return;
     const actors = game.actors.filter(a => a.type !== 'group');
     const dialog = new Dialog({
-      title: 'Выбрать персонажа',
+      title: game.i18n.localize('DRAMADIRECTOR.group.dlgPickChar'),
       content: `<select id="dd-actor-pick" style="width:100%;margin-top:8px">
         ${actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
       </select>`,
       buttons: {
-        ok: { label: 'Выбрать', callback: html => {
+        ok: { label: game.i18n.localize('DRAMADIRECTOR.group.btnSelect'), callback: html => {
           const id = html.querySelector('#dd-actor-pick')?.value;
           const a = game.actors.get(id);
           if (!a) return;
@@ -460,7 +460,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
           this._data.participants[idx].text = a.name;
           this.render();
         }},
-        cancel: { label: 'Отмена' },
+        cancel: { label: game.i18n.localize('DRAMADIRECTOR.group.btnCancel') },
       },
     });
     dialog.render(true);
@@ -469,7 +469,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
   _fillFromTokens() {
     this._syncFromForm();
     const tokens = canvas.tokens.controlled;
-    if (!tokens.length) { ui.notifications.warn('Выберите токены на сцене.'); return; }
+    if (!tokens.length) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.group.warnTokens')); return; }
     this._data.participants = tokens.map(t => ({
       ...foundry.utils.deepClone(DEFAULT_PARTICIPANT),
       img:  t.document.texture.src || t.actor?.img || 'icons/svg/mystery-man.svg',
@@ -481,7 +481,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
   _fillFromPlayers() {
     this._syncFromForm();
     const players = game.users.filter(u => u.active && !u.isGM && u.character);
-    if (!players.length) { ui.notifications.warn('Нет активных игроков с персонажами.'); return; }
+    if (!players.length) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.group.warnPlayers')); return; }
     this._data.participants = players.map(u => ({
       ...foundry.utils.deepClone(DEFAULT_PARTICIPANT),
       img:  u.character.img || 'icons/svg/mystery-man.svg',
@@ -509,9 +509,9 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
   async _savePreset() {
     this._syncFromForm();
     const name = this.element.querySelector('#ddg-preset-name')?.value?.trim();
-    if (!name) return ui.notifications.warn('Введите название пресета.');
+    if (!name) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.group.warnPresetName'));
     await DDGroupPresets.save(name, this._data);
-    ui.notifications.info(`Пресет «${name}» сохранён.`);
+    ui.notifications.info(game.i18n.format('DRAMADIRECTOR.group.presetSaved', {name}));
     this.render();
   }
 
@@ -528,7 +528,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
     const name = this.element.querySelector('#ddg-preset-select')?.value;
     if (!name) return;
     await DDGroupPresets.delete(name);
-    ui.notifications.info(`Пресет «${name}» удалён.`);
+    ui.notifications.info(game.i18n.format('DRAMADIRECTOR.group.presetDeleted', {name}));
     this.render();
   }
 
@@ -539,7 +539,7 @@ export class DDGroupIntroPanel extends HandlebarsApplicationMixin(ApplicationV2)
       ? `// Групповое интро по пресету\ngame.dramaDirector.groupIntro.playPreset(${JSON.stringify(presetName)});`
       : `// Групповое интро с параметрами\ngame.dramaDirector.groupIntro.play(${JSON.stringify(this._data, null, 2)});`;
     navigator.clipboard.writeText(code)
-      .then(() => ui.notifications.info('Код макроса скопирован!'));
+      .then(() => ui.notifications.info(game.i18n.localize('DRAMADIRECTOR.cutin.notifications.macroCopied')));
   }
 }
 
@@ -550,7 +550,7 @@ export const DDGroupIntroAPI = {
   play(data)     { DDGroupIntroManager.play(data); game.socket.emit(`module.${MODULE_ID}`, { type: 'groupIntro', data }); },
   playPreset(name) {
     const p = DDGroupPresets.get(name);
-    if (!p) { ui.notifications.warn(`Групповой пресет «${name}» не найден.`); return; }
+    if (!p) { ui.notifications.warn(game.i18n.format('DRAMADIRECTOR.group.presetNotFound', {name})); return; }
     this.play(p);
   },
   stop()         { DDGroupIntroManager.stop(); },
