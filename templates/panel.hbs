@@ -14,7 +14,6 @@
   {{!-- Tabs --}}
   <div class="dd-tabs">
     <button class="dd-tab active" data-tab="intro"><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.tabs.intro"}}</button>
-    <button class="dd-tab" data-tab="presentations"><i class="fas fa-user-circle"></i> {{localize "DRAMADIRECTOR.tabs.presentations"}}</button>
     <button class="dd-tab" data-tab="endings"><i class="fas fa-door-open"></i> {{localize "DRAMADIRECTOR.tabs.endings"}}</button>
     <button class="dd-tab" data-tab="effects"><i class="fas fa-magic"></i> {{localize "DRAMADIRECTOR.tabs.effects"}}</button>
     <button class="dd-tab" data-tab="video"><i class="fas fa-video"></i> {{localize "DRAMADIRECTOR.tabs.video"}}</button>
@@ -62,59 +61,13 @@
     </div>
   </div>
 
-  {{!-- PRESENTATIONS TAB --}}
-  <div class="dd-tab-content hidden" data-content="presentations">
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-info-circle"></i> {{localize "DRAMADIRECTOR.presentations.section"}}</h3>
-      <p class="dd-hint-block">
-        <i class="fas fa-mouse-pointer"></i>
-        {{localize "DRAMADIRECTOR.presentations.hint"}}
-      </p>
-    </div>
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-sun"></i> {{localize "DRAMADIRECTOR.presentations.heroTitle"}} <span class="dd-badge">{{localize "DRAMADIRECTOR.presentations.heroBadge"}}</span></h3>
-      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.heroDesc"}}</p>
-      <button type="button" class="dd-intro-card-btn hero" data-intro-type="hero">
-        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.heroBtn"}}
-      </button>
-    </div>
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-skull"></i> {{localize "DRAMADIRECTOR.presentations.villainTitle"}} <span class="dd-badge villain-badge">{{localize "DRAMADIRECTOR.presentations.villainBadge"}}</span></h3>
-      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.villainDesc"}}</p>
-      <button type="button" class="dd-intro-card-btn villain" data-intro-type="villain">
-        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.villainBtn"}}
-      </button>
-    </div>
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-diamond"></i> {{localize "DRAMADIRECTOR.presentations.genshinTitle"}} <span class="dd-badge genshin-badge">{{localize "DRAMADIRECTOR.presentations.genshinBadge"}}</span></h3>
-      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.presentations.genshinDesc"}}</p>
-      <button type="button" class="dd-intro-card-btn genshin" data-intro-type="genshin">
-        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.presentations.genshinBtn"}}
-      </button>
-    </div>
-  </div>
-
   {{!-- ENDINGS TAB --}}
   <div class="dd-tab-content hidden" data-content="endings">
     <div class="dd-panel-section">
-      <h3><i class="fas fa-info-circle"></i> {{localize "DRAMADIRECTOR.endings.section"}}</h3>
-      <p class="dd-hint-block">
-        <i class="fas fa-users"></i>
-        {{localize "DRAMADIRECTOR.endings.hint"}}
-      </p>
-    </div>
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-arrow-right"></i> {{localize "DRAMADIRECTOR.endings.tbcTitle"}} <span class="dd-badge tbc-badge">{{localize "DRAMADIRECTOR.endings.tbcBadge"}}</span></h3>
-      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.endings.tbcDesc"}}</p>
-      <button type="button" class="dd-ending-btn tbc-btn" data-ending-type="tbc">
-        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.endings.tbcBtn"}}
-      </button>
-    </div>
-    <div class="dd-panel-section">
-      <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.endings.dirbyTitle"}} <span class="dd-badge dirby-badge">{{localize "DRAMADIRECTOR.endings.dirbyBadge"}}</span></h3>
-      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.endings.dirbyDesc"}}</p>
-      <button type="button" class="dd-ending-btn dirby-btn" data-ending-type="dirby">
-        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.endings.dirbyBtn"}}
+      <h3><i class="fas fa-tv"></i> {{localize "DRAMADIRECTOR.endings.wbrbTitle"}} <span class="dd-badge" style="background:rgba(255,255,255,.1);color:#ddd;border-color:rgba(255,255,255,.2);">{{localize "DRAMADIRECTOR.endings.wbrbBadge"}}</span></h3>
+      <p class="dd-card-desc">{{localize "DRAMADIRECTOR.endings.wbrbDesc"}}</p>
+      <button type="button" class="dd-ending-btn" style="background:linear-gradient(135deg,#111,#0a0a0a);border-color:rgba(255,255,255,0.3);color:#ffffff;font-weight:900;font-family:'Helvetica Neue',Arial,sans-serif;letter-spacing:.04em;" data-ending-type="wbrb">
+        <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.endings.wbrbBtn"}}
       </button>
     </div>
   </div>

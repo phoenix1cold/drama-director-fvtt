@@ -382,8 +382,8 @@ export class DDVNOverlay {
         }
 
         const nameHtml = char.name?.trim()
-          ? `<div class="vn-char-label" style="color:${charColor}">${char.name}${char.title ? `<br><span class="vn-char-title">${char.title}</span>` : ''}</div>`
-          : `<div class="vn-char-label" style="color:#888;font-style:italic;">${game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</div>`;
+          ? `<div class="vn-char-label"><span class="vn-char-label-name" style="color:${charColor}">${char.name}</span>${char.title ? `<span class="vn-char-title">${char.title}</span>` : ''}</div>`
+          : `<div class="vn-char-label"><span class="vn-char-label-name" style="color:#888;font-style:italic;">${game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</span></div>`;
 
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 

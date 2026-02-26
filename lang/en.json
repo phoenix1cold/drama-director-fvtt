@@ -83,7 +83,11 @@
       "credProducer": "Producer",
       "starring": "Starring",
       "thanks": "Thanks for playing!",
-      "untilNext": "Until next session..."
+      "untilNext": "Until next session...",
+      "wbrbTitle": "We'll Be Right Back",
+      "wbrbBadge": "Meme",
+      "wbrbDesc": "Freeze frame + Eric Andre style title card. Screen desaturates and freezes, the text appears instantly in the top-left corner.",
+      "wbrbBtn": "We'll Be Right Back"
     },
     "vignette": "Vignette",
     "grayscale": "Grayscale",

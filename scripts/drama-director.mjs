@@ -11,7 +11,7 @@ import {
   executeMacheteBloodIntro, skipMacheteBloodIntro,
   executeSnatchIntro, skipSnatchIntro,
 } from './introductions.mjs';
-import { executeTBCEnding, executeDirectedByEnding, skipTBCEnding, skipDirectedByEnding } from './endings.mjs';
+import { executeWBRBEnding, skipWBRBEnding } from './endings.mjs';
 import { initCutinSystem, DDCutinAPI, DDCutinPanel } from './cutin.mjs';
 import { initVNSystem, DDVNApi } from './visual-novel.mjs';
 
@@ -157,10 +157,8 @@ class DramaDirector {
         case 'macheteBloodIntro': executeMacheteBloodIntro(data.campaignName ?? ''); break;
         case 'macheteBloodSkip':  skipMacheteBloodIntro(); break;
         case 'snatchSkip':      skipSnatchIntro(); break;
-        case 'tbcEnding':       executeTBCEnding(); break;
-        case 'dirbyEnding':     executeDirectedByEnding(); break;
-        case 'tbcSkip':         skipTBCEnding(); break;
-        case 'dirbySkip':       skipDirectedByEnding(); break;
+        case 'wbrbEnding':      executeWBRBEnding(); break;
+        case 'wbrbSkip':        skipWBRBEnding(); break;
       }
     });
   }
@@ -549,12 +547,11 @@ class DramaDirector {
   // ─── Endings ──────────────────────────────────────────────────────────────
 
   async triggerEnding(type, targetUser = null) {
-    const action = { tbc: 'tbcEnding', dirby: 'dirbyEnding' }[type];
+    const action = { wbrb: 'wbrbEnding' }[type];
     if (!action) return;
 
     // Run locally
-    if (type === 'tbc')   executeTBCEnding();
-    if (type === 'dirby') executeDirectedByEnding();
+    if (type === 'wbrb')  executeWBRBEnding();
 
     // Emit to others
     if (game.user.isGM) {

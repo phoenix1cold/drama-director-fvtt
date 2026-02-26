@@ -83,7 +83,11 @@
       "credProducer": "Продюсер",
       "starring": "В главных ролях",
       "thanks": "Спасибо за игру!",
-      "untilNext": "До следующей сессии..."
+      "untilNext": "До следующей сессии...",
+      "wbrbTitle": "We'll Be Right Back",
+      "wbrbBadge": "Мем",
+      "wbrbDesc": "Стоп-кадр + заставка в стиле шоу Эрика Андре. Экран теряет цвет и замирает, текст резко появляется в верхнем левом углу.",
+      "wbrbBtn": "We'll Be Right Back"
     },
     "vignette": "Виньетка",
     "grayscale": "Ч/Б фильтр",

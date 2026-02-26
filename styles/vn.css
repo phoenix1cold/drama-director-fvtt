@@ -211,31 +211,49 @@
 
 .vn-char-label {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 15px;
-  font-size: 18px; font-weight: bold; text-align: center; white-space: nowrap;
-  color: #ffe066;
-  text-shadow: 0 2px 8px #000, 0 0 20px rgba(0,0,0,.9);
-  background: rgba(0,0,0,.85);
-  padding: 6px 20px;
-  border-radius: 6px;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  white-space: nowrap;
+  padding: 28px 20px 14px;
   z-index: 25;
   opacity: 0;
-  transition: opacity .2s;
+  transition: opacity .25s;
   pointer-events: none;
-  border: 1px solid rgba(255,220,60,.3);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,.55) 35%,
+    rgba(0,0,0,.82) 100%
+  );
+  border-bottom: 2px solid rgba(255,220,60,.25);
+}
+.vn-char-label-name {
+  display: block;
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffe066;
+  text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,.9);
+  letter-spacing: .04em;
 }
 .vn-char:hover .vn-char-label,
 .vn-char-active .vn-char-label {
   opacity: 1;
 }
 .vn-char-active .vn-char-label {
-  border-color: rgba(255,220,60,.7);
-  box-shadow: 0 0 15px rgba(255,220,60,.4);
+  border-bottom-color: rgba(255,220,60,.65);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,0,0,.6) 35%,
+    rgba(0,0,0,.88) 100%
+  );
 }
-.vn-char-title { font-size: 14px; font-weight: normal; display: block; opacity: 0.9; }
+.vn-char-active .vn-char-label-name {
+  text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255,220,60,.5);
+}
+.vn-char-title { font-size: 15px; font-weight: normal; display: block; color: #d4c080; opacity: 0.85; margin-top: 3px; text-shadow: 0 1px 6px rgba(0,0,0,1); }
 
 /* ── Диалоговое окно ───────────────────────────────────────────────────── */
 .vn-dialogue-box {

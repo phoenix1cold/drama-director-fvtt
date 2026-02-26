@@ -48,7 +48,6 @@ Manifest URL: https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt
 ### 📚 Resources Used
 
 - **Backgrounds** — from *The Mad Cartographer* packs  
-- **Endings & assets** — from *SweetyHake Showstopper* module  
 - **Cinematic cut-ins** — from *Cinematic Cut-ins* by GlitchSmith  
 
 > The included assets are not a replacement for the original authors’ modules.  
@@ -95,8 +94,6 @@ https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt/main/module.j
 Используемые ресурсы
 
 Фоны: взяты из паков The Mad Cartographer
-
-Эндинги и ассеты: взяты из модуля SweetyHake Showstopper
 
 Кинематографические вставки: ресурсы из модуля Cinematic Cut-ins от GlitchSmith
 
