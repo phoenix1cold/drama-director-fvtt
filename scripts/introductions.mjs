@@ -371,6 +371,11 @@ export async function executeSinCityIntro(campaignName = '') {
   const gmUser  = game.users.find(u => u.isGM && u.active) || game.users.find(u => u.isGM);
   const gmName  = gmUser?.name || 'Game Master';
 
+  // Audio
+  scAudio = new Audio(`modules/${MODULE_ID}/assets/sounds/sin.ogg`);
+  scAudio.volume = 0.85;
+  scAudio.play().catch(() => {});
+
   // Build overlay — curtain starts OPAQUE (everything hidden behind it)
   const overlay = document.createElement('div');
   overlay.className = 'sc-overlay';
@@ -736,6 +741,11 @@ export async function executeSnatchIntro(campaignName = '') {
   const players = await getSnatchPlayersData();
   const gmUser  = game.users.find(u => u.isGM && u.active) || game.users.find(u => u.isGM);
   const gmName  = gmUser?.name || game.i18n.localize('DRAMADIRECTOR.intro.gmDefault');
+
+  // Audio
+  snatchAudio = new Audio(`modules/${MODULE_ID}/assets/sounds/snatch.ogg`);
+  snatchAudio.volume = 0.85;
+  snatchAudio.play().catch(() => {});
 
   // Build overlay
   const overlay = document.createElement('div');
