@@ -944,7 +944,6 @@ export function skipSnatchIntro() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HERO INTRO — CSS 1:1 showstopper persona-*
 // ═══════════════════════════════════════════════════════════════════════════
 injectStyles('dd-hero-styles', `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@700&display=swap');
