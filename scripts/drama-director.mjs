@@ -856,8 +856,6 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       game.dramaDirector.stopVideo(targetUser);
     });
 
-    // ── ГРУППОВОЕ ИНТРО TAB ───────────────────────────────────────────────
-
     // ── VISUAL NOVEL TAB ──────────────────────────────────────────────────
     html.querySelector('[data-action="open-vn-panel"]')?.addEventListener('click', () => {
       DDVNApi.openPanel();
