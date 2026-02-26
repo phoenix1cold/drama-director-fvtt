@@ -18,7 +18,6 @@ Turn your sessions into immersive movies with epic intros, dramatic character re
 | Category | Description |
 |----------|------------|
 | 🎭 **Cinematic Intros** | Multiple stylish intro sequences |
-| 👤 **Character Introductions** | Dramatic entrance styles for PCs and NPCs |
 | 🏁 **Endings** | Session-ending cinematic sequences |
 | ✨ **Map Effects** | Vignette, Black & White, Sepia, Film Grain, Glitch, Blood overlay, Sakura petals |
 | 📺 **Video Player** | Play video overlays on scenes for all players simultaneously |
@@ -73,7 +72,6 @@ Manifest URL: https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt
 | Категория | Описание |
 |-----------|----------|
 | **🎭 Кинематографические вступления** | Различные интро |
-| **👤 Представления персонажей** | Стили для драматичного выхода |
 | **🏁 Эндинги** | Различные завершения сессий |
 | **✨ Эффекты карты** | Виньетка, Ч/Б, сепия, плёнка, глитч, кровь, сакура |
 | **📺 Видеоплеер** | Воспроизведение видео поверх сцены для всех игроков |
