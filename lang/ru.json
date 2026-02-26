@@ -54,7 +54,6 @@
       "bloodTitle3": "нецензурная лексика в полном объёме",
       "bloodTitle4": "производство \"{name}\""
     },
-
     "endings": {
       "dungeonMaster": "Мастер Подземелья",
       "unknownHero": "Неизвестный герой",
@@ -71,7 +70,13 @@
       "wbrbTitle": "We'll Be Right Back",
       "wbrbBadge": "Мем",
       "wbrbDesc": "Стоп-кадр + заставка в стиле шоу Эрика Андре. Экран теряет цвет и замирает, текст резко появляется в верхнем левом углу.",
-      "wbrbBtn": "We'll Be Right Back"
+      "wbrbBtn": "We'll Be Right Back",
+      "jojoTitle": "Аниме концовка",
+      "jojoBadge": "JoJo Style",
+      "jojoDesc": "Классическая концовка в стиле аниме: стоп-кадр, портреты персонажей, титры с именами игроков и авторством ГМа.",
+      "jojoBtn": "▶ Запустить JoJo ED",
+      "jojoProduction": "ПРОИЗВОДСТВО",
+      "jojoTbc": "ПРОДОЛЖЕНИЕ СЛЕДУЕТ..."
     },
     "vignette": "Виньетка",
     "grayscale": "Ч/Б фильтр",
@@ -127,7 +132,6 @@
       "play": "Воспроизвести",
       "stop": "Остановить"
     },
-
     "vn": {
       "section": "Режим визуальной новеллы",
       "desc": "Полноэкранный VN-оверлей поверх сцены.",
@@ -342,6 +346,35 @@
       "noSavedScenes": "Нет сохранённых сцен",
       "noSavedRosters": "Нет сохранённых ростеров",
       "noChars": "Нет персонажей"
-    }
+    },
+    "imageSection": "Изображение",
+    "imagePath": "Путь к изображению",
+    "imageScale": "Масштаб изображения",
+    "imageX": "X изображения",
+    "imageY": "Y изображения",
+    "textScale": "Масштаб текста",
+    "textX": "X текста",
+    "textY": "Y текста",
+    "charIntro": "Представление персонажа",
+    "charIntroHint": "Показывает портрет персонажа с рамкой и анимацией",
+    "charIntroToken": "Выберите токен",
+    "charIntroAnim": "Анимация появления",
+    "charIntroAnimFade": "Появление",
+    "charIntroAnimSlideLeft": "Слайд слева",
+    "charIntroAnimSlideRight": "Слайд справа",
+    "charIntroAnimZoom": "Зум",
+    "charIntroAnimSmoke": "Дым",
+    "charIntroNoToken": "Нет токенов на сцене",
+    "presetsSection": "Пресеты",
+    "presetName": "Название пресета",
+    "presetSave": "Сохранить",
+    "presetLoad": "Загрузить пресет",
+    "presetDelete": "Удалить",
+    "presetNoPresets": "Нет сохранённых пресетов",
+    "copyMacro": "Скопировать как макрос",
+    "macroCopied": "Макрос скопирован!",
+    "presetSaved": "Пресет сохранён: {name}",
+    "presetLoaded": "Пресет загружен: {name}",
+    "presetDeleted": "Пресет удалён"
   }
 }

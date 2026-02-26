@@ -9,7 +9,7 @@ import {
   executeMacheteBloodIntro, skipMacheteBloodIntro,
   executeSnatchIntro, skipSnatchIntro,
 } from './introductions.mjs';
-import { executeWBRBEnding, skipWBRBEnding } from './endings.mjs';
+import { executeWBRBEnding, skipWBRBEnding, executeJojoEnding, skipJojoEnding } from './endings.mjs';
 import { initVNSystem, DDVNApi } from './visual-novel.mjs';
 
 const MODULE_ID = 'drama-director';
@@ -75,6 +75,11 @@ class DramaDirector {
       hint: 'DRAMADIRECTOR.settings.soundVolumeHint',
       scope: 'client', config: true, type: Number,
       range: { min: 0, max: 1, step: 0.1 }, default: 0.7,
+    });
+
+    // Text effect presets — stored per-world, GM only
+    game.settings.register(MODULE_ID, 'textPresets', {
+      scope: 'world', config: false, type: Array, default: [],
     });
 
     // Apply language override: load the chosen lang file and merge into i18n
@@ -153,6 +158,8 @@ class DramaDirector {
         case 'snatchSkip':      skipSnatchIntro(); break;
         case 'wbrbEnding':      executeWBRBEnding(); break;
         case 'wbrbSkip':        skipWBRBEnding(); break;
+        case 'jojoEnding':      executeJojoEnding(); break;
+        case 'jojoSkip':        skipJojoEnding(); break;
       }
     });
   }
@@ -379,23 +386,180 @@ class DramaDirector {
   // ─── Text ─────────────────────────────────────────────────────────────────
 
   _effectText(o = {}) {
-    const text     = o.text ?? '';
-    const subtitle = o.subtitle ?? '';
-    const style    = o.style ?? 'default';
-    const animation= o.animation ?? 'fade';
-    const duration = o.duration ?? game.settings.get(MODULE_ID, 'defaultTextDuration');
-    const color    = o.color ?? '#ffffff';
+    const text      = o.text ?? '';
+    const subtitle  = o.subtitle ?? '';
+    const style     = o.style ?? 'default';
+    const animation = o.animation ?? 'fade';
+    const duration  = o.duration ?? game.settings.get(MODULE_ID, 'defaultTextDuration');
+    const color     = o.color ?? '#ffffff';
+
+    // Transform options
+    const textScale = o.textScale ?? 1;
+    const textX     = o.textX ?? 0;   // % offset
+    const textY     = o.textY ?? 0;
+
+    // Image options
+    const imageUrl   = o.image ?? '';
+    const imageScale = o.imageScale ?? 1;
+    const imageX     = o.imageX ?? 0;
+    const imageY     = o.imageY ?? 0;
+
+    // Character Introduction
+    const charIntro = o.charIntro ?? false;
+    const tokenId   = o.tokenId ?? '';
+    const charAnim  = o.charIntroAnim ?? 'fade';
 
     const posMap = { 'left-block':'pos-left','right-block':'pos-right','bottom':'pos-bottom' };
     const posClass = posMap[style] ?? 'pos-center';
     this.overlays.text.className = `dd-effect ${posClass}`;
-
-    const subHtml = (style === 'chapter' && subtitle)
-      ? `<div class="dd-dramatic-subtitle">${subtitle}</div>` : '';
-    this.overlays.text.innerHTML = `<div class="dd-dramatic-text style-${style} anim-${animation}">${text}${subHtml}</div>`;
     this.overlays.text.style.color = color;
     this.overlays.text.style.setProperty('--text-duration', `${duration}ms`);
+    this.overlays.text.innerHTML = '';
+
+    // ── Image layer ──
+    if (imageUrl) {
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'dd-image-layer';
+      imgWrap.style.cssText = `
+        transform: translate(${imageX}%, ${imageY}%) scale(${imageScale});
+        transform-origin: center center;
+        animation: text-fade-in 0.5s ease-out forwards;
+      `;
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      imgWrap.appendChild(img);
+      this.overlays.text.appendChild(imgWrap);
+    }
+
+    // ── Character Introduction overlay ──
+    if (charIntro) {
+      this._effectCharIntro(tokenId, text, charAnim, duration, this.overlays.text);
+    } else {
+      // ── Regular text ──
+      const subHtml = (style === 'chapter' && subtitle)
+        ? `<div class="dd-dramatic-subtitle">${subtitle}</div>` : '';
+
+      const textWrap = document.createElement('div');
+      textWrap.className = 'dd-text-layer-wrap';
+      textWrap.style.cssText = `
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: ${posClass === 'pos-bottom' ? 'flex-end' : posClass === 'pos-left' || posClass === 'pos-right' ? 'center' : 'center'};
+        justify-content: ${posClass === 'pos-left' ? 'flex-start' : posClass === 'pos-right' ? 'flex-end' : 'center'};
+        transform: translate(${textX}%, ${textY}%);
+      `;
+
+      const textEl = document.createElement('div');
+      textEl.className = `dd-dramatic-text style-${style} anim-${animation}`;
+      textEl.style.transform = `scale(${textScale})`;
+      textEl.innerHTML = text + subHtml;
+      textWrap.appendChild(textEl);
+      this.overlays.text.appendChild(textWrap);
+    }
+
+    this.overlays.text.classList.remove('hidden');
     setTimeout(() => this.overlays.text.classList.add('hidden'), duration);
+  }
+
+  // ─── Character Introduction ───────────────────────────────────────────────
+
+  _effectCharIntro(tokenId, nameText, animStyle, duration, container) {
+    // Resolve portrait
+    let portrait = 'icons/svg/mystery-man.svg';
+    let title = '';
+    if (tokenId) {
+      const token = canvas?.tokens?.placeables?.find(t => t.id === tokenId);
+      if (token?.actor) {
+        portrait = token.actor.img || portrait;
+        const actor = token.actor;
+        const cls = Object.values(actor.classes ?? {});
+        title = cls.length ? cls.map(c => c.name).join(' / ')
+              : (actor.system?.details?.race || actor.system?.details?.type?.value || '');
+        if (title) title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = `dd-char-intro-overlay${animStyle === 'smoke' ? '' : ` anim-${animStyle}`}`;
+
+    overlay.innerHTML = `
+      <div class="dd-char-intro-portrait-wrap">
+        <div class="dd-char-frame">
+          <img src="${portrait}" alt="${nameText}" onerror="this.src='icons/svg/mystery-man.svg'">
+        </div>
+        ${nameText ? `<div class="dd-char-intro-name">${nameText}</div>` : ''}
+        ${title    ? `<div class="dd-char-intro-title">${title}</div>` : ''}
+      </div>
+    `;
+
+    container.appendChild(overlay);
+
+    // Smoke animation via SVG displacement filter
+    if (animStyle === 'smoke') {
+      overlay.style.opacity = '0';
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;top:0;left:0;pointer-events:none;';
+      const fid = `dd-ci-sf-${Date.now()}`;
+      svg.innerHTML = `<defs><filter id="${fid}" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence id="${fid}-t" type="fractalNoise" baseFrequency="0.025 0.04" numOctaves="5" seed="${(Math.random()*100)|0}" result="noise"/>
+        <feDisplacementMap id="${fid}-d" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+      </filter></defs>`;
+      document.body.appendChild(svg);
+      const turb = svg.querySelector(`#${fid}-t`);
+      const disp = svg.querySelector(`#${fid}-d`);
+      overlay.style.filter = `url(#${fid})`;
+      let start = null;
+      const dur = 1000;
+      const frame = (ts) => {
+        if (!start) start = ts;
+        const raw = Math.min((ts - start) / dur, 1);
+        const p = 1 - Math.pow(1 - raw, 2);
+        const scale = (1 - p) * 220;
+        const freq = 0.025 + (1 - p) * 0.1;
+        turb.setAttribute('baseFrequency', `${freq.toFixed(4)} ${(freq*1.7).toFixed(4)}`);
+        disp.setAttribute('scale', scale.toFixed(1));
+        overlay.style.opacity = raw.toString();
+        if (raw < 1) requestAnimationFrame(frame);
+        else { svg.remove(); overlay.style.filter = ''; }
+      };
+      requestAnimationFrame(frame);
+    }
+  }
+
+  // ─── Presets ──────────────────────────────────────────────────────────────
+
+  getTextPresets() {
+    try { return game.settings.get(MODULE_ID, 'textPresets') ?? []; }
+    catch(e) { return []; }
+  }
+
+  async saveTextPreset(name, options) {
+    if (!name) return;
+    const presets = this.getTextPresets().filter(p => p.name !== name);
+    presets.push({ name, options });
+    await game.settings.set(MODULE_ID, 'textPresets', presets);
+    ui.notifications?.info(game.i18n.format('DRAMADIRECTOR.presetSaved', { name }));
+    return presets;
+  }
+
+  async deleteTextPreset(name) {
+    if (!name) return;
+    const presets = this.getTextPresets().filter(p => p.name !== name);
+    await game.settings.set(MODULE_ID, 'textPresets', presets);
+    ui.notifications?.info(game.i18n.localize('DRAMADIRECTOR.presetDeleted'));
+    return presets;
+  }
+
+  // ─── Macro generation ────────────────────────────────────────────────────
+
+  generateTextMacro(options, targetUser = null) {
+    const opts = JSON.stringify(options, null, 2);
+    const userArg = targetUser ? `, "${targetUser}"` : '';
+    return `// Drama Director — Text Effect Macro
+// Generated ${new Date().toLocaleDateString()}
+game.dramaDirector.applyEffect('text', ${opts}${userArg});`;
   }
 
   // ─── Cinematic Intro ──────────────────────────────────────────────────────
@@ -516,13 +680,12 @@ class DramaDirector {
   // ─── Endings ──────────────────────────────────────────────────────────────
 
   async triggerEnding(type, targetUser = null) {
-    const action = { wbrb: 'wbrbEnding' }[type];
+    const action = { wbrb: 'wbrbEnding', jojo: 'jojoEnding' }[type];
     if (!action) return;
 
-    // Run locally
-    if (type === 'wbrb')  executeWBRBEnding();
+    if (type === 'wbrb') executeWBRBEnding();
+    if (type === 'jojo') executeJojoEnding();
 
-    // Emit to others
     if (game.user.isGM) {
       game.socket.emit(SOCKET_EVENT, { action, targetUser: targetUser || null });
     }
@@ -780,14 +943,179 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
     textStyleSelect?.addEventListener('change', updateSub);
     updateSub();
 
+    // Image file picker
+    html.querySelector('[data-action="browse-image"]')?.addEventListener('click', () => {
+      new FilePicker({ type: 'image', callback: (path) => {
+        const input = html.querySelector('#dd-image-url');
+        if (input) input.value = path;
+      }}).render(true);
+    });
+
+    // Character Introduction toggle
+    const charIntroCheck = html.querySelector('#dd-char-intro-enabled');
+    const charIntroPanel = html.querySelector('#dd-char-intro-panel');
+    const tokenSelect    = html.querySelector('#dd-char-intro-token');
+    const previewFrame   = html.querySelector('#dd-char-preview-frame');
+    const previewImg     = html.querySelector('#dd-char-preview-img');
+
+    const populateTokens = () => {
+      if (!tokenSelect) return;
+      tokenSelect.innerHTML = '<option value="">— ' + game.i18n.localize('DRAMADIRECTOR.charIntroToken') + ' —</option>';
+      const tokens = canvas?.tokens?.placeables ?? [];
+      tokens.forEach(t => {
+        if (!t.actor) return;
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.document?.name || t.actor.name;
+        tokenSelect.appendChild(opt);
+      });
+    };
+
+    charIntroCheck?.addEventListener('change', (e) => {
+      charIntroPanel?.classList.toggle('hidden', !e.target.checked);
+      if (e.target.checked) populateTokens();
+    });
+
+    // Token preview update
+    tokenSelect?.addEventListener('change', (e) => {
+      const tokenId = e.target.value;
+      const token = canvas?.tokens?.placeables?.find(t => t.id === tokenId);
+      if (token?.actor?.img && previewImg && previewFrame) {
+        previewImg.style.backgroundImage = `url('${token.actor.img}')`;
+        previewFrame.classList.add('has-portrait');
+        // Update preview label to show name
+        const lbl = previewFrame.querySelector('.dd-char-preview-label');
+        if (lbl) lbl.textContent = token.document?.name || token.actor.name;
+      } else if (previewImg && previewFrame) {
+        previewImg.style.backgroundImage = '';
+        previewFrame.classList.remove('has-portrait');
+        const lbl = previewFrame.querySelector('.dd-char-preview-label');
+        if (lbl) lbl.textContent = game.i18n.localize('DRAMADIRECTOR.charIntroToken');
+      }
+    });
+
+    // ── Preset helpers ─────────────────────────────────────────────────────
+    const presetSelect = html.querySelector('#dd-preset-select');
+
+    const collectOptions = () => {
+      const text       = html.querySelector('#dd-custom-text')?.value?.trim() ?? '';
+      const subtitle   = html.querySelector('#dd-text-subtitle')?.value?.trim() ?? '';
+      const style      = html.querySelector('#dd-text-style')?.value ?? 'default';
+      const animation  = html.querySelector('#dd-text-animation')?.value ?? 'fade';
+      const duration   = parseInt(html.querySelector('#dd-text-duration')?.value) || 4000;
+      const textScale  = parseFloat(html.querySelector('#dd-text-scale')?.value) || 1;
+      const textX      = parseFloat(html.querySelector('#dd-text-x')?.value) || 0;
+      const textY      = parseFloat(html.querySelector('#dd-text-y')?.value) || 0;
+      const image      = html.querySelector('#dd-image-url')?.value?.trim() ?? '';
+      const imageScale = parseFloat(html.querySelector('#dd-image-scale')?.value) || 1;
+      const imageX     = parseFloat(html.querySelector('#dd-image-x')?.value) || 0;
+      const imageY     = parseFloat(html.querySelector('#dd-image-y')?.value) || 0;
+      const charIntro  = html.querySelector('#dd-char-intro-enabled')?.checked ?? false;
+      const tokenId    = html.querySelector('#dd-char-intro-token')?.value ?? '';
+      const charIntroAnim = html.querySelector('#dd-char-intro-anim')?.value ?? 'fade';
+      const opts = { text, style, animation, duration, textScale, textX, textY };
+      if (subtitle)   opts.subtitle   = subtitle;
+      if (image)      { opts.image = image; opts.imageScale = imageScale; opts.imageX = imageX; opts.imageY = imageY; }
+      if (charIntro)  { opts.charIntro = true; opts.charIntroAnim = charIntroAnim; if (tokenId) opts.tokenId = tokenId; }
+      return opts;
+    };
+
+    const applyOptionsToPanel = (opts) => {
+      const set = (sel, val) => { const el = html.querySelector(sel); if (el) el.value = val ?? ''; };
+      const setCheck = (sel, val) => { const el = html.querySelector(sel); if (el) el.checked = !!val; };
+      set('#dd-custom-text',     opts.text ?? '');
+      set('#dd-text-subtitle',   opts.subtitle ?? '');
+      set('#dd-text-style',      opts.style ?? 'default');
+      set('#dd-text-animation',  opts.animation ?? 'fade');
+      set('#dd-text-duration',   opts.duration ?? 4000);
+      set('#dd-text-scale',      opts.textScale ?? 1);
+      set('#dd-text-x',          opts.textX ?? 0);
+      set('#dd-text-y',          opts.textY ?? 0);
+      set('#dd-image-url',       opts.image ?? '');
+      set('#dd-image-scale',     opts.imageScale ?? 1);
+      set('#dd-image-x',         opts.imageX ?? 0);
+      set('#dd-image-y',         opts.imageY ?? 0);
+      setCheck('#dd-char-intro-enabled', opts.charIntro);
+      if (opts.charIntro) {
+        charIntroPanel?.classList.remove('hidden');
+        populateTokens();
+        // Defer token select to next tick so options are populated
+        setTimeout(() => {
+          set('#dd-char-intro-token', opts.tokenId ?? '');
+          set('#dd-char-intro-anim',  opts.charIntroAnim ?? 'fade');
+          tokenSelect?.dispatchEvent(new Event('change'));
+        }, 50);
+      } else {
+        charIntroPanel?.classList.add('hidden');
+      }
+      updateSub();
+    };
+
+    const refreshPresetDropdown = (presets) => {
+      if (!presetSelect) return;
+      const cur = presetSelect.value;
+      presetSelect.innerHTML = `<option value="">— ${game.i18n.localize('DRAMADIRECTOR.presetLoad')} —</option>`;
+      (presets || game.dramaDirector.getTextPresets()).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        opt.textContent = p.name;
+        presetSelect.appendChild(opt);
+      });
+      if (cur) presetSelect.value = cur;
+    };
+
+    refreshPresetDropdown();
+
+    // Save preset
+    html.querySelector('[data-action="preset-save"]')?.addEventListener('click', async () => {
+      const name = html.querySelector('#dd-preset-name')?.value?.trim();
+      if (!name) return;
+      const opts = collectOptions();
+      const presets = await game.dramaDirector.saveTextPreset(name, opts);
+      refreshPresetDropdown(presets);
+      if (presetSelect) presetSelect.value = name;
+    });
+
+    // Load preset
+    html.querySelector('[data-action="preset-load"]')?.addEventListener('click', () => {
+      const name = presetSelect?.value;
+      if (!name) return;
+      const preset = game.dramaDirector.getTextPresets().find(p => p.name === name);
+      if (!preset) return;
+      applyOptionsToPanel(preset.options);
+      ui.notifications?.info(game.i18n.format('DRAMADIRECTOR.presetLoaded', { name }));
+    });
+
+    // Delete preset
+    html.querySelector('[data-action="preset-delete"]')?.addEventListener('click', async () => {
+      const name = presetSelect?.value;
+      if (!name) return;
+      const presets = await game.dramaDirector.deleteTextPreset(name);
+      refreshPresetDropdown(presets);
+    });
+
+    // Show text
     html.querySelector('[data-action="show-text"]')?.addEventListener('click', () => {
-      const text      = html.querySelector('#dd-custom-text')?.value?.trim();
-      const subtitle  = html.querySelector('#dd-text-subtitle')?.value?.trim();
-      const style     = html.querySelector('#dd-text-style')?.value;
-      const animation = html.querySelector('#dd-text-animation')?.value;
-      const duration  = parseInt(html.querySelector('#dd-text-duration')?.value) || 4000;
+      const opts = collectOptions();
       const targetUser = html.querySelector('#dd-target-user')?.value || null;
-      if (text) game.dramaDirector.applyEffect('text', { text, subtitle, style, animation, duration }, targetUser);
+      if (opts.text || opts.charIntro) game.dramaDirector.applyEffect('text', opts, targetUser);
+    });
+
+    // Copy as macro
+    html.querySelector('[data-action="copy-macro"]')?.addEventListener('click', () => {
+      const opts = collectOptions();
+      const targetUser = html.querySelector('#dd-target-user')?.value || null;
+      const macro = game.dramaDirector.generateTextMacro(opts, targetUser);
+      navigator.clipboard?.writeText(macro).then(() => {
+        ui.notifications?.info(game.i18n.localize('DRAMADIRECTOR.macroCopied'));
+      }).catch(() => {
+        // Fallback: show in dialog
+        new Dialog({
+          title: game.i18n.localize('DRAMADIRECTOR.copyMacro'),
+          content: `<textarea style="width:100%;height:200px;font-family:monospace;font-size:11px">${macro}</textarea>`,
+          buttons: { ok: { label: 'OK' } }
+        }).render(true);
+      });
     });
 
     html.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
@@ -867,6 +1195,7 @@ Hooks.once('ready', () => {
     macheteBlood: (name) => game.dramaDirector.triggerMacheteBloodIntro(name),
     snatch:       (name) => game.dramaDirector.triggerSnatchIntro(name),
     ending:       (type) => game.dramaDirector.triggerEnding(type),
+    jojo:         ()     => game.dramaDirector.triggerEnding('jojo'),
     // Group intros
     // Visual Novel
     vn: DDVNApi,

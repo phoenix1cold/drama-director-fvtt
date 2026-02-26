@@ -66,7 +66,13 @@
       "wbrbTitle": "We'll Be Right Back",
       "wbrbBadge": "Meme",
       "wbrbDesc": "Freeze frame + Eric Andre style title card. Screen desaturates and freezes, the text appears instantly in the top-left corner.",
-      "wbrbBtn": "We'll Be Right Back"
+      "wbrbBtn": "We'll Be Right Back",
+      "jojoTitle": "Anime Ending",
+      "jojoBadge": "JoJo Style",
+      "jojoDesc": "Classic anime-style ending: freeze frame, character portraits, credits with player names and GM production credit.",
+      "jojoBtn": "▶ Run JoJo ED",
+      "jojoProduction": "PRODUCTION",
+      "jojoTbc": "TO BE CONTINUED..."
     },
     "vignette": "Vignette",
     "grayscale": "Grayscale",
@@ -122,7 +128,6 @@
       "play": "Play",
       "stop": "Stop"
     },
-
     "vn": {
       "section": "Visual Novel Mode",
       "desc": "Full-screen VN overlay on top of the scene.",
@@ -337,6 +342,35 @@
       "noSavedScenes": "No saved scenes",
       "noSavedRosters": "No saved rosters",
       "noChars": "No characters"
-    }
+    },
+    "imageSection": "Image",
+    "imagePath": "Image Path",
+    "imageScale": "Image Scale",
+    "imageX": "Image X",
+    "imageY": "Image Y",
+    "textScale": "Text Scale",
+    "textX": "Text X",
+    "textY": "Text Y",
+    "charIntro": "Character Introduction",
+    "charIntroHint": "Shows character portrait with frame and entrance animation",
+    "charIntroToken": "Select Token",
+    "charIntroAnim": "Entrance Animation",
+    "charIntroAnimFade": "Fade In",
+    "charIntroAnimSlideLeft": "Slide from Left",
+    "charIntroAnimSlideRight": "Slide from Right",
+    "charIntroAnimZoom": "Zoom In",
+    "charIntroAnimSmoke": "Smoke",
+    "charIntroNoToken": "No tokens on scene",
+    "presetsSection": "Presets",
+    "presetName": "Preset name",
+    "presetSave": "Save",
+    "presetLoad": "Load Preset",
+    "presetDelete": "Delete",
+    "presetNoPresets": "No saved presets",
+    "copyMacro": "Copy as Macro",
+    "macroCopied": "Macro copied!",
+    "presetSaved": "Preset saved: {name}",
+    "presetLoaded": "Preset loaded: {name}",
+    "presetDeleted": "Preset deleted"
   }
 }
