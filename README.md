@@ -21,7 +21,6 @@ Turn your sessions into immersive movies with epic intros, dramatic character re
 | 🏁 **Endings** | Session-ending cinematic sequences |
 | ✨ **Map Effects** | Vignette, Black & White, Sepia, Film Grain, Glitch, Blood overlay, Sakura petals |
 | 📺 **Video Player** | Play video overlays on scenes for all players simultaneously |
-| ⚡ **Cut-Ins** | 21 themed animated cut-ins with text and images |
 | 📖 **Visual Novel Mode** | Full VN system with portraits, dialogues, and voice recognition |
 
 ---
@@ -44,13 +43,6 @@ Manifest URL: https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt
 
 ---
 
-### 📚 Resources Used
-
-- **Backgrounds** — from *The Mad Cartographer* packs  
-- **Cinematic cut-ins** — from *Cinematic Cut-ins* by GlitchSmith  
-
-> The included assets are not a replacement for the original authors’ modules.  
-> This module does not receive updates reflecting changes made to the original source modules.
 
 ---
 
@@ -89,10 +81,3 @@ Manifest URL: https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt
 Ссылка на установку:
 https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt/main/module.json
 
-Используемые ресурсы
-
-Фоны: взяты из паков The Mad Cartographer
-
-Кинематографические вставки: ресурсы из модуля Cinematic Cut-ins от GlitchSmith
-
-Используемые ассеты не являются полноценной заменой модулей авторов. Модуль не будет обновляться новыми обновлениями от авторов, чьи ресурсы были использованы.
