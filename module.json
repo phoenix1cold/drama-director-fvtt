@@ -2,7 +2,7 @@
   "id": "drama-director",
   "title": "Drama Director",
   "description": "Cinematic effects for Foundry VTT — intros, endings, filters, text overlays, video player, visual novel.",
-  "version": "4.1.67",
+  "version": "4.1.68",
   "manifest": "https://raw.githubusercontent.com/phoenix1cold/drama-director-fvtt/main/module.json",
   "download": "https://github.com/phoenix1cold/drama-director-fvtt/releases/latest/download/drama-director.zip",
   "compatibility": {
