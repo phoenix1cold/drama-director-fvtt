@@ -66,7 +66,7 @@ export function newChar(side = 'left', slot = 0) {
   return { id: uid(), name: '', title: '', img: '', activeImg: '', side, slot,
     playerId: null, active: false, visible: true,
     scale: 1.0, mirror: false, nameColor: '#ffe066',
-    x: 0, y: 0 };
+    x: 0, y: 0, zIndex: 0 };
 }
 
 // ─── Состояние ───────────────────────────────────────────────────────────────
@@ -115,6 +115,14 @@ export class DDVNOverlay {
         <button id="vn-ctrl-stop" class="vn-btn-danger"><i class="fas fa-stop"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.overlay.close')}</button>
       </div>
       <div class="vn-quick-bar" id="vn-quick-bar" style="display:none">
+        <select id="vn-quick-lang" class="vn-quick-lang-sel" title="${game.i18n.localize('DRAMADIRECTOR.vn.micLanguage')}">
+          <option value="ru-RU">RU</option>
+          <option value="en-US">EN</option>
+          <option value="de-DE">DE</option>
+          <option value="fr-FR">FR</option>
+          <option value="ja-JP">JP</option>
+        </select>
+        <div class="vn-quick-sep"></div>
         <div class="vn-mic-indicator" id="vn-mic-indicator">
           <button id="vn-mic-toggle" class="vn-quick-btn" title="${game.i18n.localize('DRAMADIRECTOR.vn.overlay.mic')}">
             <i class="fas fa-microphone"></i>
@@ -166,6 +174,20 @@ export class DDVNOverlay {
         await DDVNMic.start();
       }
       this.updateMicIndicator();
+    });
+
+    // Обработчик смены языка в quick-bar
+    el.querySelector('#vn-quick-lang')?.addEventListener('change', (e) => {
+      const lang = e.target.value;
+      DDVNMic.lang = lang;
+      // Синхронизируем с панелью настроек
+      const panelLang = document.getElementById('vn-mic-lang');
+      if (panelLang) panelLang.value = lang;
+      // Перезапускаем распознавание с новым языком
+      if (DDVNMic._active) {
+        DDVNMic.stop();
+        DDVNMic.start();
+      }
     });
 
     window.addEventListener('resize', () => this.fitStage());
@@ -244,6 +266,17 @@ export class DDVNOverlay {
       btn.classList.remove('vn-mic-on');
       dot.classList.remove('vn-mic-dot-on');
       btn.querySelector('i')?.classList.replace('fa-microphone', 'fa-microphone-slash');
+    }
+    
+    // Синхронизируем язык в quick-bar с текущим значением
+    const quickLang = document.getElementById('vn-quick-lang');
+    if (quickLang && DDVNMic.lang) {
+      quickLang.value = DDVNMic.lang;
+    }
+    // Синхронизируем язык в панели настроек
+    const panelLang = document.getElementById('vn-mic-lang');
+    if (panelLang && DDVNMic.lang) {
+      panelLang.value = DDVNMic.lang;
     }
   }
 
@@ -353,6 +386,8 @@ export class DDVNOverlay {
         const charWidth = baseWidth;
         const charScale = (char.scale || 1) * scale;
         const marginLeft = idx > 0 ? -overlap : 0;
+        // zIndex может быть задан вручную, иначе по умолчанию
+        const charZIndex = char.zIndex !== undefined ? (20 + char.zIndex) : (20 - idx);
 
         // Для центра не применяем автоматическое зеркалирование по стороне
         const mirror = side === 'center' 
@@ -363,8 +398,7 @@ export class DDVNOverlay {
 
         div.className = `vn-char ${visClass}`;
         div.dataset.charId = char.id;
-        // Применяем transform к самому элементу, чтобы hitbox двигался вместе с портретом
-        div.style.cssText = `width:${charWidth}px;margin-left:${marginLeft}px;z-index:${20 - idx};transform:translate(${offsetX}px,${offsetY}px);`;
+        div.style.cssText = `width:${charWidth}px;margin-left:${marginLeft}px;z-index:${charZIndex};`;
 
         // Рендерим изображения с поддержкой активного портрета
         const hasMainImg = char.img?.trim();
@@ -405,10 +439,12 @@ export class DDVNOverlay {
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 
         div.innerHTML = `
-          <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
-            ${portraitHtml}
-          </div>
-          ${nameHtml}`;
+          <div class="vn-char-wrapper" style="transform:translate(${offsetX}px,${offsetY}px)">
+            <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
+              ${portraitHtml}
+            </div>
+            ${nameHtml}
+          </div>`;
         container.appendChild(div);
       });
     };
@@ -1398,6 +1434,9 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     el.querySelector('#vn-mic-lang')?.addEventListener('change', e => {
       DDVNMic.lang = e.target.value;
+      // Синхронизируем с quick-bar
+      const quickLang = document.getElementById('vn-quick-lang');
+      if (quickLang) quickLang.value = e.target.value;
       if (DDVNMic._active) { DDVNMic.stop(); DDVNMic.start(); }
     });
 
@@ -1658,6 +1697,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     c.scale     = Number(q('.vn-char-scale')?.value)  || 1;
     c.x         = Number(q('.vn-char-x')?.value)      || 0;
     c.y         = Number(q('.vn-char-y')?.value)      || 0;
+    c.zIndex    = Number(q('.vn-char-z')?.value)      || 0;
     c.mirror    = q('.vn-char-mirror')?.checked  || false;
     c.visible   = q('.vn-char-visible')?.checked !== false;
     c.playerId  = q('.vn-char-player')?.value    || null;
@@ -1666,9 +1706,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     const scaleVal = q('.vn-char-scale')?.nextElementSibling;
     const xVal = q('.vn-char-x')?.nextElementSibling;
     const yVal = q('.vn-char-y')?.nextElementSibling;
+    const zVal = q('.vn-char-z')?.nextElementSibling;
     if (scaleVal) scaleVal.textContent = c.scale.toFixed(2);
     if (xVal) xVal.textContent = c.x;
     if (yVal) yVal.textContent = c.y;
+    if (zVal) zVal.textContent = c.zIndex;
 
     DDVNManager.setChars(this._chars);
   }

@@ -149,6 +149,10 @@
                 <input type="range" class="vn-char-y dd-input-sm" value="{{this.y}}" min="-600" max="600" step="5"/>
                 <span class="vn-slider-val">{{this.y}}</span>
               </label>
+              <label class="dd-param-group"><span>Z</span>
+                <input type="range" class="vn-char-z dd-input-sm" value="{{this.zIndex}}" min="-20" max="20" step="1"/>
+                <span class="vn-slider-val">{{this.zIndex}}</span>
+              </label>
               <label class="dd-param-group dd-param-check">
                 <input type="checkbox" class="vn-char-mirror"  {{#if this.mirror}} checked{{/if}}/><span>{{localize "DRAMADIRECTOR.vn.charMirror"}}</span>
               </label>

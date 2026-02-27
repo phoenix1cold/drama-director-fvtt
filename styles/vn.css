@@ -71,6 +71,28 @@
   flex-shrink: 0;
 }
 
+/* Language select in quick-bar */
+.vn-quick-lang-sel {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 5px;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  cursor: pointer;
+  height: 28px;
+  min-width: 50px;
+}
+.vn-quick-lang-sel:hover {
+  background: rgba(255,255,255,.15);
+  color: #ddd;
+}
+.vn-quick-lang-sel:focus {
+  outline: none;
+  border-color: rgba(255,220,60,.5);
+}
+
 /* Dot внутри mic-indicator теперь маленький, правее кнопки */
 .vn-mic-indicator {
   display: flex; align-items: center; gap: 4px;
@@ -133,11 +155,19 @@
   flex-direction: column; 
   align-items: center; 
   position: relative;
-  transition: filter .3s, opacity .3s, transform .3s; 
+  transition: filter .3s, opacity .3s; 
   flex-shrink: 0;
   z-index: 20;
   min-height: 200px;
   pointer-events: auto;
+}
+
+.vn-char-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  transition: transform .3s;
 }
 
 .vn-char-portrait {
