@@ -19,6 +19,9 @@ const SOCKET_EVENT = `module.${MODULE_ID}`;
 // Stored as a Promise so _prepareContext can await it before rendering.
 let _ddLangPromise = Promise.resolve();
 
+// Export the promise so other modules can await it
+export function getLanguagePromise() { return _ddLangPromise; }
+
 function _ddDeepMerge(target, src) {
   for (const key of Object.keys(src)) {
     const val = src[key];
@@ -732,13 +735,17 @@ game.dramaDirector.applyEffect('text', ${opts}${userArg});`;
   }
 
   _clearEffects() {
-    ['vignette','grayscale','sepia','sketch','text','intro'].forEach(k =>
-      this.overlays[k].classList.add('hidden'));
+    // Hide all overlay effects
+    ['vignette','grayscale','sepia','sketch','text','intro','drunk','high'].forEach(k =>
+      this.overlays[k]?.classList.add('hidden'));
     this.overlays.intro.innerHTML = '';
+    // Deactivate toggle effects
     this._effectGlitch({ active: false });
     this._effectFilm({ active: false });
+    // Clear particles and blood
     this.overlays.particles.innerHTML = '';
     this.overlays.blood.innerHTML = '';
+    // Clear all active effects tracking
     this.activeEffects.clear();
   }
 

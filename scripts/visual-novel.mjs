@@ -2,6 +2,8 @@
  * Drama Director — Visual Novel Mode
  */
 
+import { getLanguagePromise } from './drama-director.mjs';
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const MODULE_ID = 'drama-director';
 const SOCKET    = `module.${MODULE_ID}`;
@@ -62,7 +64,7 @@ export const VN_BUILTIN_BACKGROUNDS = _BUILTIN_BG_DEFS;
 
 export function newChar(side = 'left', slot = 0) {
   return { id: uid(), name: '', title: '', img: '', activeImg: '', side, slot,
-    playerId: null, active: false, visible: false,
+    playerId: null, active: false, visible: true,
     scale: 1.0, mirror: false, nameColor: '#ffe066',
     x: 0, y: 0 };
 }
@@ -93,6 +95,7 @@ export class DDVNOverlay {
       <div class="vn-bg-layer" id="vn-bg-layer"></div>
       <div class="vn-stage" id="vn-stage">
         <div class="vn-chars vn-chars-left"  id="vn-left"></div>
+        <div class="vn-chars vn-chars-center" id="vn-center"></div>
         <div class="vn-chars vn-chars-right" id="vn-right"></div>
       </div>
       <div class="vn-dialogue-box" id="vn-dialogue" style="display:none">
@@ -179,8 +182,10 @@ export class DDVNOverlay {
   static clearStage() {
     // Очищаем контейнеры персонажей
     const leftEl = document.getElementById('vn-left');
+    const centerEl = document.getElementById('vn-center');
     const rightEl = document.getElementById('vn-right');
     if (leftEl) leftEl.innerHTML = '';
+    if (centerEl) centerEl.innerHTML = '';
     if (rightEl) rightEl.innerHTML = '';
 
     // Скрываем диалоговое окно
@@ -289,43 +294,51 @@ export class DDVNOverlay {
   }
 
   static _renderChars(chars) {
-    const leftEl  = document.getElementById('vn-left');
-    const rightEl = document.getElementById('vn-right');
-    if (!leftEl || !rightEl) return;
+    const leftEl   = document.getElementById('vn-left');
+    const centerEl = document.getElementById('vn-center');
+    const rightEl  = document.getElementById('vn-right');
+    if (!leftEl || !centerEl || !rightEl) return;
 
-    // Фильтруем только видимых персонажей
-    const left  = chars.filter(c => c.side === 'left'  && c.visible !== false).sort((a, b) => a.slot - b.slot);
-    const right = chars.filter(c => c.side === 'right' && c.visible !== false).sort((a, b) => a.slot - b.slot);
+    // Validate chars array
+    if (!Array.isArray(chars)) {
+      console.warn('DD VN | _renderChars: chars is not an array');
+      return;
+    }
 
-    console.log('DD VN | Rendering chars:', { left: left.length, right: right.length, chars });
+    // Filter only visible characters
+    const left   = chars.filter(c => c && c.side === 'left'   && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    const center = chars.filter(c => c && c.side === 'center' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    const right  = chars.filter(c => c && c.side === 'right'  && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
 
-    // Проверяем, есть ли хоть один активный персонаж
-    const hasActive = chars.some(c => c.active && c.visible !== false);
+    console.log('DD VN | Rendering chars:', { left: left.length, center: center.length, right: right.length, chars });
+
+    // Check if there's at least one active character
+    const hasActive = chars.some(c => c && c.active && c.visible !== false);
 
     const render = (container, list, side) => {
       container.innerHTML = '';
       const total = list.length;
       // Динамический расчёт ширины и масштаба чтобы все помещались
-      let baseWidth = 420;
+      let baseWidth = side === 'center' ? 380 : 420;
       let scale = 1;
       let overlap = 0;
 
       if (total > 0) {
         // Чем больше персонажей, тем меньше они становятся и перекрывают друг друга
         if (total <= 3) {
-          baseWidth = 420;
+          baseWidth = side === 'center' ? 350 : 420;
           scale = 1;
           overlap = 0;
         } else if (total <= 5) {
-          baseWidth = 350;
+          baseWidth = side === 'center' ? 280 : 350;
           scale = 0.85;
           overlap = 30;
         } else if (total <= 8) {
-          baseWidth = 280;
+          baseWidth = side === 'center' ? 220 : 280;
           scale = 0.7;
           overlap = 50;
         } else {
-          baseWidth = 220;
+          baseWidth = side === 'center' ? 180 : 220;
           scale = 0.55;
           overlap = 70;
         }
@@ -341,13 +354,17 @@ export class DDVNOverlay {
         const charScale = (char.scale || 1) * scale;
         const marginLeft = idx > 0 ? -overlap : 0;
 
-        div.className = `vn-char ${visClass}`;
-        div.dataset.charId = char.id;
-        div.style.cssText = `width:${charWidth}px;margin-left:${marginLeft}px;z-index:${20 - idx};`;
-
-        const mirror = (char.mirror ? 1 : 0) ^ (side === 'right' ? 1 : 0);
+        // Для центра не применяем автоматическое зеркалирование по стороне
+        const mirror = side === 'center' 
+          ? (char.mirror ? -1 : 1) 
+          : ((char.mirror ? 1 : 0) ^ (side === 'right' ? 1 : 0));
         const offsetX = char.x || 0;
         const offsetY = char.y || 0;
+
+        div.className = `vn-char ${visClass}`;
+        div.dataset.charId = char.id;
+        // Применяем transform к самому элементу, чтобы hitbox двигался вместе с портретом
+        div.style.cssText = `width:${charWidth}px;margin-left:${marginLeft}px;z-index:${20 - idx};transform:translate(${offsetX}px,${offsetY}px);`;
 
         // Рендерим изображения с поддержкой активного портрета
         const hasMainImg = char.img?.trim();
@@ -388,7 +405,7 @@ export class DDVNOverlay {
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 
         div.innerHTML = `
-          <div class="vn-char-portrait" style="transform-origin:bottom center;transform:translate(${offsetX}px,${offsetY}px) scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
+          <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
             ${portraitHtml}
           </div>
           ${nameHtml}`;
@@ -396,8 +413,9 @@ export class DDVNOverlay {
       });
     };
 
-    render(leftEl,  left,  'left');
-    render(rightEl, right, 'right');
+    render(leftEl,   left,   'left');
+    render(centerEl, center, 'center');
+    render(rightEl,  right,  'right');
   }
 
   static _renderDialogue(d) {
@@ -601,7 +619,7 @@ export class DDVNGMBar {
     return filtered.map(c => {
       const isActive  = !!c.active;
       const isVisible = c.visible !== false;
-      const sideIcon  = c.side === 'left' ? '◀' : '▶';
+      const sideIcon  = c.side === 'left' ? '◀' : c.side === 'center' ? '◆' : '▶';
       const imgHtml   = c.img
         ? `<img src="${c.img}" class="vn-gml-char-thumb-img"/>`
         : `<i class="fas fa-user vn-gml-char-thumb-icon"></i>`;
@@ -610,6 +628,10 @@ export class DDVNGMBar {
         `<option value="${u.id}" ${c.playerId === u.id ? 'selected' : ''}>${u.name}</option>`
       ).join('');
 
+      const sideLabel = c.side === 'left' ? game.i18n.localize('DRAMADIRECTOR.vn.gml.left') : 
+                        c.side === 'center' ? game.i18n.localize('DRAMADIRECTOR.vn.gml.center') : 
+                        game.i18n.localize('DRAMADIRECTOR.vn.gml.right');
+
       return `
         <div class="vn-gml-char-item ${isActive ? 'gml-active' : ''} ${isVisible ? '' : 'gml-hidden-char'}"
              data-char-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.charTooltip')}">
@@ -617,7 +639,7 @@ export class DDVNGMBar {
           <div class="vn-gml-char-info">
             <span class="vn-gml-char-name" style="color:${c.nameColor || '#ffe066'}">${c.name || game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</span>
             <div class="vn-gml-char-player-row">
-              <span class="vn-gml-char-meta">${sideIcon} ${c.side === 'left' ? game.i18n.localize('DRAMADIRECTOR.vn.gml.left') : game.i18n.localize('DRAMADIRECTOR.vn.gml.right')}${c.title ? ' · ' + c.title : ''}</span>
+              <span class="vn-gml-char-meta">${sideIcon} ${sideLabel}${c.title ? ' · ' + c.title : ''}</span>
               <select class="vn-gml-player-sel" data-player-for="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.assignPlayer')}">
                 <option value="">${game.i18n.localize('DRAMADIRECTOR.vn.gml.playerNone')}</option>
                 ${playerOpts}
@@ -747,10 +769,17 @@ export class DDVNGMBar {
         e.preventDefault();
         const c = _state.chars.find(c => c.id === id);
         if (!c) return;
-        c.side = c.side === 'left' ? 'right' : 'left';
+        // Циклическое переключение: left -> center -> right -> left
+        const sides = ['left', 'center', 'right'];
+        const currentIdx = sides.indexOf(c.side);
+        c.side = sides[(currentIdx + 1) % sides.length];
         // Пересчитать слоты
-        let l = 0, r = 0;
-        _state.chars.forEach(ch => { ch.slot = ch.side === 'left' ? l++ : r++; });
+        let l = 0, cCnt = 0, r = 0;
+        _state.chars.forEach(ch => { 
+          if (ch.side === 'left') ch.slot = l++;
+          else if (ch.side === 'center') ch.slot = cCnt++;
+          else ch.slot = r++;
+        });
         // Синхронизируем с панелью настроек
         this._syncCharToPanel(id);
         DDVNManager.broadcast();
@@ -1166,6 +1195,9 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = { form: { template: `modules/${MODULE_ID}/templates/vn-panel.hbs` } };
 
   async _prepareContext() {
+    // Wait for language override to finish loading before localizing
+    await getLanguagePromise();
+    
     const s    = DDVNManager.getState();
     const allBg = DDVNPresets.getAllBg();
 
@@ -1177,6 +1209,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       dimBg:        s.dimBg,
       chars:        this._chars.map((c, i) => ({ ...c, _idx: i })),
       leftChars:    this._chars.filter(c => c.side === 'left').length,
+      centerChars:  this._chars.filter(c => c.side === 'center').length,
       rightChars:   this._chars.filter(c => c.side === 'right').length,
       players:      game.users.filter(u => !u.isGM).map(u => ({ id: u.id, name: u.name })),
       micOn:        DDVNMic._active,
@@ -1222,11 +1255,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       DDVNManager.setBackground(e.target.value);
     });
     el.querySelector('[data-action="vn-browse-bg"]')?.addEventListener('click', () => {
-      new FilePicker({ type: 'imagevideo', callback: p => {
+      this._openFilePicker('imagevideo', p => {
         const inp = el.querySelector('#vn-bg-path');
         if (inp) inp.value = p;
         DDVNManager.setBackground(p);
-      }}).render(true);
+      });
     });
     el.querySelector('#vn-bg-fit')?.addEventListener('change', e => {
       Object.assign(_state, { bgFit: e.target.value });
@@ -1462,7 +1495,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       fresh.addEventListener('click', () => {
         const rows = form.querySelectorAll('.vn-bgedit-var-row');
         const srcInp = rows[i]?.querySelector('.vn-bgedit-var-src');
-        new FilePicker({ type: 'imagevideo', callback: p => { if (srcInp) srcInp.value = p; }}).render(true);
+        this._openFilePicker('imagevideo', p => { if (srcInp) srcInp.value = p; });
       });
     });
   }
@@ -1491,8 +1524,9 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
   // ── Chars ─────────────────────────────────────────────────────────────────
   _bindCharEvents(el) {
-    el.querySelector('[data-action="vn-char-add-left"]') ?.addEventListener('click', () => this._addChar('left'));
-    el.querySelector('[data-action="vn-char-add-right"]')?.addEventListener('click', () => this._addChar('right'));
+    el.querySelector('[data-action="vn-char-add-left"]')  ?.addEventListener('click', () => this._addChar('left'));
+    el.querySelector('[data-action="vn-char-add-center"]')?.addEventListener('click', () => this._addChar('center'));
+    el.querySelector('[data-action="vn-char-add-right"]') ?.addEventListener('click', () => this._addChar('right'));
     el.querySelector('[data-action="vn-deactivate-all"]')?.addEventListener('click', () => {
       DDVNManager.deactivateAll(); this._syncCharsFromState(); this.render();
     });
@@ -1527,23 +1561,26 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
         if (idx < this._chars.length - 1) { [this._chars[idx], this._chars[idx+1]] = [this._chars[idx+1], this._chars[idx]]; this._reorderSlots(); DDVNManager.setChars(this._chars); this.render(); }
       });
       row.querySelector('[data-char-action="switch-side"]')?.addEventListener('click', () => {
-        this._chars[idx].side = this._chars[idx].side === 'left' ? 'right' : 'left';
+        // Циклическое переключение: left -> center -> right -> left
+        const sides = ['left', 'center', 'right'];
+        const currentIdx = sides.indexOf(this._chars[idx].side);
+        this._chars[idx].side = sides[(currentIdx + 1) % sides.length];
         this._reorderSlots();
         DDVNManager.setChars(this._chars); this.render();
       });
       row.querySelector('[data-char-action="browse"]')?.addEventListener('click', () => {
-        new FilePicker({ type: 'image', callback: p => {
+        this._openFilePicker('image', p => {
           this._chars[idx].img = p;
           row.querySelector('.vn-char-img-inp').value = p;
           DDVNManager.setChars(this._chars);
-        }}).render(true);
+        });
       });
       row.querySelector('[data-char-action="browse-active"]')?.addEventListener('click', () => {
-        new FilePicker({ type: 'image', callback: p => {
+        this._openFilePicker('image', p => {
           this._chars[idx].activeImg = p;
           row.querySelector('.vn-char-active-img-inp').value = p;
           DDVNManager.setChars(this._chars);
-        }}).render(true);
+        });
       });
 
       row.querySelectorAll('input, select').forEach(inp => {
@@ -1551,6 +1588,62 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
         inp.addEventListener('input',  () => this._syncCharRow(idx, row));
       });
     });
+  }
+
+  // Helper to open FilePicker above VN panel
+  _openFilePicker(type, callback) {
+    // Create FilePicker using Foundry API
+    const fp = new FilePicker({ 
+      type, 
+      callback: (path) => {
+        callback(path);
+        // After selection, bring VN panel back to proper position
+        setTimeout(() => {
+          if (this.bringToTop) this.bringToTop();
+        }, 100);
+      }
+    });
+    
+    // Render the FilePicker
+    fp.render(true);
+    
+    // Use Hook-based approach: Foundry will fire renderFilePicker hook
+    // We handle bringing to front there (see initVNSystem)
+    
+    // Additional DOM-based approach for immediate effect
+    const ensureFront = () => {
+      // Find all FilePicker windows and bring them to front
+      const selectors = [
+        '.filepicker',
+        '.app.window-app.filepicker', 
+        '.window-app.filepicker',
+        '.application.filepicker',
+        '[data-application="filepicker"]',
+        '#file-picker'  // v13 style
+      ];
+      
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          el.style.setProperty('z-index', '10050', 'important');
+          if (el.classList) {
+            el.classList.add('dd-frontend');
+          }
+        });
+      });
+      
+      // Use Foundry's bringToTop if available
+      if (fp.bringToTop) {
+        try { fp.bringToTop(); } catch(e) {}
+      }
+    };
+    
+    // Try multiple times to catch async rendering
+    ensureFront();
+    setTimeout(ensureFront, 10);
+    setTimeout(ensureFront, 50);
+    setTimeout(ensureFront, 100);
+    setTimeout(ensureFront, 200);
+    setTimeout(ensureFront, 500);
   }
 
   _syncCharRow(idx, row) {
@@ -1582,15 +1675,20 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _addChar(side) {
     const sideCount = this._chars.filter(c => c.side === side).length;
-    if (sideCount >= 10) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars')); return; }
+    const maxChars = side === 'center' ? 5 : 10;
+    if (sideCount >= maxChars) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars')); return; }
     this._chars.push(newChar(side, sideCount));
     DDVNManager.setChars(this._chars);
     this.render();
   }
 
   _reorderSlots() {
-    let l = 0, r = 0;
-    this._chars.forEach(c => { c.slot = c.side === 'left' ? l++ : r++; });
+    let l = 0, c = 0, r = 0;
+    this._chars.forEach(ch => {
+      if (ch.side === 'left') ch.slot = l++;
+      else if (ch.side === 'center') ch.slot = c++;
+      else ch.slot = r++;
+    });
   }
 
   _syncCharsFromState() { this._chars = deepClone(_state.chars); }
@@ -1656,6 +1754,37 @@ export function initVNSystem() {
       }, 1000);
     });
   }
+
+  // Hook to bring FilePicker and other apps to front when VN panel is open
+  Hooks.on('renderFilePicker', (app) => {
+    // Use multiple attempts to ensure FilePicker gets proper z-index
+    const bringToFront = () => {
+      if (app.bringToTop) app.bringToTop();
+      // Also set via DOM for good measure
+      const el = app.element;
+      if (el) {
+        el.style.zIndex = '10050';
+        el.style.setProperty('z-index', '10050', 'important');
+      }
+    };
+    bringToFront();
+    setTimeout(bringToFront, 10);
+    setTimeout(bringToFront, 50);
+    setTimeout(bringToFront, 100);
+  });
+
+  // Also hook other common apps
+  Hooks.on('renderFormApplication', (app) => {
+    if (app.bringToTop) {
+      setTimeout(() => app.bringToTop(), 50);
+    }
+  });
+
+  Hooks.on('renderDialog', (app) => {
+    if (app.bringToTop) {
+      setTimeout(() => app.bringToTop(), 50);
+    }
+  });
 
   if (!game.dramaDirector) game.dramaDirector = {};
   game.dramaDirector.vn = DDVNApi;

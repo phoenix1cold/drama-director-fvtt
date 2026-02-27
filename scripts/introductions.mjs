@@ -745,6 +745,7 @@ export async function executeSnatchIntro(campaignName = '') {
   // Audio
   snatchAudio = new Audio(`modules/${MODULE_ID}/assets/sounds/snatch.ogg`);
   snatchAudio.volume = 0.85;
+  snatchAudio.currentTime = 50; // Start from 0:50
   snatchAudio.play().catch(() => {});
 
   // Build overlay

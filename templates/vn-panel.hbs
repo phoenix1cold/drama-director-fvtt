@@ -99,10 +99,11 @@
     <!-- ═══ CHARACTERS ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="chars">
       <div class="vn-chars-header">
-        <span class="vn-chars-counts">◀ {{leftChars}}/10 &nbsp;&nbsp; {{rightChars}}/10 ▶</span>
+        <span class="vn-chars-counts">◀ {{leftChars}}/10 &nbsp; ◆ {{centerChars}}/5 &nbsp; {{rightChars}}/10 ▶</span>
         <div class="vn-chars-actions">
           <button type="button" data-action="vn-deactivate-all" class="vn-btn-secondary"><i class="fas fa-eye-slash"></i> {{localize "DRAMADIRECTOR.vn.charsDeactivateAll"}}</button>
           <button type="button" data-action="vn-char-add-left"  class="vn-btn-add"><i class="fas fa-arrow-left"></i> {{localize "DRAMADIRECTOR.vn.charsAddLeft"}}</button>
+          <button type="button" data-action="vn-char-add-center" class="vn-btn-add"><i class="fas fa-dot-circle"></i> {{localize "DRAMADIRECTOR.vn.charsAddCenter"}}</button>
           <button type="button" data-action="vn-char-add-right" class="vn-btn-add">{{localize "DRAMADIRECTOR.vn.charsAddRight"}} <i class="fas fa-arrow-right"></i></button>
         </div>
       </div>
@@ -119,7 +120,7 @@
               {{#if this.img}}<img src="{{this.img}}" alt=""/>
               {{else}}<div class="vn-char-thumb-empty"><i class="fas fa-user-circle"></i></div>{{/if}}
             </div>
-            <span class="vn-char-pos-badge {{this.side}}">{{#if (eq this.side "left")}}◀{{else}}▶{{/if}}</span>
+            <span class="vn-char-pos-badge {{this.side}}">{{#if (eq this.side "left")}}◀{{else if (eq this.side "center")}}◆{{else}}▶{{/if}}</span>
           </div>
           <div class="vn-char-row-body">
             <div class="dd-row">
@@ -141,11 +142,11 @@
                 <span class="vn-slider-val">{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}</span>
               </label>
               <label class="dd-param-group"><span>X</span>
-                <input type="range" class="vn-char-x dd-input-sm" value="{{this.x}}" min="-200" max="200" step="5"/>
+                <input type="range" class="vn-char-x dd-input-sm" value="{{this.x}}" min="-600" max="600" step="5"/>
                 <span class="vn-slider-val">{{this.x}}</span>
               </label>
               <label class="dd-param-group"><span>Y</span>
-                <input type="range" class="vn-char-y dd-input-sm" value="{{this.y}}" min="-200" max="200" step="5"/>
+                <input type="range" class="vn-char-y dd-input-sm" value="{{this.y}}" min="-600" max="600" step="5"/>
                 <span class="vn-slider-val">{{this.y}}</span>
               </label>
               <label class="dd-param-group dd-param-check">

@@ -124,8 +124,9 @@
   z-index: 15;
   position: relative;
 }
-.vn-chars-left  { flex-direction: row; }
-.vn-chars-right { flex-direction: row-reverse; }
+.vn-chars-left   { flex-direction: row; }
+.vn-chars-center { flex-direction: row; justify-content: center; flex: 1; }
+.vn-chars-right  { flex-direction: row-reverse; }
 
 .vn-char { 
   display: flex !important; 
@@ -353,6 +354,23 @@
 .dd-vn-panel .window-content { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .dd-vn-panel { z-index: 10002 !important; } /* Выше VN overlay */
 
+/* Force FilePicker and other apps to be above VN panel */
+.filepicker,
+.app.window-app.filepicker,
+.application.filepicker,
+[data-application="filepicker"],
+.window-app.filepicker {
+  z-index: 10050 !important;
+}
+
+/* Also ensure other Foundry dialogs appear above VN */
+.dialog,
+.form-application,
+.window-app:not(.dd-vn-panel),
+.application:not(.dd-vn-panel) {
+  z-index: 10030 !important;
+}
+
 .vn-panel-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; font-size: 13px; }
 
 .vn-panel-header { flex-shrink: 0; border-bottom: 1px solid #333; padding: 7px 10px 0; background: rgba(0,0,0,.35); }
@@ -453,8 +471,9 @@
 .vn-char-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .vn-char-thumb-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #444; }
 .vn-char-pos-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: bold; }
-.vn-char-pos-badge.left  { background: rgba(60,100,200,.35); color: #88aaff; }
-.vn-char-pos-badge.right { background: rgba(200,60,60,.35);  color: #ffaaaa; }
+.vn-char-pos-badge.left   { background: rgba(60,100,200,.35); color: #88aaff; }
+.vn-char-pos-badge.center { background: rgba(150,120,60,.35); color: #ddbb66; }
+.vn-char-pos-badge.right  { background: rgba(200,60,60,.35);  color: #ffaaaa; }
 
 .vn-char-row-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .vn-char-params-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
