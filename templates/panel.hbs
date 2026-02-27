@@ -16,6 +16,7 @@
     <button class="dd-tab active" data-tab="intro"><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.tabs.intro"}}</button>
     <button class="dd-tab" data-tab="endings"><i class="fas fa-door-open"></i> {{localize "DRAMADIRECTOR.tabs.endings"}}</button>
     <button class="dd-tab" data-tab="effects"><i class="fas fa-magic"></i> {{localize "DRAMADIRECTOR.tabs.effects"}}</button>
+    <button class="dd-tab" data-tab="textpics"><i class="fas fa-layer-group"></i> Text and Pictures</button>
     <button class="dd-tab" data-tab="video"><i class="fas fa-video"></i> {{localize "DRAMADIRECTOR.tabs.video"}}</button>
     <button class="dd-tab" data-tab="vn"><i class="fas fa-book-open"></i> {{localize "DRAMADIRECTOR.tabs.vn"}}</button>
   </div>
@@ -121,131 +122,6 @@
       </div>
     </div>
     <div class="dd-panel-section">
-      <h3><i class="fas fa-comment-dots"></i> {{localize "DRAMADIRECTOR.customText"}}</h3>
-
-      {{!-- Presets --}}
-      <div class="dd-preset-bar">
-        <select id="dd-preset-select" class="dd-select" style="flex:1">
-          <option value="">— {{localize "DRAMADIRECTOR.presetLoad"}} —</option>
-        </select>
-        <button type="button" class="dd-icon-btn" data-action="preset-load" title="{{localize "DRAMADIRECTOR.presetLoad"}}"><i class="fas fa-upload"></i></button>
-        <button type="button" class="dd-icon-btn dd-danger-btn" data-action="preset-delete" title="{{localize "DRAMADIRECTOR.presetDelete"}}"><i class="fas fa-trash"></i></button>
-      </div>
-      <div class="dd-row" style="margin-bottom:.4rem">
-        <input type="text" id="dd-preset-name" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.presetName"}}" style="flex:1">
-        <button type="button" class="dd-icon-btn" data-action="preset-save" title="{{localize "DRAMADIRECTOR.presetSave"}}"><i class="fas fa-save"></i></button>
-      </div>
-
-      {{!-- Character Introduction --}}
-      <div class="dd-char-intro-block">
-        <label class="dd-checkbox-label dd-char-intro-toggle">
-          <input type="checkbox" id="dd-char-intro-enabled">
-          <span><i class="fas fa-user-circle"></i> {{localize "DRAMADIRECTOR.charIntro"}}</span>
-        </label>
-        <div id="dd-char-intro-panel" class="dd-char-intro-panel hidden">
-          <div class="dd-char-intro-preview">
-            <div class="dd-char-intro-frame" id="dd-char-preview-frame">
-              <div class="dd-char-preview-portrait" id="dd-char-preview-img"></div>
-              <div class="dd-char-preview-label">{{localize "DRAMADIRECTOR.charIntroToken"}}</div>
-            </div>
-          </div>
-          <div class="dd-row" style="margin-top:.5rem">
-            <select id="dd-char-intro-token" class="dd-select" style="flex:1">
-              <option value="">— {{localize "DRAMADIRECTOR.charIntroToken"}} —</option>
-            </select>
-          </div>
-          <div class="dd-row" style="margin-top:.3rem">
-            <label class="dd-label" style="margin:0;white-space:nowrap">{{localize "DRAMADIRECTOR.charIntroAnim"}}</label>
-            <select id="dd-char-intro-anim" class="dd-select" style="flex:1">
-              <option value="fade">{{localize "DRAMADIRECTOR.charIntroAnimFade"}}</option>
-              <option value="slideLeft">{{localize "DRAMADIRECTOR.charIntroAnimSlideLeft"}}</option>
-              <option value="slideRight">{{localize "DRAMADIRECTOR.charIntroAnimSlideRight"}}</option>
-              <option value="zoom">{{localize "DRAMADIRECTOR.charIntroAnimZoom"}}</option>
-              <option value="smoke">{{localize "DRAMADIRECTOR.charIntroAnimSmoke"}}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {{!-- Text --}}
-      <textarea id="dd-custom-text" placeholder="{{localize "DRAMADIRECTOR.textPlaceholder"}}"></textarea>
-      <div id="dd-subtitle-row" class="dd-row" style="display:none">
-        <input type="text" id="dd-text-subtitle" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.textSubtitlePlaceholder"}}">
-      </div>
-      <div class="dd-row">
-        <select id="dd-text-style" class="dd-select">
-          <option value="default">{{localize "DRAMADIRECTOR.textStyleCenter"}}</option>
-          <option value="left-block">{{localize "DRAMADIRECTOR.textStyleLeft"}}</option>
-          <option value="right-block">{{localize "DRAMADIRECTOR.textStyleRight"}}</option>
-          <option value="bottom">{{localize "DRAMADIRECTOR.textStyleBottom"}}</option>
-          <option value="chapter">{{localize "DRAMADIRECTOR.textStyleChapter"}}</option>
-          <option value="horror">{{localize "DRAMADIRECTOR.textStyleHorror"}}</option>
-          <option value="anime">{{localize "DRAMADIRECTOR.textStyleAnime"}}</option>
-        </select>
-        <select id="dd-text-animation" class="dd-select">
-          <option value="fade">{{localize "DRAMADIRECTOR.textAnimFade"}}</option>
-          <option value="zoom">{{localize "DRAMADIRECTOR.textAnimZoom"}}</option>
-          <option value="shake">{{localize "DRAMADIRECTOR.textAnimShake"}}</option>
-          <option value="impact">{{localize "DRAMADIRECTOR.textAnimImpact"}}</option>
-        </select>
-      </div>
-
-      {{!-- Text scale + XY --}}
-      <div class="dd-transform-grid">
-        <div class="dd-transform-item">
-          <label class="dd-label">{{localize "DRAMADIRECTOR.textScale"}}</label>
-          <input type="number" id="dd-text-scale" class="dd-input" value="1" min="0.1" max="5" step="0.1">
-        </div>
-        <div class="dd-transform-item">
-          <label class="dd-label">X</label>
-          <input type="number" id="dd-text-x" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
-        </div>
-        <div class="dd-transform-item">
-          <label class="dd-label">Y</label>
-          <input type="number" id="dd-text-y" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
-        </div>
-      </div>
-
-      <div class="dd-duration-input">
-        <input type="number" id="dd-text-duration" value="4000" min="1000" max="15000" step="500">
-        <span>{{localize "DRAMADIRECTOR.textDuration"}}</span>
-      </div>
-
-      {{!-- Image layer --}}
-      <details class="dd-image-section">
-        <summary><i class="fas fa-image"></i> {{localize "DRAMADIRECTOR.imageSection"}}</summary>
-        <div class="dd-image-content">
-          <div class="dd-sound-picker" style="margin-bottom:.4rem">
-            <input type="text" id="dd-image-url" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.imagePath"}}">
-            <button type="button" class="dd-icon-btn" data-action="browse-image"><i class="fas fa-folder-open"></i></button>
-          </div>
-          <div class="dd-transform-grid">
-            <div class="dd-transform-item">
-              <label class="dd-label">{{localize "DRAMADIRECTOR.imageScale"}}</label>
-              <input type="number" id="dd-image-scale" class="dd-input" value="1" min="0.1" max="5" step="0.1">
-            </div>
-            <div class="dd-transform-item">
-              <label class="dd-label">X</label>
-              <input type="number" id="dd-image-x" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
-            </div>
-            <div class="dd-transform-item">
-              <label class="dd-label">Y</label>
-              <input type="number" id="dd-image-y" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
-            </div>
-          </div>
-        </div>
-      </details>
-
-      <div class="dd-row" style="margin-top:.6rem;gap:.4rem">
-        <button type="button" class="dd-show-btn" data-action="show-text" style="flex:1">
-          <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.showText"}}
-        </button>
-        <button type="button" class="dd-icon-btn dd-macro-btn" data-action="copy-macro" title="{{localize "DRAMADIRECTOR.copyMacro"}}">
-          <i class="fas fa-code"></i>
-        </button>
-      </div>
-    </div>
-    <div class="dd-panel-section">
       <h3><i class="fas fa-volume-up"></i> {{localize "DRAMADIRECTOR.sounds"}}</h3>
       <div class="dd-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:.5rem">
         {{#each sounds}}
@@ -269,6 +145,119 @@
       <button type="button" class="dd-clear-btn" data-action="clear">
         <i class="fas fa-times-circle"></i> {{localize "DRAMADIRECTOR.clearEffects"}}
       </button>
+    </div>
+  </div>
+
+  {{!-- TEXT AND PICTURES TAB --}}
+  <div class="dd-tab-content hidden" data-content="textpics">
+
+    {{!-- Presets bar --}}
+    <div class="dd-panel-section">
+      <div class="dd-preset-bar">
+        <select id="dd-preset-select" class="dd-select" style="flex:1">
+          <option value="">— {{localize "DRAMADIRECTOR.presetLoad"}} —</option>
+        </select>
+        <button type="button" class="dd-icon-btn" data-action="preset-load" title="{{localize "DRAMADIRECTOR.presetLoad"}}"><i class="fas fa-upload"></i></button>
+        <button type="button" class="dd-icon-btn dd-danger-btn" data-action="preset-delete" title="{{localize "DRAMADIRECTOR.presetDelete"}}"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="dd-row" style="margin-bottom:.4rem">
+        <input type="text" id="dd-preset-name" class="dd-input" placeholder="{{localize "DRAMADIRECTOR.presetName"}}" style="flex:1">
+        <button type="button" class="dd-icon-btn" data-action="preset-save" title="{{localize "DRAMADIRECTOR.presetSave"}}"><i class="fas fa-save"></i></button>
+      </div>
+    </div>
+
+    {{!-- Character Portrait Introduction --}}
+    <div class="dd-panel-section">
+      <h3><i class="fas fa-user-circle"></i> {{localize "DRAMADIRECTOR.charIntro"}}</h3>
+      <div class="dd-char-intro-block">
+        <label class="dd-checkbox-label dd-char-intro-toggle">
+          <input type="checkbox" id="dd-char-intro-enabled">
+          <span>{{localize "DRAMADIRECTOR.charIntro"}}</span>
+        </label>
+        <div id="dd-char-intro-panel" class="dd-char-intro-panel hidden">
+          <div class="dd-char-intro-preview">
+            <div class="dd-char-intro-frame" id="dd-char-preview-frame">
+              <div class="dd-char-preview-portrait" id="dd-char-preview-img"></div>
+              <div class="dd-char-preview-label">{{localize "DRAMADIRECTOR.charIntroToken"}}</div>
+            </div>
+          </div>
+          <div class="dd-row" style="margin-top:.5rem">
+            <select id="dd-char-intro-token" class="dd-select" style="flex:1">
+              <option value="">— {{localize "DRAMADIRECTOR.charIntroToken"}} —</option>
+            </select>
+          </div>
+          <div class="dd-row" style="margin-top:.3rem">
+            <label class="dd-label" style="margin:0;white-space:nowrap">{{localize "DRAMADIRECTOR.charIntroAnim"}}</label>
+            <select id="dd-char-intro-anim" class="dd-select" style="flex:1">
+              <option value="fade">{{localize "DRAMADIRECTOR.charIntroAnimFade"}}</option>
+              <option value="slideLeft">{{localize "DRAMADIRECTOR.charIntroAnimSlideLeft"}}</option>
+              <option value="slideRight">{{localize "DRAMADIRECTOR.charIntroAnimSlideRight"}}</option>
+              <option value="slideUp">Slide Up</option>
+              <option value="slideDown">Slide Down</option>
+              <option value="zoom">{{localize "DRAMADIRECTOR.charIntroAnimZoom"}}</option>
+              <option value="zoomOut">Zoom Out</option>
+              <option value="smoke">{{localize "DRAMADIRECTOR.charIntroAnimSmoke"}}</option>
+              <option value="flip">Flip</option>
+              <option value="bounce">Bounce</option>
+            </select>
+          </div>
+          <div class="dd-transform-grid" style="margin-top:.3rem">
+            <div class="dd-transform-item">
+              <label class="dd-label">Scale</label>
+              <input type="number" id="dd-portrait-scale" class="dd-input" value="1" min="0.1" max="5" step="0.1">
+            </div>
+            <div class="dd-transform-item">
+              <label class="dd-label">X %</label>
+              <input type="number" id="dd-portrait-x" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
+            </div>
+            <div class="dd-transform-item">
+              <label class="dd-label">Y %</label>
+              <input type="number" id="dd-portrait-y" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
+            </div>
+            <div class="dd-transform-item">
+              <label class="dd-label">Z-Index</label>
+              <input type="number" id="dd-portrait-z" class="dd-input" value="0" min="-10" max="20" step="1" placeholder="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Text Layers (up to 10) --}}
+    <div class="dd-panel-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+        <h3 style="margin:0"><i class="fas fa-font"></i> Text Layers <span id="dd-text-layer-count" class="dd-badge">0/10</span></h3>
+        <button type="button" class="dd-icon-btn" data-action="add-text-layer" title="Add text layer"><i class="fas fa-plus"></i> Add</button>
+      </div>
+      <div id="dd-text-layers-container" class="dd-layers-container"></div>
+    </div>
+
+    {{!-- Image Layers (up to 10) --}}
+    <div class="dd-panel-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+        <h3 style="margin:0"><i class="fas fa-image"></i> Image Layers <span id="dd-image-layer-count" class="dd-badge">0/10</span></h3>
+        <button type="button" class="dd-icon-btn" data-action="add-image-layer" title="Add image layer"><i class="fas fa-plus"></i> Add</button>
+      </div>
+      <div id="dd-image-layers-container" class="dd-layers-container"></div>
+    </div>
+
+    {{!-- Duration + Show controls --}}
+    <div class="dd-panel-section">
+      <div class="dd-duration-input">
+        <input type="number" id="dd-text-duration" value="4000" min="1000" max="15000" step="500">
+        <span>{{localize "DRAMADIRECTOR.textDuration"}}</span>
+      </div>
+      <div class="dd-row" style="margin-top:.6rem;gap:.4rem">
+        <button type="button" class="dd-show-btn" data-action="show-text" style="flex:1">
+          <i class="fas fa-play"></i> {{localize "DRAMADIRECTOR.showText"}}
+        </button>
+        <button type="button" class="dd-icon-btn dd-macro-btn" data-action="copy-macro" title="{{localize "DRAMADIRECTOR.copyMacro"}}">
+          <i class="fas fa-code"></i>
+        </button>
+        <button type="button" class="dd-clear-btn" data-action="clear" style="flex:0.5">
+          <i class="fas fa-times"></i> Clear
+        </button>
+      </div>
     </div>
   </div>
 

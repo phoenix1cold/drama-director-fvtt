@@ -69,6 +69,22 @@ export function newChar(side = 'left', slot = 0) {
     x: 0, y: 0, zIndex: 0 };
 }
 
+export function newLayer(type = 'image') {
+  return { id: uid(), type, name: '',
+    src: '', text: '',
+    x: 760, y: 400, zIndex: 0,
+    width: 400, height: 300, scale: 1,
+    fontSize: 28, color: '#ffffff', fontFamily: 'inherit',
+    textAlign: 'center', opacity: 1, visible: true };
+}
+
+export function newInteractiveImage() {
+  return { id: uid(), name: '', src: '',
+    x: 900, y: 500, zIndex: 10,
+    width: 200, height: 200, scale: 1, macroId: '',
+    opacity: 1, visible: true };
+}
+
 // ─── Состояние ───────────────────────────────────────────────────────────────
 const _state = {
   open: false,
@@ -78,6 +94,14 @@ const _state = {
   dimBg: 0.0,
   chars: [],
   dialogue: { visible: false, speakerName: '', speakerColor: '#ffe066', text: '', _subtitleActive: false },
+  layers: [],
+  interactiveImages: [],
+};
+
+// ─── Глобальные z-index базы ─────────────────────────────────────────────────
+// Все элементы используют ОБЩУЮ базу z-index для полной свободы перекрытия
+const ZINDEX_BASE = {
+  ALL: 100,  // Общая база для всех: персонажи, слои, интерактивные изображения
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,10 +118,10 @@ export class DDVNOverlay {
     el.innerHTML = `
       <div class="vn-bg-layer" id="vn-bg-layer"></div>
       <div class="vn-stage" id="vn-stage">
-        <div class="vn-chars vn-chars-left"  id="vn-left"></div>
-        <div class="vn-chars vn-chars-center" id="vn-center"></div>
-        <div class="vn-chars vn-chars-right" id="vn-right"></div>
+        <!-- Единый контейнер для всех элементов с z-index -->
+        <div id="vn-unified-container" class="vn-unified-container"></div>
       </div>
+      <div class="vn-name-bar" id="vn-name-bar" style="display:none"></div>
       <div class="vn-dialogue-box" id="vn-dialogue" style="display:none">
         <div class="vn-dialogue-inner">
           <div class="vn-speaker" id="vn-speaker"></div>
@@ -202,13 +226,9 @@ export class DDVNOverlay {
   }
 
   static clearStage() {
-    // Очищаем контейнеры персонажей
-    const leftEl = document.getElementById('vn-left');
-    const centerEl = document.getElementById('vn-center');
-    const rightEl = document.getElementById('vn-right');
-    if (leftEl) leftEl.innerHTML = '';
-    if (centerEl) centerEl.innerHTML = '';
-    if (rightEl) rightEl.innerHTML = '';
+    // Очищаем единый контейнер
+    const container = document.getElementById('vn-unified-container');
+    if (container) container.innerHTML = '';
 
     // Скрываем диалоговое окно
     const dialogue = document.getElementById('vn-dialogue');
@@ -237,8 +257,10 @@ export class DDVNOverlay {
     if (state.open) overlay.classList.add('interactive');
     else overlay.classList.remove('interactive');
     this._renderBg(state);
-    this._renderChars(state.chars || []);
+    // Единый рендеринг всех элементов с учётом z-index
+    this._renderAllElements(state);
     this._renderDialogue(state.dialogue);
+    this._renderNameBar(state.chars || []);
 
     const gmBar = document.getElementById('vn-gm-bar');
     if (gmBar) gmBar.style.display = (state.open && game.user?.isGM) ? 'flex' : 'none';
@@ -326,132 +348,266 @@ export class DDVNOverlay {
     }
   }
 
-  static _renderChars(chars) {
-    const leftEl   = document.getElementById('vn-left');
-    const centerEl = document.getElementById('vn-center');
-    const rightEl  = document.getElementById('vn-right');
-    if (!leftEl || !centerEl || !rightEl) return;
+  static _renderAllElements(state) {
+    const container = document.getElementById('vn-unified-container');
+    if (!container) return;
+    container.innerHTML = '';
 
-    // Validate chars array
-    if (!Array.isArray(chars)) {
-      console.warn('DD VN | _renderChars: chars is not an array');
-      return;
-    }
+    const chars = state.chars || [];
+    const layers = state.layers || [];
+    const interactiveImages = state.interactiveImages || [];
 
-    // Filter only visible characters
-    const left   = chars.filter(c => c && c.side === 'left'   && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
-    const center = chars.filter(c => c && c.side === 'center' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
-    const right  = chars.filter(c => c && c.side === 'right'  && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
-
-    console.log('DD VN | Rendering chars:', { left: left.length, center: center.length, right: right.length, chars });
-
-    // Check if there's at least one active character
+    // Проверяем есть ли активный персонаж
     const hasActive = chars.some(c => c && c.active && c.visible !== false);
 
-    const render = (container, list, side) => {
-      container.innerHTML = '';
-      const total = list.length;
-      // Динамический расчёт ширины и масштаба чтобы все помещались
-      let baseWidth = side === 'center' ? 380 : 420;
-      let scale = 1;
-      let overlap = 0;
+    // Собираем все элементы с их z-index и позицией
+    const allElements = [];
 
-      if (total > 0) {
-        // Чем больше персонажей, тем меньше они становятся и перекрывают друг друга
-        if (total <= 3) {
-          baseWidth = side === 'center' ? 350 : 420;
-          scale = 1;
-          overlap = 0;
-        } else if (total <= 5) {
-          baseWidth = side === 'center' ? 280 : 350;
-          scale = 0.85;
-          overlap = 30;
-        } else if (total <= 8) {
-          baseWidth = side === 'center' ? 220 : 280;
-          scale = 0.7;
-          overlap = 50;
-        } else {
-          baseWidth = side === 'center' ? 180 : 220;
-          scale = 0.55;
-          overlap = 70;
-        }
+    // ─── Персонажи ───
+    // Группируем по сторонам для расчёта позиций
+    const leftChars = chars.filter(c => c && c.side === 'left' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    const centerChars = chars.filter(c => c && c.side === 'center' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    const rightChars = chars.filter(c => c && c.side === 'right' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+
+    // Функция для расчёта базовой позиции персонажа по стороне и слоту
+    const calcCharBasePos = (side, slot, totalOnSide) => {
+      // Базовые координаты для каждой стороны
+      const basePositions = {
+        left: { x: 250, y: 1080 },    // Нижняя левая область
+        center: { x: 960, y: 1080 },  // Нижняя центральная область
+        right: { x: 1670, y: 1080 }   // Нижняя правая область
+      };
+      const base = basePositions[side];
+      
+      // Динамический расчёт ширины и перекрытия
+      let baseWidth = side === 'center' ? 380 : 420;
+      let overlap = 0;
+      
+      if (totalOnSide <= 3) {
+        baseWidth = side === 'center' ? 350 : 420;
+        overlap = 0;
+      } else if (totalOnSide <= 5) {
+        baseWidth = side === 'center' ? 280 : 350;
+        overlap = 30;
+      } else if (totalOnSide <= 8) {
+        baseWidth = side === 'center' ? 220 : 280;
+        overlap = 50;
+      } else {
+        baseWidth = side === 'center' ? 180 : 220;
+        overlap = 70;
       }
 
-      list.forEach((char, idx) => {
-        const div = document.createElement('div');
-        // Если никто не активен - все видны нормально, иначе - подсветка/затемнение
+      // Смещение по слоту
+      const slotOffset = slot * (baseWidth - overlap);
+      
+      // Для левой стороны - персонажи идут слева направо
+      // Для центра - центрируются
+      // Для правой стороны - персонажи идут справа налево
+      let x = base.x;
+      if (side === 'left') {
+        x = 100 + slotOffset;
+      } else if (side === 'center') {
+        x = 960 - (totalOnSide * (baseWidth - overlap)) / 2 + slotOffset;
+      } else if (side === 'right') {
+        x = 1820 - slotOffset - baseWidth;
+      }
+
+      return { x, y: base.y, width: baseWidth };
+    };
+
+    // Добавляем персонажей
+    const addCharElements = (charList, side) => {
+      const total = charList.length;
+      charList.forEach((char, idx) => {
+        const basePos = calcCharBasePos(side, idx, total);
+        allElements.push({
+          type: 'char',
+          data: char,
+          zIndex: ZINDEX_BASE.ALL + (char.zIndex ?? 0),
+          baseX: basePos.x,
+          baseY: basePos.y,
+          width: basePos.width,
+          side,
+          slot: idx,
+          totalOnSide: total
+        });
+      });
+    };
+
+    addCharElements(leftChars, 'left');
+    addCharElements(centerChars, 'center');
+    addCharElements(rightChars, 'right');
+
+    // ─── Слои (Layers) ───
+    layers.filter(l => l.visible !== false).forEach(layer => {
+      allElements.push({
+        type: 'layer',
+        data: layer,
+        zIndex: ZINDEX_BASE.ALL + (layer.zIndex ?? 0)
+      });
+    });
+
+    // ─── Интерактивные изображения ───
+    interactiveImages.filter(img => img.visible !== false && img.src).forEach(image => {
+      allElements.push({
+        type: 'interactive',
+        data: image,
+        zIndex: ZINDEX_BASE.ALL + (image.zIndex ?? 0)
+      });
+    });
+
+    // Сортируем по z-index (меньшие значения — ниже)
+    allElements.sort((a, b) => a.zIndex - b.zIndex);
+
+    // ─── Рендерим все элементы ───
+    allElements.forEach(elem => {
+      const el = document.createElement('div');
+
+      if (elem.type === 'char') {
+        const char = elem.data;
         const visClass = !hasActive ? 'vn-char-all-visible' : (char.active ? 'vn-char-active' : 'vn-char-dim');
         const charColor = char.nameColor || '#ffe066';
-
-        const charWidth = baseWidth;
-        const charScale = (char.scale || 1) * scale;
-        const marginLeft = idx > 0 ? -overlap : 0;
-        // zIndex может быть задан вручную, иначе по умолчанию
-        const charZIndex = char.zIndex !== undefined ? (20 + char.zIndex) : (20 - idx);
-
-        // Для центра не применяем автоматическое зеркалирование по стороне
-        const mirror = side === 'center' 
-          ? (char.mirror ? -1 : 1) 
-          : ((char.mirror ? 1 : 0) ^ (side === 'right' ? 1 : 0));
+        const charScale = char.scale || 1;
         const offsetX = char.x || 0;
         const offsetY = char.y || 0;
+        const mirror = elem.side === 'center' 
+          ? (char.mirror ? -1 : 1) 
+          : ((char.mirror ? 1 : 0) ^ (elem.side === 'right' ? 1 : 0));
 
-        div.className = `vn-char ${visClass}`;
-        div.dataset.charId = char.id;
-        div.style.cssText = `width:${charWidth}px;margin-left:${marginLeft}px;z-index:${charZIndex};`;
+        el.className = `vn-char ${visClass}`;
+        el.dataset.charId = char.id;
+        // Контейнер полностью без pointer-events
+        el.style.cssText = `position:absolute;left:${elem.baseX + offsetX}px;bottom:0;width:${elem.width}px;height:900px;z-index:${elem.zIndex};pointer-events:none;`;
 
         // Рендерим изображения с поддержкой активного портрета
         const hasMainImg = char.img?.trim();
         const hasActiveImg = char.activeImg?.trim();
         const isActive = char.active;
 
+        // Генерируем уникальный ID для изображений чтобы найти их позже
+        const imgId = `char-img-${char.id}-${Date.now()}`;
+
         let portraitHtml;
         if (hasMainImg || hasActiveImg) {
-          // Определяем какое изображение показывать как основное
           const mainSrc = hasMainImg ? char.img : char.activeImg;
-          const activeSrc = hasActiveImg ? char.activeImg : char.img;
-
           if (hasActiveImg && hasMainImg) {
-            // Есть оба изображения — используем кроссфейд
             portraitHtml = `
-              <div class="vn-char-img-wrap">
+              <div class="vn-char-img-wrap" id="${imgId}-wrap">
                 <img class="vn-char-img-base ${isActive ? 'vn-img-hidden' : ''}"
+                     id="${imgId}-base"
                      src="${char.img}"
                      alt="${char.name || ''}"
+                     style="pointer-events:auto;cursor:pointer;"
                      onerror="this.style.display='none'"/>
                 <img class="vn-char-img-active ${isActive ? 'vn-img-visible' : ''}"
+                     id="${imgId}-active"
                      src="${char.activeImg}"
                      alt="${char.name || ''}"
+                     style="pointer-events:auto;cursor:pointer;"
                      onerror="this.style.display='none'"/>
               </div>`;
           } else {
-            // Только одно изображение
-            portraitHtml = `<img src="${mainSrc}" alt="${char.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
+            portraitHtml = `<img id="${imgId}" src="${mainSrc}" alt="${char.name || ''}" style="pointer-events:auto;cursor:pointer;" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
           }
         } else {
           portraitHtml = `<div class="vn-char-empty"><i class="fas fa-user"></i></div>`;
         }
 
-        const nameHtml = char.name?.trim()
-          ? `<div class="vn-char-label"><span class="vn-char-label-name" style="color:${charColor}">${char.name}</span>${char.title ? `<span class="vn-char-title">${char.title}</span>` : ''}</div>`
-          : `<div class="vn-char-label"><span class="vn-char-label-name" style="color:#888;font-style:italic;">${game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</span></div>`;
-
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 
-        div.innerHTML = `
-          <div class="vn-char-wrapper" style="transform:translate(${offsetX}px,${offsetY}px)">
-            <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
+        // wrapper без pointer-events
+        el.innerHTML = `
+          <div class="vn-char-wrapper" style="transform:translateY(${offsetY}px);pointer-events:none;">
+            <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}pointer-events:none;">
               ${portraitHtml}
             </div>
-            ${nameHtml}
           </div>`;
-        container.appendChild(div);
-      });
-    };
 
-    render(leftEl,   left,   'left');
-    render(centerEl, center, 'center');
-    render(rightEl,  right,  'right');
+        // Hover tracking - вешаем на само изображение (pointer-events:auto на img)
+        const imgs = el.querySelectorAll('img');
+        imgs.forEach(img => {
+          img.addEventListener('mouseenter', () => {
+            DDVNOverlay._hoveredCharId = char.id;
+            DDVNOverlay._renderNameBar(_state.chars || []);
+          });
+          img.addEventListener('mouseleave', () => {
+            DDVNOverlay._hoveredCharId = null;
+            DDVNOverlay._renderNameBar(_state.chars || []);
+          });
+        });
+
+      } else if (elem.type === 'layer') {
+        const layer = elem.data;
+        const layerScale = layer.scale || 1;
+        const layerWidth = (layer.width || 300) * layerScale;
+        const layerHeight = (layer.height || 200) * layerScale;
+        el.className = 'vn-layer-item';
+        el.style.cssText = `position:absolute;left:${layer.x||0}px;top:${layer.y||0}px;z-index:${elem.zIndex};opacity:${layer.opacity??1};pointer-events:none;`;
+        if (layer.type === 'image' && layer.src) {
+          el.innerHTML = `<img src="${layer.src}" style="width:${layerWidth}px;height:${layerHeight}px;object-fit:contain;display:block;" onerror="this.style.display='none'"/>`;
+        } else if (layer.type === 'text' && layer.text) {
+          el.innerHTML = `<div style="width:${(layer.width||400)*layerScale}px;font-size:${(layer.fontSize||28)*layerScale}px;color:${layer.color||'#fff'};font-family:${layer.fontFamily||'inherit'};text-align:${layer.textAlign||'left'};text-shadow:0 2px 10px rgba(0,0,0,.95),0 0 20px rgba(0,0,0,.8);line-height:1.4;white-space:pre-wrap;">${layer.text}</div>`;
+        }
+
+      } else if (elem.type === 'interactive') {
+        const image = elem.data;
+        const imgScale = image.scale || 1;
+        const imgWidth = (image.width || 200) * imgScale;
+        const imgHeight = (image.height || 200) * imgScale;
+        el.className = 'vn-interactive-img-item';
+        el.dataset.imgId = image.id;
+        el.style.cssText = `position:absolute;left:${image.x||0}px;top:${image.y||0}px;z-index:${elem.zIndex};opacity:${image.opacity??1};width:${imgWidth}px;height:${imgHeight}px;cursor:pointer;pointer-events:auto;transition:filter .2s,transform .1s;`;
+        el.innerHTML = `<img src="${image.src}" style="width:100%;height:100%;object-fit:contain;display:block;" title="${image.name||''}" onerror="this.style.display='none'"/>`;
+        if (image.macroId) {
+          el.addEventListener('click', () => {
+            const macro = game.macros?.get(image.macroId) ?? game.macros?.getName(image.macroId);
+            if (macro) macro.execute();
+            else ui.notifications?.warn(`Macro not found: ${image.macroId}`);
+          });
+          el.addEventListener('mouseenter', () => { el.style.filter = 'brightness(1.2) drop-shadow(0 0 12px rgba(255,220,60,.6))'; el.style.transform = 'scale(1.05)'; });
+          el.addEventListener('mouseleave', () => { el.style.filter = ''; el.style.transform = ''; });
+        }
+      }
+
+      container.appendChild(el);
+    });
+
+    console.log('DD VN | Rendered elements:', allElements.length, 'sorted by z-index');
+  }
+
+  static _renderChars(chars) {
+    // Устаревший метод - теперь используется _renderAllElements
+    // Оставляем для совместимости
+  }
+
+  static _hoveredCharId = null;
+
+  static _renderNameBar(chars) {
+    const bar = document.getElementById('vn-name-bar');
+    if (!bar) return;
+    const activeChars = chars.filter(c => c.active && c.visible !== false && c.name?.trim());
+    const hoveredChar = this._hoveredCharId ? chars.find(c => c.id === this._hoveredCharId) : null;
+    const allVisible = [...activeChars];
+    if (hoveredChar && !activeChars.find(c => c.id === hoveredChar.id) && hoveredChar.name?.trim()) {
+      allVisible.push(hoveredChar);
+    }
+    if (!allVisible.length) {
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'flex';
+    bar.innerHTML = allVisible.map((c, i) =>
+      (i > 0 ? '<span class="vn-name-bar-sep">·</span>' : '') +
+      `<span class="vn-name-bar-name">${c.name}</span>`
+    ).join('');
+  }
+
+  static _renderLayers(layers) {
+    // Устаревший метод - теперь используется _renderAllElements
+  }
+
+  static _renderInteractiveImages(images) {
+    // Устаревший метод - теперь используется _renderAllElements
   }
 
   static _renderDialogue(d) {
@@ -1010,10 +1166,12 @@ export class DDVNPresets {
   static CHARS_KEY  = 'vnCharPresets';
   static BG_KEY     = 'vnBgPresets';
   static SCENE_KEY  = 'vnScenePresets';
+  static LAYERS_KEY = 'vnLayerPresets';
+  static IIMGS_KEY  = 'vnIimgPresets';
 
   static register() {
     const base = { scope: 'world', config: false, type: Object, default: {} };
-    for (const k of [this.CHARS_KEY, this.BG_KEY, this.SCENE_KEY])
+    for (const k of [this.CHARS_KEY, this.BG_KEY, this.SCENE_KEY, this.LAYERS_KEY, this.IIMGS_KEY])
       game.settings.register(MODULE_ID, k, { ...base });
   }
 
@@ -1036,6 +1194,18 @@ export class DDVNPresets {
   static saveScene(n,v) { const a = this._g(this.SCENE_KEY); a[n] = v; return this._s(this.SCENE_KEY, a); }
   static getScene(n)    { return this._g(this.SCENE_KEY)[n] ?? null; }
   static deleteScene(n) { const a = this._g(this.SCENE_KEY); delete a[n]; return this._s(this.SCENE_KEY, a); }
+
+  // Layers
+  static listLayers()     { return Object.keys(this._g(this.LAYERS_KEY)).sort(); }
+  static saveLayers(n, v) { const a = this._g(this.LAYERS_KEY); a[n] = v; return this._s(this.LAYERS_KEY, a); }
+  static getLayers(n)     { return this._g(this.LAYERS_KEY)[n] ?? null; }
+  static deleteLayers(n)  { const a = this._g(this.LAYERS_KEY); delete a[n]; return this._s(this.LAYERS_KEY, a); }
+
+  // Interactive images
+  static listIimgs()     { return Object.keys(this._g(this.IIMGS_KEY)).sort(); }
+  static saveIimgs(n, v) { const a = this._g(this.IIMGS_KEY); a[n] = v; return this._s(this.IIMGS_KEY, a); }
+  static getIimgs(n)     { return this._g(this.IIMGS_KEY)[n] ?? null; }
+  static deleteIimgs(n)  { const a = this._g(this.IIMGS_KEY); delete a[n]; return this._s(this.IIMGS_KEY, a); }
 
   // Получить все фоны (встроенные + пользовательские)
   static getAllBg() {
@@ -1138,6 +1308,24 @@ export class DDVNManager {
     this.broadcast();
   }
 
+  // ── Layers ───────────────────────────────────────────────────────────────
+  static setLayers(layers) { _state.layers = deepClone(layers); this.broadcast(); }
+  static addLayer(layer)   { _state.layers.push(deepClone(layer)); this.broadcast(); }
+  static updateLayer(id, props) {
+    const l = _state.layers.find(l => l.id === id);
+    if (l) { Object.assign(l, props); this.broadcast(); }
+  }
+  static removeLayer(id) { _state.layers = _state.layers.filter(l => l.id !== id); this.broadcast(); }
+
+  // ── Interactive Images ───────────────────────────────────────────────────
+  static setInteractiveImages(images) { _state.interactiveImages = deepClone(images); this.broadcast(); }
+  static addInteractiveImage(img)     { _state.interactiveImages.push(deepClone(img)); this.broadcast(); }
+  static updateInteractiveImage(id, props) {
+    const img = _state.interactiveImages.find(i => i.id === id);
+    if (img) { Object.assign(img, props); this.broadcast(); }
+  }
+  static removeInteractiveImage(id) { _state.interactiveImages = _state.interactiveImages.filter(i => i.id !== id); this.broadcast(); }
+
   static showDialogue(speakerName, text, speakerColor = '#ffe066', autoClose = 0) {
     _state.dialogue = { visible: true, speakerName, text, speakerColor, _subtitleActive: _state.dialogue._subtitleActive };
     this.broadcast();
@@ -1217,6 +1405,8 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     super(opts);
     DDVNPanel._instance = this;
     this._chars    = deepClone(_state.chars);
+    this._layers   = deepClone(_state.layers);
+    this._interactiveImages = deepClone(_state.interactiveImages);
     this._activeTab = 'scene';
     this._editBgId  = null; // id редактируемого bg preset
   }
@@ -1256,6 +1446,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       scenePresets: DDVNPresets.listScenes(),
       allBg,
       gmCharId:     this._gmCharId || '',
+      layers:       this._layers.map((l, i) => ({ ...l, _idx: i })),
+      interactiveImages: this._interactiveImages.map((img, i) => ({ ...img, _idx: i })),
+      macros:       (game.macros?.contents || []).map(m => ({ id: m.id, name: m.name })).sort((a,b) => a.name.localeCompare(b.name)),
+      layerPresets: DDVNPresets.listLayers(),
+      iimgPresets:  DDVNPresets.listIimgs(),
     };
   }
 
@@ -1380,6 +1575,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // ── Персонажи ──
     this._bindCharEvents(el);
+    this._bindTextPicsEvents(el);
 
     // Пресеты ростера
     el.querySelector('[data-action="vn-chars-save"]')?.addEventListener('click', async () => {
@@ -1445,29 +1641,257 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       this._gmCharId = e.target.value || null;
     });
 
-    // Пресеты сцен
+    // Пресеты сцен (сохраняют всё: chars, layers, interactiveImages)
     el.querySelector('[data-action="vn-scene-save"]')?.addEventListener('click', async () => {
       const name = el.querySelector('#vn-scene-name')?.value?.trim();
       if (!name) return;
-      await DDVNPresets.saveScene(name, { ...deepClone(_state), chars: deepClone(this._chars) });
-      ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneLoaded', {name}));
+      // Сохраняем напрямую из _state - это всегда актуальное состояние
+      await DDVNPresets.saveScene(name, deepClone(_state));
+      ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneSaved', {name}));
       this.render();
     });
     el.querySelector('[data-action="vn-scene-load"]')?.addEventListener('click', () => {
       const n = el.querySelector('#vn-scene-select')?.value;
       const s = DDVNPresets.getScene(n);
       if (!s) return;
-      this._chars = deepClone(s.chars || []);
-      Object.assign(_state, s);
-      _state.chars = this._chars;
+      // Загружаем состояние в _state
+      Object.assign(_state, {
+        open: s.open ?? _state.open,
+        background: s.background ?? '',
+        bgFit: s.bgFit ?? 'cover',
+        bgColor: s.bgColor ?? '#0a0a14',
+        dimBg: s.dimBg ?? 0,
+        chars: deepClone(s.chars || []),
+        dialogue: s.dialogue ?? { visible: false, speakerName: '', speakerColor: '#ffe066', text: '', _subtitleActive: false },
+        layers: deepClone(s.layers || []),
+        interactiveImages: deepClone(s.interactiveImages || [])
+      });
+      // Синхронизируем панельные переменные с _state
+      this._syncCharsFromState();
       DDVNManager.broadcast();
       this.render();
+      ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneLoaded', {name: n}));
     });
     el.querySelector('[data-action="vn-scene-delete"]')?.addEventListener('click', async () => {
       const n = el.querySelector('#vn-scene-select')?.value;
       if (!n) return;
       await DDVNPresets.deleteScene(n); this.render();
     });
+
+    // ── Copy macro buttons ────────────────────────────────────────────────
+    el.querySelectorAll('.vn-macro-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pre = btn.closest('.vn-macro-wrap')?.querySelector('.vn-macro-example');
+        if (!pre) return;
+        navigator.clipboard.writeText(pre.textContent).then(() => {
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1500);
+        });
+      });
+    });
+  }
+
+  // ── Text & Pictures events ──────────────────────────────────────────────────
+  _bindTextPicsEvents(el) {
+    // ── Layers ──────────────────────────────────────────────────────────────
+    el.querySelector('[data-action="vn-layer-add-img"]')?.addEventListener('click', () => {
+      this._layers.push(newLayer('image'));
+      DDVNManager.setLayers(this._layers);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-layer-add-text"]')?.addEventListener('click', () => {
+      this._layers.push(newLayer('text'));
+      DDVNManager.setLayers(this._layers);
+      this.render();
+    });
+
+    el.querySelectorAll('[data-layer-idx]').forEach(row => {
+      const idx = Number(row.dataset.layerIdx);
+      const layer = this._layers[idx];
+      if (!layer) return;
+
+      row.querySelector('[data-layer-action="remove"]')?.addEventListener('click', () => {
+        this._layers.splice(idx, 1);
+        DDVNManager.setLayers(this._layers);
+        this.render();
+      });
+      row.querySelector('[data-layer-action="move-up"]')?.addEventListener('click', () => {
+        if (idx > 0) {
+          [this._layers[idx-1], this._layers[idx]] = [this._layers[idx], this._layers[idx-1]];
+          DDVNManager.setLayers(this._layers); this.render();
+        }
+      });
+      row.querySelector('[data-layer-action="move-down"]')?.addEventListener('click', () => {
+        if (idx < this._layers.length - 1) {
+          [this._layers[idx], this._layers[idx+1]] = [this._layers[idx+1], this._layers[idx]];
+          DDVNManager.setLayers(this._layers); this.render();
+        }
+      });
+      row.querySelector('[data-layer-action="browse"]')?.addEventListener('click', () => {
+        this._openFilePicker(layer.type === 'image' ? 'image' : 'any', p => {
+          this._layers[idx].src = p;
+          const inp = row.querySelector('.vn-layer-src-inp');
+          if (inp) inp.value = p;
+          DDVNManager.setLayers(this._layers);
+        });
+      });
+
+      row.querySelectorAll('input, select, textarea').forEach(inp => {
+        inp.addEventListener('change', () => this._syncLayerRow(idx, row));
+        inp.addEventListener('input',  () => this._syncLayerRow(idx, row));
+      });
+    });
+
+    // Layer presets
+    el.querySelector('[data-action="vn-layers-save"]')?.addEventListener('click', async () => {
+      const name = el.querySelector('#vn-layers-preset-name')?.value?.trim();
+      if (!name) return;
+      await DDVNPresets.saveLayers(name, deepClone(this._layers));
+      ui.notifications.info(`Layers preset "${name}" saved.`);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-layers-load"]')?.addEventListener('click', () => {
+      const n = el.querySelector('#vn-layers-preset-select')?.value;
+      const layers = DDVNPresets.getLayers(n);
+      if (!layers) return;
+      this._layers = deepClone(layers);
+      DDVNManager.setLayers(this._layers);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-layers-delete"]')?.addEventListener('click', async () => {
+      const n = el.querySelector('#vn-layers-preset-select')?.value;
+      if (!n) return;
+      await DDVNPresets.deleteLayers(n); this.render();
+    });
+    el.querySelector('[data-action="vn-layers-macro"]')?.addEventListener('click', () => {
+      const code = `// Apply VN layers
+const layers = ${JSON.stringify(this._layers, null, 2)};
+game.dramaDirector.vn.setLayers(layers);`;
+      const wrap = el.querySelector('#vn-layers-macro-wrap');
+      if (wrap) { wrap.style.display = ''; wrap.querySelector('.vn-macro-example').textContent = code; }
+    });
+    el.querySelector('[data-action="vn-layers-clear"]')?.addEventListener('click', () => {
+      this._layers = [];
+      DDVNManager.setLayers(this._layers);
+      this.render();
+    });
+
+    // ── Interactive Images ──────────────────────────────────────────────────
+    el.querySelector('[data-action="vn-iimg-add"]')?.addEventListener('click', () => {
+      this._interactiveImages.push(newInteractiveImage());
+      DDVNManager.setInteractiveImages(this._interactiveImages);
+      this.render();
+    });
+
+    el.querySelectorAll('[data-iimg-idx]').forEach(row => {
+      const idx = Number(row.dataset.iimgIdx);
+      if (!this._interactiveImages[idx]) return;
+
+      row.querySelector('[data-iimg-action="remove"]')?.addEventListener('click', () => {
+        this._interactiveImages.splice(idx, 1);
+        DDVNManager.setInteractiveImages(this._interactiveImages);
+        this.render();
+      });
+      row.querySelector('[data-iimg-action="browse"]')?.addEventListener('click', () => {
+        this._openFilePicker('image', p => {
+          this._interactiveImages[idx].src = p;
+          const inp = row.querySelector('.vn-iimg-src-inp');
+          if (inp) inp.value = p;
+          DDVNManager.setInteractiveImages(this._interactiveImages);
+        });
+      });
+
+      row.querySelectorAll('input, select').forEach(inp => {
+        inp.addEventListener('change', () => this._syncIimgRow(idx, row));
+        inp.addEventListener('input',  () => this._syncIimgRow(idx, row));
+      });
+    });
+
+    // Interactive images presets
+    el.querySelector('[data-action="vn-iimg-save"]')?.addEventListener('click', async () => {
+      const name = el.querySelector('#vn-iimg-preset-name')?.value?.trim();
+      if (!name) return;
+      await DDVNPresets.saveIimgs(name, deepClone(this._interactiveImages));
+      ui.notifications.info(`Interactive images preset "${name}" saved.`);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-iimg-load"]')?.addEventListener('click', () => {
+      const n = el.querySelector('#vn-iimg-preset-select')?.value;
+      const imgs = DDVNPresets.getIimgs(n);
+      if (!imgs) return;
+      this._interactiveImages = deepClone(imgs);
+      DDVNManager.setInteractiveImages(this._interactiveImages);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-iimg-delete"]')?.addEventListener('click', async () => {
+      const n = el.querySelector('#vn-iimg-preset-select')?.value;
+      if (!n) return;
+      await DDVNPresets.deleteIimgs(n); this.render();
+    });
+    el.querySelector('[data-action="vn-iimg-macro"]')?.addEventListener('click', () => {
+      const code = `// Apply VN interactive images
+const images = ${JSON.stringify(this._interactiveImages, null, 2)};
+game.dramaDirector.vn.setInteractiveImages(images);`;
+      const wrap = el.querySelector('#vn-iimg-macro-wrap');
+      if (wrap) { wrap.style.display = ''; wrap.querySelector('.vn-macro-example').textContent = code; }
+    });
+    el.querySelector('[data-action="vn-iimg-clear"]')?.addEventListener('click', () => {
+      this._interactiveImages = [];
+      DDVNManager.setInteractiveImages(this._interactiveImages);
+      this.render();
+    });
+  }
+
+  _syncLayerRow(idx, row) {
+    const l = this._layers[idx];
+    if (!l) return;
+    const q = s => row.querySelector(s);
+    l.name      = q('.vn-layer-name-inp')?.value ?? l.name;
+    l.src       = q('.vn-layer-src-inp')?.value  ?? l.src;
+    l.text      = q('.vn-layer-text-inp')?.value ?? l.text;
+    l.x         = Number(q('.vn-layer-x')?.value) || 0;
+    l.y         = Number(q('.vn-layer-y')?.value) || 0;
+    l.zIndex    = Number(q('.vn-layer-z')?.value) || 0;
+    l.width     = Number(q('.vn-layer-w')?.value) || 300;
+    l.height    = Number(q('.vn-layer-h')?.value) || 200;
+    l.opacity   = parseFloat(q('.vn-layer-opacity')?.value ?? 1);
+    l.scale     = parseFloat(q('.vn-layer-scale')?.value ?? 1);
+    l.fontSize  = Number(q('.vn-layer-fontsize')?.value) || 28;
+    l.color     = q('.vn-layer-color')?.value ?? l.color;
+    l.textAlign = q('.vn-layer-align')?.value ?? l.textAlign;
+    l.visible   = q('.vn-layer-visible')?.checked !== false;
+    // Update slider labels
+    ['.vn-layer-x', '.vn-layer-y', '.vn-layer-z', '.vn-layer-w', '.vn-layer-h', '.vn-layer-opacity', '.vn-layer-scale', '.vn-layer-fontsize'].forEach(sel => {
+      const inp = q(sel);
+      if (inp?.nextElementSibling?.classList.contains('vn-slider-val')) {
+        inp.nextElementSibling.textContent = inp.value;
+      }
+    });
+    DDVNManager.setLayers(this._layers);
+  }
+
+  _syncIimgRow(idx, row) {
+    const img = this._interactiveImages[idx];
+    if (!img) return;
+    const q = s => row.querySelector(s);
+    img.name    = q('.vn-iimg-name-inp')?.value ?? img.name;
+    img.src     = q('.vn-iimg-src-inp')?.value  ?? img.src;
+    img.macroId = q('.vn-iimg-macro-sel')?.value ?? img.macroId;
+    img.x       = Number(q('.vn-iimg-x')?.value) || 0;
+    img.y       = Number(q('.vn-iimg-y')?.value) || 0;
+    img.zIndex  = Number(q('.vn-iimg-z')?.value) || 0;
+    img.width   = Number(q('.vn-iimg-w')?.value) || 200;
+    img.height  = Number(q('.vn-iimg-h')?.value) || 200;
+    img.opacity = parseFloat(q('.vn-iimg-opacity')?.value ?? 1);
+    img.scale   = parseFloat(q('.vn-iimg-scale')?.value ?? 1);
+    img.visible = q('.vn-iimg-visible')?.checked !== false;
+    ['.vn-iimg-x', '.vn-iimg-y', '.vn-iimg-z', '.vn-iimg-w', '.vn-iimg-h', '.vn-iimg-opacity', '.vn-iimg-scale'].forEach(sel => {
+      const inp = q(sel);
+      if (inp?.nextElementSibling?.classList.contains('vn-slider-val')) {
+        inp.nextElementSibling.textContent = inp.value;
+      }
+    });
+    DDVNManager.setInteractiveImages(this._interactiveImages);
   }
 
   // ── Bg Edit Form ─────────────────────────────────────────────────────────
@@ -1733,7 +2157,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
-  _syncCharsFromState() { this._chars = deepClone(_state.chars); }
+  _syncCharsFromState() {
+    this._chars = deepClone(_state.chars);
+    this._layers = deepClone(_state.layers);
+    this._interactiveImages = deepClone(_state.interactiveImages);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1754,6 +2182,14 @@ export const DDVNApi = {
   startMic()                         { return DDVNMic.start(); },
   stopMic()                          { DDVNMic.stop(); },
   state()                            { return _state; },
+  setLayers(layers)                  { DDVNManager.setLayers(layers); },
+  addLayer(layer)                    { DDVNManager.addLayer(layer); },
+  updateLayer(id, props)             { DDVNManager.updateLayer(id, props); },
+  removeLayer(id)                    { DDVNManager.removeLayer(id); },
+  setInteractiveImages(images)       { DDVNManager.setInteractiveImages(images); },
+  addInteractiveImage(img)           { DDVNManager.addInteractiveImage(img); },
+  updateInteractiveImage(id, props)  { DDVNManager.updateInteractiveImage(id, props); },
+  removeInteractiveImage(id)         { DDVNManager.removeInteractiveImage(id); },
   openPanel() {
     const ex = foundry.applications.instances.get('dd-vn-panel');
     if (ex) { ex.bringToTop(); return; }

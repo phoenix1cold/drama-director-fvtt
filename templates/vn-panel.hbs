@@ -22,6 +22,8 @@
       <button class="vn-tab" data-vtab="dialogue"><i class="fas fa-comment"></i> {{localize "DRAMADIRECTOR.vn.tabDialogue"}}</button>
       <button class="vn-tab" data-vtab="mic">     <i class="fas fa-microphone"></i> {{localize "DRAMADIRECTOR.vn.tabMic"}}{{#if micOn}} <span class="vn-mic-dot"></span>{{/if}}</button>
       <button class="vn-tab" data-vtab="presets"> <i class="fas fa-bookmark"></i> {{localize "DRAMADIRECTOR.vn.tabPresets"}}</button>
+      <button class="vn-tab" data-vtab="textpics"><i class="fas fa-layer-group"></i> Layers</button>
+      <button class="vn-tab" data-vtab="interactive"><i class="fas fa-hand-pointer"></i> Interactive</button>
       <button class="vn-tab" data-vtab="help">    <i class="fas fa-question-circle"></i> {{localize "DRAMADIRECTOR.vn.tabHelp"}}</button>
     </div>
   </div>
@@ -138,7 +140,7 @@
             </div>
             <div class="vn-char-params-row">
               <label class="dd-param-group"><span>{{localize "DRAMADIRECTOR.vn.charScale"}}</span>
-                <input type="range" class="vn-char-scale dd-input-sm" value="{{this.scale}}" min="0.1" max="3" step="0.05"/>
+                <input type="range" class="vn-char-scale dd-input-sm" value="{{this.scale}}" min="0.1" max="5" step="0.05"/>
                 <span class="vn-slider-val">{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}</span>
               </label>
               <label class="dd-param-group"><span>X</span>
@@ -269,6 +271,7 @@
     <div class="vn-tab-content dd-hidden" data-vtab-content="presets">
       <section class="dd-section">
         <h3><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.vn.presetsSection"}}</h3>
+        <p class="dd-hint" style="font-size:11px;color:#888;margin:0 0 8px">Сохраняет: персонажей, фон, слои, интерактивные изображения</p>
         <div class="dd-row">
           <select id="vn-scene-select" class="dd-select" style="flex:1">
             <option value="">{{localize "DRAMADIRECTOR.vn.presetsLoad"}}</option>
@@ -284,12 +287,222 @@
       </section>
       <section class="dd-section" style="margin-top:8px">
         <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.vn.apiSection"}}</h3>
-        <pre class="vn-macro-example">game.dramaDirector.vn.open();
+        <div class="vn-macro-wrap" style="position:relative">
+          <pre class="vn-macro-example">game.dramaDirector.vn.open();
 game.dramaDirector.vn.setBackground('path/bg.mp4');
 game.dramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066');
 game.dramaDirector.vn.activateExclusive('char-id');
 game.dramaDirector.vn.stop();</pre>
+          <button type="button" class="vn-macro-copy-btn" title="Copy macro"><i class="fas fa-copy"></i></button>
+        </div>
       </section>
+    </div>
+
+    <!-- ═══ TEXT & PICTURES ═══ -->
+    <div class="vn-tab-content dd-hidden" data-vtab-content="textpics">
+
+      <!-- Layers -->
+      <section class="dd-section">
+        <div class="vn-tp-section-header">
+          <h3><i class="fas fa-layer-group"></i> Layers (Text &amp; Images)</h3>
+          <div style="display:flex;gap:5px">
+            <button type="button" data-action="vn-layer-add-img" class="vn-btn-add"><i class="fas fa-image"></i> + Image</button>
+            <button type="button" data-action="vn-layer-add-text" class="vn-btn-add"><i class="fas fa-font"></i> + Text</button>
+            <button type="button" data-action="vn-layers-clear" class="vn-btn-danger" title="Clear all layers"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+
+        <div class="vn-layer-list" id="vn-layer-list">
+          {{#each layers}}
+          <div class="vn-layer-row {{#if (eq this.type 'text')}}vn-layer-row-text{{else}}vn-layer-row-img{{/if}}" data-layer-idx="{{this._idx}}">
+            <div class="vn-layer-row-header">
+              <span class="vn-layer-type-badge {{this.type}}">{{this.type}}</span>
+              <input type="text" class="vn-layer-name-inp dd-input" value="{{this.name}}" placeholder="Layer name" style="flex:1;max-width:120px"/>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#888">
+                <input type="checkbox" class="vn-layer-visible" {{#if this.visible}}checked{{/if}}/> Visible
+              </label>
+              <button type="button" data-layer-action="move-up"   class="vn-order-btn" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+              <button type="button" data-layer-action="move-down" class="vn-order-btn" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+              <button type="button" data-layer-action="remove"    class="dd-btn-danger" title="Remove"><i class="fas fa-times"></i></button>
+            </div>
+
+            {{#if (eq this.type 'image')}}
+            <div class="dd-row" style="margin-top:4px">
+              <input type="text" class="vn-layer-src-inp dd-input" value="{{this.src}}" placeholder="Image path…"/>
+              <button type="button" data-layer-action="browse"><i class="fas fa-folder-open"></i></button>
+            </div>
+            {{else}}
+            <div style="margin-top:4px">
+              <textarea class="vn-layer-text-inp dd-textarea" rows="2" style="width:100%;resize:vertical">{{this.text}}</textarea>
+            </div>
+            <div class="dd-row" style="margin-top:3px;gap:6px;flex-wrap:wrap">
+              <label class="dd-param-group"><span>Size</span>
+                <input type="range" class="vn-layer-fontsize dd-input-sm" value="{{this.fontSize}}" min="8" max="120" step="1"/>
+                <span class="vn-slider-val">{{this.fontSize}}</span>
+              </label>
+              <label class="dd-param-group"><span>Color</span>
+                <input type="color" class="vn-layer-color dd-color" value="{{this.color}}"/>
+              </label>
+              <label class="dd-param-group"><span>Align</span>
+                <select class="vn-layer-align dd-select-sm">
+                  <option value="left"   {{#if (eq this.textAlign "left")}}selected{{/if}}>Left</option>
+                  <option value="center" {{#if (eq this.textAlign "center")}}selected{{/if}}>Center</option>
+                  <option value="right"  {{#if (eq this.textAlign "right")}}selected{{/if}}>Right</option>
+                </select>
+              </label>
+            </div>
+            {{/if}}
+
+            <div class="vn-char-params-row" style="margin-top:4px">
+              <label class="dd-param-group"><span>X</span>
+                <input type="range" class="vn-layer-x dd-input-sm" value="{{this.x}}" min="0" max="1920" step="5"/>
+                <span class="vn-slider-val">{{this.x}}</span>
+              </label>
+              <label class="dd-param-group"><span>Y</span>
+                <input type="range" class="vn-layer-y dd-input-sm" value="{{this.y}}" min="0" max="1080" step="5"/>
+                <span class="vn-slider-val">{{this.y}}</span>
+              </label>
+              <label class="dd-param-group"><span>Z</span>
+                <input type="range" class="vn-layer-z dd-input-sm" value="{{this.zIndex}}" min="-50" max="50" step="1"/>
+                <span class="vn-slider-val">{{this.zIndex}}</span>
+              </label>
+              <label class="dd-param-group"><span>W</span>
+                <input type="range" class="vn-layer-w dd-input-sm" value="{{this.width}}" min="20" max="1920" step="10"/>
+                <span class="vn-slider-val">{{this.width}}</span>
+              </label>
+              {{#if (eq this.type 'image')}}
+              <label class="dd-param-group"><span>H</span>
+                <input type="range" class="vn-layer-h dd-input-sm" value="{{this.height}}" min="20" max="1080" step="10"/>
+                <span class="vn-slider-val">{{this.height}}</span>
+              </label>
+              {{/if}}
+              <label class="dd-param-group"><span>Opacity</span>
+                <input type="range" class="vn-layer-opacity dd-input-sm" value="{{this.opacity}}" min="0" max="1" step="0.05"/>
+                <span class="vn-slider-val">{{this.opacity}}</span>
+              </label>
+              <label class="dd-param-group"><span>Scale</span>
+                <input type="range" class="vn-layer-scale dd-input-sm" value="{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}" min="0.1" max="5" step="0.05"/>
+                <span class="vn-slider-val">{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}</span>
+              </label>
+            </div>
+          </div>
+          {{else}}
+          <div class="dd-empty-layers" style="color:#666;text-align:center;padding:14px;">No layers. Click + Image or + Text to add.</div>
+          {{/each}}
+        </div>
+
+        <!-- Layer presets and macro -->
+        <div class="vn-chars-presets-bar" style="margin-top:8px">
+          <select id="vn-layers-preset-select" class="dd-select" style="flex:1">
+            <option value="">Load preset…</option>
+            {{#each ../layerPresets}}<option value="{{this}}">{{this}}</option>{{/each}}
+          </select>
+          <button type="button" data-action="vn-layers-load" title="Load"><i class="fas fa-upload"></i></button>
+          <button type="button" data-action="vn-layers-delete" class="dd-btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+          <input type="text" id="vn-layers-preset-name" placeholder="Preset name…" class="dd-input" style="flex:1"/>
+          <button type="button" data-action="vn-layers-save" title="Save"><i class="fas fa-save"></i></button>
+          <button type="button" data-action="vn-layers-macro" class="vn-btn-secondary" title="Generate macro"><i class="fas fa-code"></i></button>
+        </div>
+        <div id="vn-layers-macro-wrap" class="vn-macro-wrap" style="display:none;margin-top:6px;position:relative">
+          <pre class="vn-macro-example"></pre>
+          <button type="button" class="vn-macro-copy-btn" title="Copy"><i class="fas fa-copy"></i></button>
+        </div>
+      </section>
+
+
+    </div>
+
+    <!-- ═══ INTERACTIVE IMAGES ═══ -->
+    <div class="vn-tab-content dd-hidden" data-vtab-content="interactive">
+<!-- Interactive Images -->
+      <section class="dd-section" style="margin-top:8px">
+        <div class="vn-tp-section-header">
+          <h3><i class="fas fa-hand-pointer"></i> Interactive Images</h3>
+          <div style="display:flex;gap:5px">
+            <button type="button" data-action="vn-iimg-add" class="vn-btn-add"><i class="fas fa-plus"></i> Add</button>
+            <button type="button" data-action="vn-iimg-clear" class="vn-btn-danger" title="Clear all"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <p class="dd-hint" style="font-size:11px;color:#777;margin:0 0 6px">Interactive images float freely on screen. Players click them to trigger a macro.</p>
+
+        <div class="vn-layer-list" id="vn-iimg-list">
+          {{#each interactiveImages}}
+          <div class="vn-layer-row vn-iimg-row" data-iimg-idx="{{this._idx}}">
+            <div class="vn-layer-row-header">
+              <i class="fas fa-hand-pointer" style="color:#ffe066;font-size:11px"></i>
+              <input type="text" class="vn-iimg-name-inp dd-input" value="{{this.name}}" placeholder="Name…" style="flex:1;max-width:120px"/>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#888">
+                <input type="checkbox" class="vn-iimg-visible" {{#if this.visible}}checked{{/if}}/> Visible
+              </label>
+              <button type="button" data-iimg-action="remove" class="dd-btn-danger" title="Remove"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dd-row" style="margin-top:4px">
+              <input type="text" class="vn-iimg-src-inp dd-input" value="{{this.src}}" placeholder="Image path…"/>
+              <button type="button" data-iimg-action="browse"><i class="fas fa-folder-open"></i></button>
+            </div>
+            <div class="dd-row" style="margin-top:3px">
+              <label style="font-size:11px;color:#888;min-width:50px">Macro:</label>
+              <select class="vn-iimg-macro-sel dd-select" style="flex:1">
+                <option value="">— None —</option>
+                {{#each ../macros}}
+                <option value="{{this.id}}" {{#if (eq ../macroId this.id)}}selected{{/if}}>{{this.name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="vn-char-params-row" style="margin-top:4px">
+              <label class="dd-param-group"><span>X</span>
+                <input type="range" class="vn-iimg-x dd-input-sm" value="{{this.x}}" min="0" max="1920" step="5"/>
+                <span class="vn-slider-val">{{this.x}}</span>
+              </label>
+              <label class="dd-param-group"><span>Y</span>
+                <input type="range" class="vn-iimg-y dd-input-sm" value="{{this.y}}" min="0" max="1080" step="5"/>
+                <span class="vn-slider-val">{{this.y}}</span>
+              </label>
+              <label class="dd-param-group"><span>Z</span>
+                <input type="range" class="vn-iimg-z dd-input-sm" value="{{this.zIndex}}" min="-50" max="50" step="1"/>
+                <span class="vn-slider-val">{{this.zIndex}}</span>
+              </label>
+              <label class="dd-param-group"><span>W</span>
+                <input type="range" class="vn-iimg-w dd-input-sm" value="{{this.width}}" min="20" max="800" step="5"/>
+                <span class="vn-slider-val">{{this.width}}</span>
+              </label>
+              <label class="dd-param-group"><span>H</span>
+                <input type="range" class="vn-iimg-h dd-input-sm" value="{{this.height}}" min="20" max="800" step="5"/>
+                <span class="vn-slider-val">{{this.height}}</span>
+              </label>
+              <label class="dd-param-group"><span>Opacity</span>
+                <input type="range" class="vn-iimg-opacity dd-input-sm" value="{{this.opacity}}" min="0" max="1" step="0.05"/>
+                <span class="vn-slider-val">{{this.opacity}}</span>
+              </label>
+              <label class="dd-param-group"><span>Scale</span>
+                <input type="range" class="vn-iimg-scale dd-input-sm" value="{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}" min="0.1" max="5" step="0.05"/>
+                <span class="vn-slider-val">{{#if this.scale}}{{this.scale}}{{else}}1{{/if}}</span>
+              </label>
+            </div>
+          </div>
+          {{else}}
+          <div class="dd-empty-layers" style="color:#666;text-align:center;padding:14px;">No interactive images yet.</div>
+          {{/each}}
+        </div>
+
+        <!-- Interactive images presets and macro -->
+        <div class="vn-chars-presets-bar" style="margin-top:8px">
+          <select id="vn-iimg-preset-select" class="dd-select" style="flex:1">
+            <option value="">Load preset…</option>
+            {{#each iimgPresets}}<option value="{{this}}">{{this}}</option>{{/each}}
+          </select>
+          <button type="button" data-action="vn-iimg-load" title="Load"><i class="fas fa-upload"></i></button>
+          <button type="button" data-action="vn-iimg-delete" class="dd-btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+          <input type="text" id="vn-iimg-preset-name" placeholder="Preset name…" class="dd-input" style="flex:1"/>
+          <button type="button" data-action="vn-iimg-save" title="Save"><i class="fas fa-save"></i></button>
+          <button type="button" data-action="vn-iimg-macro" class="vn-btn-secondary" title="Generate macro"><i class="fas fa-code"></i></button>
+        </div>
+        <div id="vn-iimg-macro-wrap" class="vn-macro-wrap" style="display:none;margin-top:6px;position:relative">
+          <pre class="vn-macro-example"></pre>
+          <button type="button" class="vn-macro-copy-btn" title="Copy"><i class="fas fa-copy"></i></button>
+        </div>
+      </section>
+
     </div>
 
     <!-- ═══ HELP ═══ -->
@@ -392,6 +605,7 @@ game.dramaDirector.vn.stop();</pre>
         <section class="vn-help-section">
           <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.vn.helpApiTitle"}}</h3>
           <p>{{localize "DRAMADIRECTOR.vn.helpApiText"}}</p>
+          <div class="vn-macro-wrap" style="position:relative">
           <pre class="vn-macro-example">// Open VN for all
 game.dramaDirector.vn.open();
 
@@ -415,6 +629,8 @@ game.dramaDirector.vn.stop(true);
 
 // Close VN locally (yourself only)
 game.dramaDirector.vn.stopLocal();</pre>
+          <button type="button" class="vn-macro-copy-btn" title="Copy macro"><i class="fas fa-copy"></i></button>
+          </div>
         </section>
 
       </div>

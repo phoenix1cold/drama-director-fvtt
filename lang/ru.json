@@ -332,6 +332,7 @@
     "notifications": {
       "noToken": "Выберите токен на карте!",
       "noActiveChar": "Нет активного персонажа.",
+      "sceneSaved": "Сцена «{name}» сохранена",
       "sceneLoaded": "Сцена «{name}» загружена",
       "sceneNotFound": "Сцена «{name}» не найдена",
       "rosterLoaded": "Ростер «{name}» загружен ({count} персонажей)",

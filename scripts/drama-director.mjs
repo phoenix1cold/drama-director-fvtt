@@ -411,28 +411,19 @@ class DramaDirector {
   // ─── Text ─────────────────────────────────────────────────────────────────
 
   _effectText(o = {}) {
-    const text      = o.text ?? '';
-    const subtitle  = o.subtitle ?? '';
     const style     = o.style ?? 'default';
     const animation = o.animation ?? 'fade';
     const duration  = o.duration ?? game.settings.get(MODULE_ID, 'defaultTextDuration');
     const color     = o.color ?? '#ffffff';
 
-    // Transform options
-    const textScale = o.textScale ?? 1;
-    const textX     = o.textX ?? 0;   // % offset
-    const textY     = o.textY ?? 0;
-
-    // Image options
-    const imageUrl   = o.image ?? '';
-    const imageScale = o.imageScale ?? 1;
-    const imageX     = o.imageX ?? 0;
-    const imageY     = o.imageY ?? 0;
-
     // Character Introduction
     const charIntro = o.charIntro ?? false;
     const tokenId   = o.tokenId ?? '';
     const charAnim  = o.charIntroAnim ?? 'fade';
+    const portraitScale = o.portraitScale ?? 1;
+    const portraitX     = o.portraitX ?? 0;
+    const portraitY     = o.portraitY ?? 0;
+    const portraitZ     = o.portraitZ ?? 0;
 
     const posMap = { 'left-block':'pos-left','right-block':'pos-right','bottom':'pos-bottom' };
     const posClass = posMap[style] ?? 'pos-center';
@@ -441,47 +432,58 @@ class DramaDirector {
     this.overlays.text.style.setProperty('--text-duration', `${duration}ms`);
     this.overlays.text.innerHTML = '';
 
-    // ── Image layer ──
-    if (imageUrl) {
+    // ── Multi-image layers ──
+    const imageLayers = o.imageLayers ?? (o.image ? [{ url: o.image, scale: o.imageScale ?? 1, x: o.imageX ?? 0, y: o.imageY ?? 0, z: 0, animation: 'fade' }] : []);
+    imageLayers.forEach((img, idx) => {
+      if (!img.url) return;
       const imgWrap = document.createElement('div');
       imgWrap.className = 'dd-image-layer';
       imgWrap.style.cssText = `
-        transform: translate(${imageX}%, ${imageY}%) scale(${imageScale});
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        transform: translate(${img.x ?? 0}%, ${img.y ?? 0}%) scale(${img.scale ?? 1});
         transform-origin: center center;
-        animation: text-fade-in 0.5s ease-out forwards;
+        z-index: ${10 + (img.z ?? 0)};
+        animation: text-${img.animation || 'fade'}-in 0.5s ease-out forwards;
       `;
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      imgWrap.appendChild(img);
+      const imgEl = document.createElement('img');
+      imgEl.src = img.url;
+      imgEl.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+      imgWrap.appendChild(imgEl);
       this.overlays.text.appendChild(imgWrap);
-    }
+    });
 
     // ── Character Introduction overlay ──
     if (charIntro) {
-      this._effectCharIntro(tokenId, text, charAnim, duration, this.overlays.text);
-    } else {
-      // ── Regular text ──
-      const subHtml = (style === 'chapter' && subtitle)
-        ? `<div class="dd-dramatic-subtitle">${subtitle}</div>` : '';
+      this._effectCharIntro(tokenId, o.text ?? '', charAnim, duration, this.overlays.text, { scale: portraitScale, x: portraitX, y: portraitY, z: portraitZ });
+    }
+
+    // ── Multi-text layers ──
+    const textLayers = o.textLayers ?? (o.text ? [{ text: o.text, subtitle: o.subtitle, style: o.style ?? 'default', animation: o.animation ?? 'fade', scale: o.textScale ?? 1, x: o.textX ?? 0, y: o.textY ?? 0, z: 0 }] : []);
+    textLayers.forEach((layer) => {
+      if (!layer.text) return;
+      const layerStyle = layer.style ?? 'default';
+      const layerPosMap = { 'left-block':'pos-left','right-block':'pos-right','bottom':'pos-bottom' };
+      const layerPosClass = layerPosMap[layerStyle] ?? 'pos-center';
+      const subHtml = (layerStyle === 'chapter' && layer.subtitle)
+        ? `<div class="dd-dramatic-subtitle">${layer.subtitle}</div>` : '';
 
       const textWrap = document.createElement('div');
       textWrap.className = 'dd-text-layer-wrap';
       textWrap.style.cssText = `
-        position: absolute;
-        inset: 0;
+        position: absolute; inset: 0;
         display: flex;
-        align-items: ${posClass === 'pos-bottom' ? 'flex-end' : posClass === 'pos-left' || posClass === 'pos-right' ? 'center' : 'center'};
-        justify-content: ${posClass === 'pos-left' ? 'flex-start' : posClass === 'pos-right' ? 'flex-end' : 'center'};
-        transform: translate(${textX}%, ${textY}%);
+        align-items: ${layerPosClass === 'pos-bottom' ? 'flex-end' : 'center'};
+        justify-content: ${layerPosClass === 'pos-left' ? 'flex-start' : layerPosClass === 'pos-right' ? 'flex-end' : 'center'};
+        transform: translate(${layer.x ?? 0}%, ${layer.y ?? 0}%);
+        z-index: ${20 + (layer.z ?? 0)};
       `;
-
       const textEl = document.createElement('div');
-      textEl.className = `dd-dramatic-text style-${style} anim-${animation}`;
-      textEl.style.transform = `scale(${textScale})`;
-      textEl.innerHTML = text + subHtml;
+      textEl.className = `dd-dramatic-text style-${layerStyle} anim-${layer.animation || 'fade'}`;
+      textEl.style.transform = `scale(${layer.scale ?? 1})`;
+      textEl.innerHTML = layer.text + subHtml;
       textWrap.appendChild(textEl);
       this.overlays.text.appendChild(textWrap);
-    }
+    });
 
     this.overlays.text.classList.remove('hidden');
     setTimeout(() => this.overlays.text.classList.add('hidden'), duration);
@@ -489,7 +491,7 @@ class DramaDirector {
 
   // ─── Character Introduction ───────────────────────────────────────────────
 
-  _effectCharIntro(tokenId, nameText, animStyle, duration, container) {
+  _effectCharIntro(tokenId, nameText, animStyle, duration, container, posOpts = {}) {
     // Resolve portrait
     let portrait = 'icons/svg/mystery-man.svg';
     let title = '';
@@ -505,8 +507,25 @@ class DramaDirector {
       }
     }
 
+    const scale = posOpts.scale ?? 1;
+    const px    = posOpts.x ?? 0;
+    const py    = posOpts.y ?? 0;
+    const pz    = posOpts.z ?? 0;
+
+    // Extended animation set
+    const smokeAnim   = animStyle === 'smoke';
+    const flipAnim    = animStyle === 'flip';
+    const bounceAnim  = animStyle === 'bounce';
+    const slideDownA  = animStyle === 'slideDown';
+
     const overlay = document.createElement('div');
-    overlay.className = `dd-char-intro-overlay${animStyle === 'smoke' ? '' : ` anim-${animStyle}`}`;
+    const extraAnim = (smokeAnim || flipAnim || bounceAnim) ? '' : ` anim-${animStyle}`;
+    overlay.className = `dd-char-intro-overlay${extraAnim}`;
+    overlay.style.cssText = `
+      transform: translate(${px}%, ${py}%) scale(${scale});
+      transform-origin: center center;
+      z-index: ${10 + pz};
+    `;
 
     overlay.innerHTML = `
       <div class="dd-char-intro-portrait-wrap">
@@ -520,8 +539,8 @@ class DramaDirector {
 
     container.appendChild(overlay);
 
-    // Smoke animation via SVG displacement filter
-    if (animStyle === 'smoke') {
+    // ── Smoke animation via SVG displacement filter ──
+    if (smokeAnim) {
       overlay.style.opacity = '0';
       const svgNS = 'http://www.w3.org/2000/svg';
       const svg = document.createElementNS(svgNS, 'svg');
@@ -541,15 +560,31 @@ class DramaDirector {
         if (!start) start = ts;
         const raw = Math.min((ts - start) / dur, 1);
         const p = 1 - Math.pow(1 - raw, 2);
-        const scale = (1 - p) * 220;
+        const sc = (1 - p) * 220;
         const freq = 0.025 + (1 - p) * 0.1;
         turb.setAttribute('baseFrequency', `${freq.toFixed(4)} ${(freq*1.7).toFixed(4)}`);
-        disp.setAttribute('scale', scale.toFixed(1));
+        disp.setAttribute('scale', sc.toFixed(1));
         overlay.style.opacity = raw.toString();
         if (raw < 1) requestAnimationFrame(frame);
         else { svg.remove(); overlay.style.filter = ''; }
       };
       requestAnimationFrame(frame);
+    }
+
+    // ── Flip animation ──
+    if (flipAnim) {
+      overlay.style.perspective = '800px';
+      overlay.style.animation = 'dd-flip-in 0.7s cubic-bezier(.42,0,.27,1.5) forwards';
+    }
+
+    // ── Bounce animation ──
+    if (bounceAnim) {
+      overlay.style.animation = 'dd-bounce-in 0.8s cubic-bezier(.36,.07,.19,.97) forwards';
+    }
+
+    // ── SlideDown animation ──
+    if (slideDownA) {
+      overlay.style.animation = 'dd-slide-down 0.6s ease-out forwards';
     }
   }
 
@@ -982,7 +1017,205 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       }}).render(true);
     });
 
-    // Character Introduction toggle
+    // ── TEXT AND PICTURES TAB ─────────────────────────────────────────────
+    const _textLayers  = [];
+    const _imageLayers = [];
+
+    const _updateLayerCounts = () => {
+      const tc = html.querySelector('#dd-text-layer-count');
+      const ic = html.querySelector('#dd-image-layer-count');
+      if (tc) tc.textContent = `${_textLayers.length}/10`;
+      if (ic) ic.textContent = `${_imageLayers.length}/10`;
+    };
+
+    const _textAnimOptions = [
+      { v:'fade',      l:'Fade' },
+      { v:'zoom',      l:'Zoom In' },
+      { v:'zoom-out',  l:'Zoom Out' },
+      { v:'shake',     l:'Shake' },
+      { v:'impact',    l:'Impact' },
+      { v:'slideUp',   l:'Slide Up' },
+      { v:'slideDown', l:'Slide Down' },
+      { v:'slideLeft', l:'Slide Left' },
+      { v:'slideRight',l:'Slide Right' },
+      { v:'bounce',    l:'Bounce' },
+      { v:'flip',      l:'Flip' },
+    ];
+    const _textStyleOptions = [
+      { v:'default',    l:'Center' },
+      { v:'left-block', l:'Left Block' },
+      { v:'right-block',l:'Right Block' },
+      { v:'bottom',     l:'Bottom' },
+      { v:'chapter',    l:'Chapter Title' },
+      { v:'horror',     l:'Horror' },
+      { v:'anime',      l:'Anime' },
+    ];
+    const _animSelectHtml = _textAnimOptions.map(o => `<option value="${o.v}">${o.l}</option>`).join('');
+    const _styleSelectHtml = _textStyleOptions.map(o => `<option value="${o.v}">${o.l}</option>`).join('');
+
+    const _renderTextLayer = (idx) => {
+      const layer = _textLayers[idx];
+      const row = document.createElement('div');
+      row.className = 'dd-layer-row';
+      row.dataset.layerIdx = idx;
+      row.innerHTML = `
+        <div class="dd-layer-row-header">
+          <span class="dd-layer-index">#${idx + 1}</span>
+          <span style="font-size:11px;color:#aaa;flex:1">Text Layer</span>
+          <button type="button" class="dd-layer-remove-btn" data-remove-text="${idx}" title="Remove layer"><i class="fas fa-times"></i></button>
+        </div>
+        <textarea class="dd-layer-text-input" placeholder="Enter text..." rows="2">${layer.text || ''}</textarea>
+        <div class="dd-layer-controls">
+          <div>
+            <span class="dd-layer-label">Style</span>
+            <select class="dd-layer-select" data-field="style">${_styleSelectHtml}</select>
+          </div>
+          <div>
+            <span class="dd-layer-label">Animation</span>
+            <select class="dd-layer-select" data-field="animation">${_animSelectHtml}</select>
+          </div>
+        </div>
+        <div class="dd-layer-transform">
+          <div class="dd-layer-transform-item">
+            <label>Scale</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="scale" value="${layer.scale ?? 1}" min="0.1" max="10" step="0.1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>X %</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="x" value="${layer.x ?? 0}" min="-100" max="100" step="1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>Y %</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="y" value="${layer.y ?? 0}" min="-100" max="100" step="1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>Z-Index</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="z" value="${layer.z ?? 0}" min="-20" max="20" step="1">
+          </div>
+        </div>
+      `;
+      // Restore select values
+      row.querySelector('[data-field="style"]').value = layer.style ?? 'default';
+      row.querySelector('[data-field="animation"]').value = layer.animation ?? 'fade';
+
+      // Sync changes back to layer object
+      row.querySelector('textarea').addEventListener('input', e => { _textLayers[idx].text = e.target.value; });
+      row.querySelectorAll('[data-field]').forEach(el => {
+        el.addEventListener('change', e => {
+          const f = e.target.dataset.field;
+          _textLayers[idx][f] = el.tagName === 'SELECT' ? el.value : parseFloat(el.value) || 0;
+        });
+      });
+      row.querySelector(`[data-remove-text="${idx}"]`).addEventListener('click', () => {
+        _textLayers.splice(idx, 1);
+        _rebuildTextLayers();
+      });
+      return row;
+    };
+
+    const _renderImageLayer = (idx) => {
+      const layer = _imageLayers[idx];
+      const row = document.createElement('div');
+      row.className = 'dd-layer-row';
+      row.dataset.layerIdx = idx;
+      row.innerHTML = `
+        <div class="dd-layer-row-header">
+          <span class="dd-layer-index">#${idx + 1}</span>
+          <span style="font-size:11px;color:#aaa;flex:1">Image Layer</span>
+          <button type="button" class="dd-layer-remove-btn" data-remove-image="${idx}" title="Remove layer"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dd-layer-url-row">
+          <input type="text" class="dd-input" data-field="url" value="${layer.url || ''}" placeholder="Image path...">
+          <button type="button" class="dd-icon-btn dd-browse-img-layer" title="Browse"><i class="fas fa-folder-open"></i></button>
+        </div>
+        <div class="dd-layer-controls">
+          <div class="dd-layer-controls-full">
+            <span class="dd-layer-label">Animation</span>
+            <select class="dd-layer-select" data-field="animation">${_animSelectHtml}</select>
+          </div>
+        </div>
+        <div class="dd-layer-transform">
+          <div class="dd-layer-transform-item">
+            <label>Scale</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="scale" value="${layer.scale ?? 1}" min="0.1" max="10" step="0.1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>X %</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="x" value="${layer.x ?? 0}" min="-100" max="100" step="1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>Y %</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="y" value="${layer.y ?? 0}" min="-100" max="100" step="1">
+          </div>
+          <div class="dd-layer-transform-item">
+            <label>Z-Index</label>
+            <input type="number" class="dd-input dd-layer-num" data-field="z" value="${layer.z ?? 0}" min="-20" max="20" step="1">
+          </div>
+        </div>
+      `;
+      row.querySelector('[data-field="animation"]').value = layer.animation ?? 'fade';
+
+      row.querySelector('[data-field="url"]').addEventListener('input', e => { _imageLayers[idx].url = e.target.value; });
+      row.querySelectorAll('[data-field]:not([type="text"])').forEach(el => {
+        el.addEventListener('change', e => {
+          const f = e.target.dataset.field;
+          _imageLayers[idx][f] = el.tagName === 'SELECT' ? el.value : parseFloat(el.value) || 0;
+        });
+      });
+      row.querySelector('.dd-browse-img-layer').addEventListener('click', () => {
+        new FilePicker({ type: 'image', callback: (path) => {
+          _imageLayers[idx].url = path;
+          row.querySelector('[data-field="url"]').value = path;
+        }}).render(true);
+      });
+      row.querySelector(`[data-remove-image="${idx}"]`).addEventListener('click', () => {
+        _imageLayers.splice(idx, 1);
+        _rebuildImageLayers();
+      });
+      return row;
+    };
+
+    const _rebuildTextLayers = () => {
+      const cont = html.querySelector('#dd-text-layers-container');
+      if (!cont) return;
+      cont.innerHTML = '';
+      if (_textLayers.length === 0) {
+        cont.innerHTML = '<div class="dd-layers-empty">No text layers. Click + Add to create one.</div>';
+      } else {
+        _textLayers.forEach((_, i) => cont.appendChild(_renderTextLayer(i)));
+      }
+      _updateLayerCounts();
+    };
+
+    const _rebuildImageLayers = () => {
+      const cont = html.querySelector('#dd-image-layers-container');
+      if (!cont) return;
+      cont.innerHTML = '';
+      if (_imageLayers.length === 0) {
+        cont.innerHTML = '<div class="dd-layers-empty">No image layers. Click + Add to create one.</div>';
+      } else {
+        _imageLayers.forEach((_, i) => cont.appendChild(_renderImageLayer(i)));
+      }
+      _updateLayerCounts();
+    };
+
+    // Initialize empty state
+    _rebuildTextLayers();
+    _rebuildImageLayers();
+
+    html.querySelector('[data-action="add-text-layer"]')?.addEventListener('click', () => {
+      if (_textLayers.length >= 10) { ui.notifications?.warn('Maximum 10 text layers'); return; }
+      _textLayers.push({ text: '', style: 'default', animation: 'fade', scale: 1, x: 0, y: 0, z: 0 });
+      _rebuildTextLayers();
+    });
+
+    html.querySelector('[data-action="add-image-layer"]')?.addEventListener('click', () => {
+      if (_imageLayers.length >= 10) { ui.notifications?.warn('Maximum 10 image layers'); return; }
+      _imageLayers.push({ url: '', animation: 'fade', scale: 1, x: 0, y: 0, z: 0 });
+      _rebuildImageLayers();
+    });
+
+    // Character Introduction toggle (Text and Pictures tab)
     const charIntroCheck = html.querySelector('#dd-char-intro-enabled');
     const charIntroPanel = html.querySelector('#dd-char-intro-panel');
     const tokenSelect    = html.querySelector('#dd-char-intro-token');
@@ -1014,7 +1247,6 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       if (token?.actor?.img && previewImg && previewFrame) {
         previewImg.style.backgroundImage = `url('${token.actor.img}')`;
         previewFrame.classList.add('has-portrait');
-        // Update preview label to show name
         const lbl = previewFrame.querySelector('.dd-char-preview-label');
         if (lbl) lbl.textContent = token.document?.name || token.actor.name;
       } else if (previewImg && previewFrame) {
@@ -1029,57 +1261,60 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
     const presetSelect = html.querySelector('#dd-preset-select');
 
     const collectOptions = () => {
-      const text       = html.querySelector('#dd-custom-text')?.value?.trim() ?? '';
-      const subtitle   = html.querySelector('#dd-text-subtitle')?.value?.trim() ?? '';
-      const style      = html.querySelector('#dd-text-style')?.value ?? 'default';
-      const animation  = html.querySelector('#dd-text-animation')?.value ?? 'fade';
       const duration   = parseInt(html.querySelector('#dd-text-duration')?.value) || 4000;
-      const textScale  = parseFloat(html.querySelector('#dd-text-scale')?.value) || 1;
-      const textX      = parseFloat(html.querySelector('#dd-text-x')?.value) || 0;
-      const textY      = parseFloat(html.querySelector('#dd-text-y')?.value) || 0;
-      const image      = html.querySelector('#dd-image-url')?.value?.trim() ?? '';
-      const imageScale = parseFloat(html.querySelector('#dd-image-scale')?.value) || 1;
-      const imageX     = parseFloat(html.querySelector('#dd-image-x')?.value) || 0;
-      const imageY     = parseFloat(html.querySelector('#dd-image-y')?.value) || 0;
       const charIntro  = html.querySelector('#dd-char-intro-enabled')?.checked ?? false;
       const tokenId    = html.querySelector('#dd-char-intro-token')?.value ?? '';
       const charIntroAnim = html.querySelector('#dd-char-intro-anim')?.value ?? 'fade';
-      const opts = { text, style, animation, duration, textScale, textX, textY };
-      if (subtitle)   opts.subtitle   = subtitle;
-      if (image)      { opts.image = image; opts.imageScale = imageScale; opts.imageX = imageX; opts.imageY = imageY; }
-      if (charIntro)  { opts.charIntro = true; opts.charIntroAnim = charIntroAnim; if (tokenId) opts.tokenId = tokenId; }
+      const portraitScale = parseFloat(html.querySelector('#dd-portrait-scale')?.value) || 1;
+      const portraitX     = parseFloat(html.querySelector('#dd-portrait-x')?.value) || 0;
+      const portraitY     = parseFloat(html.querySelector('#dd-portrait-y')?.value) || 0;
+      const portraitZ     = parseFloat(html.querySelector('#dd-portrait-z')?.value) || 0;
+
+      const opts = {
+        duration,
+        textLayers:  _textLayers.filter(l => l.text),
+        imageLayers: _imageLayers.filter(l => l.url),
+      };
+      if (charIntro) {
+        opts.charIntro = true;
+        opts.charIntroAnim = charIntroAnim;
+        opts.portraitScale = portraitScale;
+        opts.portraitX = portraitX;
+        opts.portraitY = portraitY;
+        opts.portraitZ = portraitZ;
+        if (tokenId) opts.tokenId = tokenId;
+      }
       return opts;
     };
 
     const applyOptionsToPanel = (opts) => {
       const set = (sel, val) => { const el = html.querySelector(sel); if (el) el.value = val ?? ''; };
       const setCheck = (sel, val) => { const el = html.querySelector(sel); if (el) el.checked = !!val; };
-      set('#dd-custom-text',     opts.text ?? '');
-      set('#dd-text-subtitle',   opts.subtitle ?? '');
-      set('#dd-text-style',      opts.style ?? 'default');
-      set('#dd-text-animation',  opts.animation ?? 'fade');
       set('#dd-text-duration',   opts.duration ?? 4000);
-      set('#dd-text-scale',      opts.textScale ?? 1);
-      set('#dd-text-x',          opts.textX ?? 0);
-      set('#dd-text-y',          opts.textY ?? 0);
-      set('#dd-image-url',       opts.image ?? '');
-      set('#dd-image-scale',     opts.imageScale ?? 1);
-      set('#dd-image-x',         opts.imageX ?? 0);
-      set('#dd-image-y',         opts.imageY ?? 0);
       setCheck('#dd-char-intro-enabled', opts.charIntro);
       if (opts.charIntro) {
         charIntroPanel?.classList.remove('hidden');
         populateTokens();
-        // Defer token select to next tick so options are populated
         setTimeout(() => {
           set('#dd-char-intro-token', opts.tokenId ?? '');
           set('#dd-char-intro-anim',  opts.charIntroAnim ?? 'fade');
+          set('#dd-portrait-scale',   opts.portraitScale ?? 1);
+          set('#dd-portrait-x',       opts.portraitX ?? 0);
+          set('#dd-portrait-y',       opts.portraitY ?? 0);
+          set('#dd-portrait-z',       opts.portraitZ ?? 0);
           tokenSelect?.dispatchEvent(new Event('change'));
         }, 50);
       } else {
         charIntroPanel?.classList.add('hidden');
       }
-      updateSub();
+      // Restore text layers
+      _textLayers.length = 0;
+      (opts.textLayers ?? []).forEach(l => _textLayers.push({ ...l }));
+      _rebuildTextLayers();
+      // Restore image layers
+      _imageLayers.length = 0;
+      (opts.imageLayers ?? []).forEach(l => _imageLayers.push({ ...l }));
+      _rebuildImageLayers();
     };
 
     const refreshPresetDropdown = (presets) => {

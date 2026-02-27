@@ -924,3 +924,204 @@
 .dd-danger-btn:hover {
   background: rgba(200, 50, 50, 0.22) !important;
 }
+
+/* ══════════════════════════════════════════════════════
+   TEXT AND PICTURES TAB — Layer UI
+   ══════════════════════════════════════════════════════ */
+
+.dd-layers-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.dd-layers-container::-webkit-scrollbar { width: 4px; }
+.dd-layers-container::-webkit-scrollbar-track { background: transparent; }
+.dd-layers-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+
+.dd-layer-row {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 5px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+}
+.dd-layer-row:hover {
+  border-color: rgba(255,220,60,.25);
+}
+
+.dd-layer-row-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dd-layer-index {
+  font-size: 10px;
+  color: #666;
+  font-weight: bold;
+  min-width: 16px;
+  text-align: center;
+  background: rgba(255,255,255,.06);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.dd-layer-remove-btn {
+  background: rgba(180,30,30,.2);
+  border: 1px solid rgba(200,60,60,.3);
+  border-radius: 3px;
+  color: #f88;
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: background .12s;
+}
+.dd-layer-remove-btn:hover {
+  background: rgba(200,50,50,.35);
+}
+
+.dd-layer-text-input {
+  width: 100%;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 3px;
+  color: #ddd;
+  font-size: 12px;
+  padding: 5px 8px;
+  resize: vertical;
+  min-height: 44px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.dd-layer-text-input:focus {
+  outline: none;
+  border-color: rgba(255,220,60,.4);
+}
+
+.dd-layer-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+}
+.dd-layer-controls-full {
+  grid-column: 1 / -1;
+}
+
+.dd-layer-url-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+.dd-layer-url-row input {
+  flex: 1;
+}
+
+.dd-layer-transform {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  grid-column: 1 / -1;
+}
+.dd-layer-transform-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dd-layer-transform-item label {
+  font-size: 9px;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-align: center;
+}
+.dd-layer-transform-item input {
+  text-align: center;
+  padding: 3px 4px;
+  font-size: 11px;
+}
+
+.dd-layer-select {
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 3px;
+  color: #ccc;
+  font-size: 11px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.dd-layer-select:focus { outline: none; border-color: rgba(255,220,60,.4); }
+
+.dd-layer-label {
+  font-size: 10px;
+  color: #888;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.dd-layers-empty {
+  color: #555;
+  font-size: 11px;
+  text-align: center;
+  padding: 12px 0;
+  font-style: italic;
+}
+
+/* ── Extended portrait intro animations ───────────────────── */
+@keyframes dd-flip-in {
+  0%   { opacity: 0; transform: perspective(800px) rotateY(90deg); }
+  60%  { transform: perspective(800px) rotateY(-8deg); }
+  100% { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+}
+@keyframes dd-bounce-in {
+  0%   { opacity: 0; transform: scale(0.3); }
+  50%  { opacity: 1; transform: scale(1.12); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+@keyframes dd-slide-down {
+  0%   { opacity: 0; transform: translateY(-60px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* SlideUp anim variant for text/image layers */
+@keyframes text-slideUp-in {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes text-slideDown-in {
+  from { opacity: 0; transform: translateY(-40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes text-slideLeft-in {
+  from { opacity: 0; transform: translateX(-60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes text-slideRight-in {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes text-zoom-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes text-bounce-in {
+  0%   { opacity: 0; transform: scale(0.5); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes text-flip-in {
+  0%   { opacity: 0; transform: perspective(600px) rotateX(70deg); }
+  100% { opacity: 1; transform: perspective(600px) rotateX(0deg); }
+}

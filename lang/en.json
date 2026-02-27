@@ -332,6 +332,7 @@
     "notifications": {
       "noToken": "Select a token on the map!",
       "noActiveChar": "No active character.",
+      "sceneSaved": "Scene '{name}' saved",
       "sceneLoaded": "Scene '{name}' loaded",
       "sceneNotFound": "Scene '{name}' not found",
       "rosterLoaded": "Roster '{name}' loaded ({count} characters)",
