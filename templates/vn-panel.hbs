@@ -100,6 +100,7 @@
 
     <!-- ═══ CHARACTERS ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="chars">
+      <p class="dd-hint" style="margin:0 0 8px;font-size:11px;color:#888">{{{localize "DRAMADIRECTOR.vn.charsHint"}}}</p>
       <div class="vn-chars-header">
         <span class="vn-chars-counts">◀ {{leftChars}}/10 &nbsp; ◆ {{centerChars}}/5 &nbsp; {{rightChars}}/10 ▶</span>
         <div class="vn-chars-actions">
@@ -202,6 +203,7 @@
 
     <!-- ═══ DIALOGUE ═══ -->
     <div class="vn-tab-content dd-hidden" data-vtab-content="dialogue">
+      <p class="dd-hint" style="margin:0 0 8px;font-size:11px;color:#888">{{{localize "DRAMADIRECTOR.vn.dialogueHint"}}}</p>
       <div class="vn-two-col">
         <section class="dd-section">
           <h3><i class="fas fa-comment-dots"></i> {{localize "DRAMADIRECTOR.vn.dlgSection"}}</h3>
@@ -292,11 +294,11 @@
       <section class="dd-section" style="margin-top:8px">
         <h3><i class="fas fa-code"></i> {{localize "DRAMADIRECTOR.vn.apiSection"}}</h3>
         <div class="vn-macro-wrap" style="position:relative">
-          <pre class="vn-macro-example">game.dramaDirector.vn.open();
-game.dramaDirector.vn.setBackground('path/bg.mp4');
-game.dramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066');
-game.dramaDirector.vn.activateExclusive('char-id');
-game.dramaDirector.vn.stop();</pre>
+          <pre class="vn-macro-example">DramaDirector.vn.open();
+DramaDirector.vn.setBackground('path/bg.mp4');
+DramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066');
+DramaDirector.vn.activateExclusive('char-id');
+DramaDirector.vn.stop();</pre>
           <button type="button" class="vn-macro-copy-btn" title="Copy macro"><i class="fas fa-copy"></i></button>
         </div>
       </section>
@@ -315,6 +317,7 @@ game.dramaDirector.vn.stop();</pre>
             <button type="button" data-action="vn-layers-clear" class="vn-btn-danger" title="{{localize "DRAMADIRECTOR.clearAll"}}"><i class="fas fa-trash"></i></button>
           </div>
         </div>
+        <p class="dd-hint" style="font-size:11px;color:#888;margin:0 0 6px">{{{localize "DRAMADIRECTOR.vn.layersHint"}}}</p>
 
         <div class="vn-layer-list" id="vn-layer-list">
           {{#each layers}}
@@ -649,30 +652,52 @@ game.dramaDirector.vn.stop();</pre>
           <p>{{localize "DRAMADIRECTOR.vn.helpApiText"}}</p>
           <div class="vn-macro-wrap" style="position:relative">
           <pre class="vn-macro-example">// Open VN for all
-game.dramaDirector.vn.open();
+DramaDirector.vn.open();
 
 // Open VN for yourself only (GM-only)
-game.dramaDirector.vn.openLocal();
+DramaDirector.vn.openLocal();
 
 // Set background
-game.dramaDirector.vn.setBackground('path/to/bg.mp4');
+DramaDirector.vn.setBackground('path/to/bg.mp4');
 
 // Show dialogue
-game.dramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066', 5);
+DramaDirector.vn.showDialogue('Name', 'Text…', '#ffe066', 5);
+
+// Hide dialogue
+DramaDirector.vn.hideDialogue();
 
 // Activate character by ID
-game.dramaDirector.vn.activateExclusive('char-id');
+DramaDirector.vn.activateExclusive('char-id');
 
 // Deactivate all
-game.dramaDirector.vn.deactivateAll();
+DramaDirector.vn.deactivateAll();
 
 // Close VN (for all)
-game.dramaDirector.vn.stop(true);
+DramaDirector.vn.stop();
 
 // Close VN locally (yourself only)
-game.dramaDirector.vn.stopLocal();</pre>
+DramaDirector.vn.stopLocal();</pre>
           <button type="button" class="vn-macro-copy-btn" title="Copy macro"><i class="fas fa-copy"></i></button>
           </div>
+        </section>
+
+        <section class="vn-help-section">
+          <h3><i class="fas fa-layer-group"></i> {{localize "DRAMADIRECTOR.vn.helpDepthTitle"}} <span class="vn-help-badge">{{localize "DRAMADIRECTOR.vn.helpDepthBadge"}}</span></h3>
+          <p>{{localize "DRAMADIRECTOR.vn.helpDepthText"}}</p>
+          <ul class="vn-help-list">
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDepthItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDepthItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDepthItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDepthItem4"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpDepthItem5"}}}</li>
+          </ul>
+          <h4 style="margin:8px 0 4px;color:#ffe066;font-size:12px"><i class="fas fa-minus"></i> {{localize "DRAMADIRECTOR.vn.helpHorizonTitle"}}</h4>
+          <ul class="vn-help-list">
+            <li>{{{localize "DRAMADIRECTOR.vn.helpHorizonItem1"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpHorizonItem2"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpHorizonItem3"}}}</li>
+            <li>{{{localize "DRAMADIRECTOR.vn.helpHorizonItem4"}}}</li>
+          </ul>
         </section>
 
       </div>

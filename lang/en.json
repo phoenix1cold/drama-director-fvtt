@@ -53,7 +53,8 @@
       "bloodTitle1": "Based on unreal events",
       "bloodTitle2": "Session contains concentrated trash",
       "bloodTitle3": "Uncensored language in full",
-      "bloodTitle4": "A {name} production"
+      "bloodTitle4": "A {name} production",
+      "hint": "Choose a cinematic intro style below. The Campaign Name field is used for some intro animations. Select a target player or leave blank to show to all."
     },
     "endings": {
       "dungeonMaster": "Dungeon Master",
@@ -77,7 +78,8 @@
       "tbc": "TO BE CONTINUED",
       "credDirector": "Director",
       "credExecProd": "Executive Producer",
-      "credProducer": "Producer"
+      "credProducer": "Producer",
+      "hint": "Play a cinematic end-of-session card for all players. WBRB pauses the scene, JoJo shows a dramatic freeze-frame ending."
     },
     "vignette": "Vignette",
     "grayscale": "Grayscale",
@@ -131,7 +133,8 @@
       "loop": "Loop",
       "volume": "Volume",
       "play": "Play",
-      "stop": "Stop"
+      "stop": "Stop",
+      "instructionHint": "Select a video file (mp4/webm) using the folder button or paste a path directly. Set loop and volume, then press Play. Use Stop to close the player on all screens."
     },
     "vn": {
       "section": "Visual Novel Mode",
@@ -352,7 +355,23 @@
         "sawmillDay": "Abandoned Sawmill",
         "sawmillNight": "Abandoned Sawmill — Night",
         "sewer": "Sewer Lair"
-      }
+      },
+      "helpDepthTitle": "Depth Mode & Horizon",
+      "helpDepthBadge": "GM panel",
+      "helpDepthText": "Depth Mode creates a perspective illusion: characters placed lower on the stage appear larger (closer), those higher appear smaller (further away). Enable it from the GM left panel when Mouse Control is active.",
+      "helpDepthItem1": "<strong>Scale Speed</strong> — controls how dramatically size changes with vertical position. At 1× scale changes smoothly; higher values make the effect more pronounced.",
+      "helpDepthItem2": "<strong>Y Speed</strong> — multiplier for vertical mouse movement. Increase to make dragging characters up/down more sensitive.",
+      "helpDepthItem3": "<strong>Base Scale</strong> (on each character/layer) — the reference size at the horizon. The actual rendered scale = Base Scale × perspective factor at that Y position.",
+      "helpDepthItem4": "The <i class='fas fa-layer-group' style='color:#ffe066'></i> icon next to Scale in Characters and Layers tabs indicates that the slider controls Base Scale in depth mode, not final scale.",
+      "helpDepthItem5": "To disable depth mode uncheck the <strong>Depth Mode</strong> checkbox. Characters return to their Base Scale values.",
+      "helpHorizonTitle": "Horizon Line",
+      "helpHorizonItem1": "When <strong>Horizon Line</strong> is enabled, a fixed vanishing point is set at a specific vertical percentage of the stage (default 30% from top).",
+      "helpHorizonItem2": "Characters at or above the horizon appear at near-zero scale. Characters at the very bottom of the stage appear at maximum scale.",
+      "helpHorizonItem3": "<strong>Horizon Y %</strong> slider (0–90%) moves the horizon up or down. 0% = top edge, 50% = middle of stage.",
+      "helpHorizonItem4": "The horizon line also constrains vertical movement: characters cannot be dragged above their starting position if they are already at or near the horizon.",
+      "charsHint": "Add characters to the left, center, or right side. Each character can have a default image and an active image (shown when speaking). Link to a player so their voice activates the character automatically via microphone.",
+      "layersHint": "Layers sit on top of the scene independently of characters. X/Y in pixels on a 1920×1080 canvas. Z controls stacking order. Lock a layer to prevent accidental changes.",
+      "dialogueHint": "Type the speaker name and dialogue text, then click Show. The dialogue box appears for all players. Use «From active» to auto-fill the currently highlighted character's name and color."
     },
     "settings": {
       "language": "Interface Language",
@@ -413,7 +432,7 @@
     "charIntroAnimSmoke": "Smoke",
     "charIntroNoToken": "No tokens on scene",
     "presetsSection": "Presets",
-    "presetName": "Preset name",
+    "presetName": "Preset name…",
     "presetSave": "Save",
     "presetLoad": "Load Preset",
     "presetDelete": "Delete",
@@ -440,7 +459,6 @@
     "layerRemove": "Remove",
     "noLayers": "No layers. Click + Image or + Text to add.",
     "loadPreset": "Load preset…",
-    "presetName": "Preset name…",
     "generateMacro": "Generate macro",
     "clearAll": "Clear all",
     "fontSize": "Size",
@@ -465,6 +483,12 @@
     "xPercent": "X %",
     "yPercent": "Y %",
     "zIndexParam": "Z-Index",
-    "clearBtn": "Clear"
+    "clearBtn": "Clear",
+    "effects": {
+      "hint": "Toggle visual effects on the player screen. Basic effects stack; filters replace each other. Click an active button again to turn it off. Use the Clear button to remove all effects at once."
+    },
+    "textpics": {
+      "hint": "Display text and image overlays on player screens. Add up to 10 text layers and 10 image layers, adjust position with X/Y, size with W/H, depth with Z. Use presets to save and reuse layouts."
+    }
   }
 }

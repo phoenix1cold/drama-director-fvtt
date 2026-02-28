@@ -53,7 +53,8 @@
       "bloodTitle1": "Basé sur des événements irréels",
       "bloodTitle2": "La session contient du trash concentré",
       "bloodTitle3": "Langage non censuré intégral",
-      "bloodTitle4": "Une production {name}"
+      "bloodTitle4": "Une production {name}",
+      "hint": "Choisissez un style d'intro cinématographique. Le champ Nom de campagne est utilisé dans certaines animations. Sélectionnez un joueur cible ou laissez vide pour montrer à tous."
     },
     "endings": {
       "dungeonMaster": "Maître du Donjon",
@@ -77,7 +78,8 @@
       "tbc": "À SUIVRE",
       "credDirector": "Réalisateur",
       "credExecProd": "Producteur exécutif",
-      "credProducer": "Producteur"
+      "credProducer": "Producteur",
+      "hint": "Joue une carte de fin de session cinématographique pour tous les joueurs. WBRB met la scène en pause, JoJo affiche une fin dramatique en image fixe."
     },
     "vignette": "Vignette",
     "grayscale": "Niveaux de gris",
@@ -131,7 +133,8 @@
       "loop": "En boucle",
       "volume": "Volume",
       "play": "Jouer",
-      "stop": "Arrêter"
+      "stop": "Arrêter",
+      "instructionHint": "Sélectionnez un fichier vidéo (mp4/webm) via le bouton dossier ou collez un chemin directement. Réglez la boucle et le volume, puis appuyez sur Lecture. Arrêt ferme le lecteur sur tous les écrans."
     },
     "vn": {
       "section": "Mode Roman Visuel",
@@ -350,7 +353,23 @@
         "sawmillDay": "Scierie Abandonnée",
         "sawmillNight": "Scierie Abandonnée — Nuit",
         "sewer": "Repaire des Égouts"
-      }
+      },
+      "helpDepthTitle": "Mode Profondeur et Horizon",
+      "helpDepthBadge": "Panneau MJ",
+      "helpDepthText": "Le mode Profondeur crée une illusion de perspective : les personnages placés plus bas sur la scène paraissent plus grands (plus proches), ceux du haut plus petits (plus loin). Activez-le depuis le panneau gauche MJ quand le Contrôle souris est actif.",
+      "helpDepthItem1": "<strong>Vitesse d'échelle</strong> — contrôle à quel point la taille change avec la position verticale. À 1× le changement est doux ; des valeurs plus élevées renforcent l'effet.",
+      "helpDepthItem2": "<strong>Vitesse Y</strong> — multiplicateur du mouvement vertical de la souris. Augmentez pour rendre le glissement des personnages vers le haut/bas plus sensible.",
+      "helpDepthItem3": "<strong>Échelle de base</strong> (sur chaque personnage/calque) — la taille de référence au niveau de l'horizon. L'échelle rendue = Échelle de base × facteur de perspective à cette position Y.",
+      "helpDepthItem4": "L'icône <i class='fas fa-layer-group' style='color:#ffe066'></i> à côté de Scale dans les onglets Personnages et Calques indique qu'en mode profondeur le curseur contrôle l'Échelle de base, pas l'échelle finale.",
+      "helpDepthItem5": "Pour désactiver le mode profondeur, décochez <strong>Mode Profondeur</strong>. Les personnages reviennent à leurs valeurs d'Échelle de base.",
+      "helpHorizonTitle": "Ligne d'horizon",
+      "helpHorizonItem1": "Quand la <strong>Ligne d'horizon</strong> est activée, un point de fuite fixe est défini à un pourcentage vertical de la scène (30% depuis le haut par défaut).",
+      "helpHorizonItem2": "Les personnages au niveau de l'horizon ou au-dessus apparaissent à échelle quasi nulle. Ceux tout en bas de la scène apparaissent à échelle maximale.",
+      "helpHorizonItem3": "<strong>Curseur Horizon Y %</strong> (0–90%) déplace la ligne d'horizon vers le haut ou le bas. 0% = bord supérieur de la scène, 50% = milieu.",
+      "helpHorizonItem4": "La ligne d'horizon contraint aussi le déplacement vertical : les personnages ne peuvent pas être tirés au-dessus de leur position initiale s'ils sont déjà à l'horizon ou au-dessus.",
+      "charsHint": "Ajoutez des personnages à gauche, au centre ou à droite. Chacun peut avoir une image par défaut et une image active (montrée quand il parle). Liez à un joueur pour que sa voix active automatiquement le personnage via le microphone.",
+      "layersHint": "Les calques se superposent à la scène indépendamment des personnages. X/Y en pixels sur un canevas 1920×1080. Z contrôle l'ordre d'empilement. Verrouillez un calque pour éviter les modifications accidentelles.",
+      "dialogueHint": "Saisissez le nom du locuteur et le texte du dialogue, puis cliquez sur Afficher. La boîte de dialogue apparaît pour tous les joueurs. «Du personnage actif» remplit automatiquement le nom et la couleur du personnage actuellement mis en évidence."
     },
     "settings": {
       "language": "Langue de l'interface",
@@ -410,7 +429,7 @@
     "charIntroAnimSmoke": "Fumée",
     "charIntroNoToken": "Aucun token sur la scène",
     "presetsSection": "Préréglages",
-    "presetName": "Nom du préréglage",
+    "presetName": "Nom du préréglage…",
     "presetSave": "Enregistrer",
     "presetLoad": "Charger le préréglage",
     "presetDelete": "Supprimer",
@@ -437,7 +456,6 @@
     "layerRemove": "Supprimer",
     "noLayers": "Aucun calque. Cliquez + Image ou + Texte pour ajouter.",
     "loadPreset": "Charger un préréglage…",
-    "presetName": "Nom du préréglage…",
     "generateMacro": "Générer une macro",
     "clearAll": "Tout effacer",
     "fontSize": "Taille",
@@ -462,6 +480,12 @@
     "xPercent": "X %",
     "yPercent": "Y %",
     "zIndexParam": "Z-Index",
-    "clearBtn": "Effacer"
+    "clearBtn": "Effacer",
+    "effects": {
+      "hint": "Activez des effets visuels sur les écrans des joueurs. Les effets de base s'accumulent ; les filtres se remplacent. Cliquez à nouveau sur un bouton actif pour le désactiver. Le bouton Effacer supprime tous les effets d'un coup."
+    },
+    "textpics": {
+      "hint": "Affiche des superpositions de texte et d'images sur les écrans des joueurs. Ajoutez jusqu'à 10 calques texte et 10 calques image. Position : X/Y, taille : L/H, profondeur : Z. Utilisez les préréglages pour sauvegarder et réutiliser."
+    }
   }
 }

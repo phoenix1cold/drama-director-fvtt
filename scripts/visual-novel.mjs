@@ -2800,9 +2800,8 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
   }
 
   _openFilePicker(type, callback) {
-    const fp = new FilePicker({ type });
-    fp.options.callback = callback;
-    fp.render(true);
+    const fp = new FilePicker({ type, callback });
+    fp.render({force: true});
   }
 
   _showBgEditForm(el, editId = null) {
@@ -2924,9 +2923,9 @@ export class DDVNApi {
   static deactivateAll() { DDVNManager.deactivateAll(); }
   static openPanel() {
     if (DDVNPanel._instance) {
-      DDVNPanel._instance.render(true);
+      DDVNPanel._instance.render({force: true});
     } else {
-      new DDVNPanel().render(true);
+      new DDVNPanel().render({force: true});
     }
   }
 }

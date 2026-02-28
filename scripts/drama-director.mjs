@@ -986,7 +986,7 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       new FilePicker({ type:'audio', callback: (path) => {
         const input = html.querySelector('#dd-custom-sound');
         if (input) input.value = path;
-      }}).render(true);
+      }}).render({force: true});
     });
 
     html.querySelector('[data-action="stop-custom-sound"]')?.addEventListener('click', () => {
@@ -1014,7 +1014,7 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       new FilePicker({ type: 'image', callback: (path) => {
         const input = html.querySelector('#dd-image-url');
         if (input) input.value = path;
-      }}).render(true);
+      }}).render({force: true});
     });
 
     // ── TEXT AND PICTURES TAB ─────────────────────────────────────────────
@@ -1166,7 +1166,7 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
         new FilePicker({ type: 'image', callback: (path) => {
           _imageLayers[idx].url = path;
           row.querySelector('[data-field="url"]').value = path;
-        }}).render(true);
+        }}).render({force: true});
       });
       row.querySelector(`[data-remove-image="${idx}"]`).addEventListener('click', () => {
         _imageLayers.splice(idx, 1);
@@ -1380,7 +1380,7 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
           title: game.i18n.localize('DRAMADIRECTOR.copyMacro'),
           content: `<textarea style="width:100%;height:200px;font-family:monospace;font-size:11px">${macro}</textarea>`,
           buttons: { ok: { label: 'OK' } }
-        }).render(true);
+        }).render({force: true});
       });
     });
 
@@ -1395,7 +1395,7 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
       new FilePicker({ type:'video', callback: (path) => {
         const input = html.querySelector('#dd-video-url');
         if (input) input.value = path;
-      }}).render(true);
+      }}).render({force: true});
     });
 
     html.querySelector('[data-action="play-video"]')?.addEventListener('click', () => {
