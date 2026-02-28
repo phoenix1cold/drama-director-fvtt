@@ -983,10 +983,16 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
     });
 
     html.querySelector('[data-action="browse-sound"]')?.addEventListener('click', () => {
-      new FilePicker({ type:'audio', callback: (path) => {
-        const input = html.querySelector('#dd-custom-sound');
-        if (input) input.value = path;
-      }}).render({force: true});
+      // Foundry V13: FilePicker with location
+      const FilePickerClass = foundry.applications.apps.FilePicker.implementation;
+      new FilePickerClass({
+        type: 'audio',
+        location: 'data',
+        callback: (path) => {
+          const input = html.querySelector('#dd-custom-sound');
+          if (input) input.value = path;
+        }
+      }).render({ force: true });
     });
 
     html.querySelector('[data-action="stop-custom-sound"]')?.addEventListener('click', () => {
@@ -1011,10 +1017,16 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
 
     // Image file picker
     html.querySelector('[data-action="browse-image"]')?.addEventListener('click', () => {
-      new FilePicker({ type: 'image', callback: (path) => {
-        const input = html.querySelector('#dd-image-url');
-        if (input) input.value = path;
-      }}).render({force: true});
+      // Foundry V13: FilePicker with location
+      const FilePickerClass = foundry.applications.apps.FilePicker.implementation;
+      new FilePickerClass({
+        type: 'image',
+        location: 'data',
+        callback: (path) => {
+          const input = html.querySelector('#dd-image-url');
+          if (input) input.value = path;
+        }
+      }).render({ force: true });
     });
 
     // ── TEXT AND PICTURES TAB ─────────────────────────────────────────────
@@ -1163,10 +1175,16 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
         });
       });
       row.querySelector('.dd-browse-img-layer').addEventListener('click', () => {
-        new FilePicker({ type: 'image', callback: (path) => {
-          _imageLayers[idx].url = path;
-          row.querySelector('[data-field="url"]').value = path;
-        }}).render({force: true});
+        // Foundry V13: FilePicker with location
+        const FilePickerClass = foundry.applications.apps.FilePicker.implementation;
+        new FilePickerClass({
+          type: 'image',
+          location: 'data',
+          callback: (path) => {
+            _imageLayers[idx].url = path;
+            row.querySelector('[data-field="url"]').value = path;
+          }
+        }).render({ force: true });
       });
       row.querySelector(`[data-remove-image="${idx}"]`).addEventListener('click', () => {
         _imageLayers.splice(idx, 1);
@@ -1392,10 +1410,16 @@ class DramaDirectorPanel extends HandlebarsApplicationMixin(foundry.applications
 
     // ── VIDEO TAB ─────────────────────────────────────────────────────────
     html.querySelector('[data-action="browse-video"]')?.addEventListener('click', () => {
-      new FilePicker({ type:'video', callback: (path) => {
-        const input = html.querySelector('#dd-video-url');
-        if (input) input.value = path;
-      }}).render({force: true});
+      // Foundry V13: FilePicker with location
+      const FilePickerClass = foundry.applications.apps.FilePicker.implementation;
+      new FilePickerClass({
+        type: 'video',
+        location: 'data',
+        callback: (path) => {
+          const input = html.querySelector('#dd-video-url');
+          if (input) input.value = path;
+        }
+      }).render({ force: true });
     });
 
     html.querySelector('[data-action="play-video"]')?.addEventListener('click', () => {
