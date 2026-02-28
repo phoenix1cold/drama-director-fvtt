@@ -1040,6 +1040,105 @@
 }
 .vn-gml-player-sel:focus { outline: none; border-color: rgba(255,220,60,.4); }
 
+/* ── Control items (checkboxes, sliders) ─────────────────────────────────── */
+.vn-gml-control-item {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.vn-gml-control-item:last-child { border-bottom: none; }
+
+.vn-gml-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #bbb;
+  font-family: sans-serif;
+}
+.vn-gml-checkbox-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #ffe066;
+}
+.vn-gml-checkbox-label span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vn-gml-checkbox-label span i {
+  font-size: 11px;
+  color: #888;
+}
+
+.vn-gml-hint {
+  font-size: 10px;
+  color: #666;
+  font-family: sans-serif;
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+.vn-gml-slider-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #999;
+  font-family: sans-serif;
+}
+.vn-gml-slider-label span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.vn-gml-slider-label span i {
+  font-size: 10px;
+  color: #777;
+}
+.vn-gml-slider-label input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+}
+.vn-gml-slider-label input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ffe066;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.vn-gml-slider-label input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ffe066;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+.vn-gml-slider-label .vn-slider-val {
+  min-width: 32px;
+  text-align: right;
+  font-size: 11px;
+  color: #ffe066;
+  font-weight: bold;
+}
+
+.vn-gml-depth-slider {
+  background: rgba(255,220,60,.04);
+  padding: 8px 10px;
+}
+.vn-gml-depth-slider.dd-hidden {
+  display: none !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NAME BAR — active character names above dialogue
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1209,3 +1308,185 @@
   color: #ffe066;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOUSE CONTROLS SECTION (GM Left Bar)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-gml-controls-section {
+  margin-bottom: 4px;
+}
+
+.vn-gml-control-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+
+.vn-gml-control-item:last-child {
+  border-bottom: none;
+}
+
+.vn-gml-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.vn-gml-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ffe066;
+  cursor: pointer;
+}
+
+.vn-gml-checkbox-label span {
+  font-size: 12px;
+  color: #bbb;
+  font-family: sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vn-gml-checkbox-label span i {
+  font-size: 11px;
+  color: #888;
+  width: 16px;
+}
+
+.vn-gml-checkbox-label input:checked + span {
+  color: #ffe066;
+}
+
+.vn-gml-checkbox-label input:disabled + span {
+  color: #555;
+  cursor: not-allowed;
+}
+
+.vn-gml-hint {
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+  padding-left: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOCK BADGE & LOCKED STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-lock-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #f44;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.vn-char-portrait .vn-lock-badge {
+  top: 8px;
+  right: 8px;
+}
+
+.vn-lock-icon {
+  font-size: 10px;
+  color: #f66;
+  margin-left: 4px;
+}
+
+/* Locked element visual state */
+.vn-locked {
+  opacity: 0.6;
+  filter: saturate(0.5);
+}
+
+.vn-char.vn-locked {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+.vn-layer-item.vn-locked,
+.vn-interactive-img-item.vn-locked {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+/* Locked item in GM list */
+.gml-locked {
+  opacity: 0.5;
+  background: rgba(255,50,50,.05);
+}
+
+.gml-locked .vn-gml-char-name {
+  text-decoration: line-through;
+  text-decoration-color: #f66;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRAG & DROP CURSORS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-char.vn-draggable,
+.vn-layer-item.vn-draggable,
+.vn-interactive-img-item.vn-draggable {
+  cursor: grab;
+}
+
+.vn-char.vn-dragging,
+.vn-layer-item.vn-dragging,
+.vn-interactive-img-item.vn-dragging {
+  cursor: grabbing;
+  z-index: 10000 !important;
+}
+
+/* Depth mode indicator */
+.vn-unified-container.depth-mode {
+  cursor: ns-resize;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETTINGS PANEL — LOCK CHECKBOX
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vn-char-locked-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vn-char-locked-label {
+  font-size: 11px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vn-char-locked-label input {
+  accent-color: #f44;
+}
+
+
+/* ─── Scroll-to-select highlight ─────────────────────────────────────────── */
+.vn-scroll-selected {
+  outline: 2px solid rgba(255, 255, 255, 0.9) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))
+          drop-shadow(0 0 20px rgba(255, 255, 255, 0.25)) !important;
+  transition: filter 0.15s ease, outline 0.15s ease;
+  cursor: grab !important;
+}
+
+/* Портрет персонажа — ореол применяем к img внутри */
+.vn-char.vn-scroll-selected .vn-char-portrait {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7))
+          drop-shadow(0 0 24px rgba(255, 255, 255, 0.3)) !important;
+}

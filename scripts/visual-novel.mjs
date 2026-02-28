@@ -1,5 +1,6 @@
 /**
  * Drama Director — Visual Novel Mode
+ * Updated: Added mouse control, depth mode, player control
  */
 
 import { getLanguagePromise } from './drama-director.mjs';
@@ -12,8 +13,6 @@ function deepClone(o) { return foundry.utils.deepClone(o); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 // ─── Встроенные фоны ─────────────────────────────────────────────────────────
-// Built-in backgrounds — names are resolved lazily via i18n keys so they
-// work regardless of language load order.
 const _BUILTIN_BG_DEFS = [
   {
     id: 'citybank', _nameKey: 'DRAMADIRECTOR.vn.bg.citybank',
@@ -50,7 +49,6 @@ const _BUILTIN_BG_DEFS = [
   },
 ];
 
-// Resolve i18n names at call-time (game.i18n is ready by then)
 function _resolveBgNames(defs) {
   return defs.map(bg => ({
     ...bg,
@@ -64,24 +62,24 @@ export const VN_BUILTIN_BACKGROUNDS = _BUILTIN_BG_DEFS;
 
 export function newChar(side = 'left', slot = 0) {
   return { id: uid(), name: '', title: '', img: '', activeImg: '', side, slot,
-    playerId: null, active: false, visible: true,
-    scale: 1.0, mirror: false, nameColor: '#ffe066',
+    playerId: null, active: false, visible: true, locked: false,
+    scale: 1.0, baseScale: 1.0, mirror: false, nameColor: '#ffe066',
     x: 0, y: 0, zIndex: 0 };
 }
 
 export function newLayer(type = 'image') {
   return { id: uid(), type, name: '',
-    src: '', text: '',
+    src: '', text: '', locked: false,
     x: 760, y: 400, zIndex: 0,
-    width: 400, height: 300, scale: 1,
+    width: 400, height: 300, scale: 1, baseScale: 1.0,
     fontSize: 28, color: '#ffffff', fontFamily: 'inherit',
     textAlign: 'center', opacity: 1, visible: true };
 }
 
 export function newInteractiveImage() {
-  return { id: uid(), name: '', src: '',
-    x: 900, y: 500, zIndex: 10,
-    width: 200, height: 200, scale: 1, macroId: '',
+  return { id: uid(), name: '', src: '', locked: false,
+    x: 900, y: 500, zIndex: 0,
+    width: 200, height: 200, scale: 1, baseScale: 1.0, macroId: '',
     opacity: 1, visible: true };
 }
 
@@ -96,20 +94,59 @@ const _state = {
   dialogue: { visible: false, speakerName: '', speakerColor: '#ffe066', text: '', _subtitleActive: false },
   layers: [],
   interactiveImages: [],
+  // Новые флаги управления
+  mouseControl: false,
+  depthMode: false,
+  playerControl: false,
+  depthScaleMultiplier: 1.0,
+  depthYMultiplier: 1.0,
+  horizonLine: false,
+  horizonY: 30,
 };
 
 // ─── Глобальные z-index базы ─────────────────────────────────────────────────
-// Все элементы используют ОБЩУЮ базу z-index для полной свободы перекрытия
 const ZINDEX_BASE = {
-  ALL: 100,  // Общая база для всех: персонажи, слои, интерактивные изображения
+  ALL: 100,
 };
+
+// ─── Drag State ─────────────────────────────────────────────────────────────
+let _dragState = {
+  active: false,
+  element: null,
+  type: null,
+  id: null,
+  startX: 0,
+  startY: 0,
+  elemStartX: 0,
+  elemStartY: 0,
+  elemStartZ: 0,
+  elemStartScale: 1,
+  elemBaseScale: 1,
+};
+
+// ─── Horizon Line State ──────────────────────────────────────────────────────
+let _horizonY = null; // Фиксированная линия горизонта (Y в пикселях стейджа)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OVERLAY
 // ─────────────────────────────────────────────────────────────────────────────
 export class DDVNOverlay {
   static ID = 'dd-vn-overlay';
-  static _lastBg = ''; // Запоминаем последний установленный фон
+  static _lastBg = '';
+  static _hoveredCharId = null;
+
+  // ─── Scroll-to-select state ──────────────────────────────────────────────
+  // При наведении мыши на сцену + прокрутка колесом → цикл по объектам под курсором
+  static _scrollSelect = {
+    active: false,       // включён ли режим выбора
+    elemId: null,        // id выбранного элемента
+    elemType: null,      // 'char' | 'layer' | 'interactive'
+    candidates: [],      // [{id, type, zIndex, el}] — все элементы под курсором, по z desc
+    curIdx: -1,          // текущий индекс в candidates
+    mouseX: 0,
+    mouseY: 0,
+    hideTimer: null,
+  };
 
   static build() {
     if (document.getElementById(this.ID)) return;
@@ -118,7 +155,6 @@ export class DDVNOverlay {
     el.innerHTML = `
       <div class="vn-bg-layer" id="vn-bg-layer"></div>
       <div class="vn-stage" id="vn-stage">
-        <!-- Единый контейнер для всех элементов с z-index -->
         <div id="vn-unified-container" class="vn-unified-container"></div>
       </div>
       <div class="vn-name-bar" id="vn-name-bar" style="display:none"></div>
@@ -176,46 +212,273 @@ export class DDVNOverlay {
     el.querySelector('#vn-ctrl-stop')?.addEventListener('click', () => DDVNManager.stop(true));
     el.querySelector('#vn-ctrl-panel')?.addEventListener('click', () => DDVNApi.openPanel());
 
-    // Кнопки быстрого доступа к вкладкам сайдбара (Foundry v13: renderPopout())
     el.querySelectorAll('[data-sidebar-tab]').forEach(btn => {
       btn.addEventListener('click', () => {
         const tabName = btn.dataset.sidebarTab;
         const tab = ui[tabName];
-        if (tab?.renderPopout) {
-          // v13 API
-          tab.renderPopout();
-        } else if (tab?.popOut !== undefined) {
-          // v12 fallback
-          tab.renderPopout?.();
-        }
+        if (tab?.renderPopout) tab.renderPopout();
+        else if (tab?.popOut !== undefined) tab.renderPopout?.();
       });
     });
 
     el.querySelector('#vn-mic-toggle')?.addEventListener('click', async () => {
-      if (DDVNMic._active) {
-        DDVNMic.stop();
-      } else {
-        await DDVNMic.start();
-      }
+      if (DDVNMic._active) DDVNMic.stop();
+      else await DDVNMic.start();
       this.updateMicIndicator();
     });
 
-    // Обработчик смены языка в quick-bar
     el.querySelector('#vn-quick-lang')?.addEventListener('change', (e) => {
       const lang = e.target.value;
       DDVNMic.lang = lang;
-      // Синхронизируем с панелью настроек
       const panelLang = document.getElementById('vn-mic-lang');
       if (panelLang) panelLang.value = lang;
-      // Перезапускаем распознавание с новым языком
-      if (DDVNMic._active) {
-        DDVNMic.stop();
-        DDVNMic.start();
-      }
+      if (DDVNMic._active) { DDVNMic.stop(); DDVNMic.start(); }
     });
 
     window.addEventListener('resize', () => this.fitStage());
     this.fitStage();
+    this._initScrollSelect();
+  }
+
+  // ─── Scroll-to-select: колесо мыши для выбора объектов под курсором ─────────
+  static _initScrollSelect() {
+    const stage = document.getElementById('vn-stage');
+    if (!stage) return;
+    const ss = this._scrollSelect;
+
+    // Уход со сцены → снять подсветку
+    stage.addEventListener('mouseleave', () => {
+      clearTimeout(ss.hideTimer);
+      ss.hideTimer = setTimeout(() => this._clearScrollSelect(), 600);
+    });
+    stage.addEventListener('mouseenter', () => clearTimeout(ss.hideTimer));
+
+    // Scroll без Ctrl → scroll-to-select
+    stage.addEventListener('wheel', (e) => {
+      if (!_state.mouseControl) return;
+      if (!game.user?.isGM)     return;
+      if (e.ctrlKey)            return; // Ctrl+scroll = baseScale
+      if (_dragState.active)    return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const hits = this._getElementsAt(e.clientX, e.clientY);
+      if (!hits.length) { this._clearScrollSelect(); return; }
+
+      const hitKey = hits.map(h => h.type + h.id).join('|');
+      if (ss._lastHitKey !== hitKey) {
+        // Курсор попал на новую группу объектов — начинаем с верхнего
+        ss._lastHitKey  = hitKey;
+        ss.candidates   = hits; // отсортированы по z убыванию (верхний первый)
+        ss.curIdx       = 0;
+      } else {
+        // Крутим по циклу: вниз → глубже (следующий), вверх → ближе
+        const dir = e.deltaY > 0 ? 1 : -1;
+        ss.curIdx = (ss.curIdx + dir + hits.length) % hits.length;
+      }
+
+      const chosen   = hits[ss.curIdx];
+      ss.active      = true;
+      ss.elemId      = chosen.id;
+      ss.elemType    = chosen.type;
+
+      this._applyScrollHighlight(chosen.id, chosen.type);
+      this._showScrollToast(hits, ss.curIdx);
+
+      clearTimeout(ss.hideTimer);
+      ss.hideTimer = setTimeout(() => this._clearScrollSelect(), 2500);
+    }, { passive: false });
+
+    // ЛКМ по сцене: если есть активный выбор → начать drag на нём
+    stage.addEventListener('mousedown', (e) => {
+      if (e.button !== 0)    return;
+      if (!ss.active)        return;
+      if (_dragState.active) return;
+
+      const item = this._getItemById(ss.elemType, ss.elemId);
+      if (!item || item.locked)               return;
+      if (!this._canDragElement(item, _state)) return;
+
+      const container = document.getElementById('vn-unified-container');
+      if (!container) return;
+      const selector =
+        ss.elemType === 'char'        ? `[data-char-id="${ss.elemId}"]`  :
+        ss.elemType === 'layer'       ? `[data-layer-id="${ss.elemId}"]` :
+                                        `[data-img-id="${ss.elemId}"]`;
+      const selEl = container.querySelector(selector);
+      if (!selEl) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const stageEl    = document.getElementById('vn-stage');
+      const stageRect  = stageEl?.getBoundingClientRect();
+      const stageScale = stageRect
+        ? Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
+        : 1;
+
+      _dragState = {
+        active: true,
+        element: selEl,
+        type: ss.elemType,
+        id: ss.elemId,
+        startX: e.clientX,
+        startY: e.clientY,
+        elemStartX: item.x || 0,
+        elemStartY: item.y || 0,
+        elemStartZ: item.zIndex || 0,
+        elemStartScale: item.scale || 1,
+        elemBaseScale: item.baseScale ?? item.scale ?? 1,
+        stageScale,
+      };
+
+      selEl.style.cursor = 'grabbing';
+      selEl.style.zIndex = (parseInt(selEl.style.zIndex) || 100) + 1000;
+
+      document.addEventListener('mousemove', this._onDragMove);
+      document.addEventListener('mouseup',   this._onDragEnd);
+
+      this._clearScrollSelect();
+    }, true);
+  }
+
+  // Собирает все DOM-элементы сцены под точкой экрана, сортирует по z-index убыванию
+  static _getElementsAt(clientX, clientY) {
+    const container = document.getElementById('vn-unified-container');
+    if (!container) return [];
+
+    // Временно делаем все элементы pointer-events:none чтобы elementFromPoint работал насквозь
+    const children = Array.from(container.children);
+    const results  = [];
+
+    // Используем elementsFromPoint для получения всех слоёв
+    const allHit = document.elementsFromPoint(clientX, clientY);
+
+    for (const hitEl of allHit) {
+      // Ищем ближайший родительский элемент с data-elem-type
+      let el = hitEl;
+      while (el && el !== container) {
+        if (el.dataset?.elemType) break;
+        el = el.parentElement;
+      }
+      if (!el || !el.dataset?.elemType) continue;
+      if (results.find(r => r.el === el)) continue; // дубликат
+
+      const type = el.dataset.elemType;
+      const id   =
+        type === 'char'        ? el.dataset.charId  :
+        type === 'layer'       ? el.dataset.layerId :
+                                 el.dataset.imgId;
+      if (!id) continue;
+
+      const zIndex = parseInt(el.style.zIndex) || 0;
+      results.push({ id, type, zIndex, el });
+    }
+
+    // Сортируем по z убыванию (верхний — первый)
+    results.sort((a, b) => b.zIndex - a.zIndex);
+    return results;
+  }
+
+  // Помощник: достаёт объект данных по type+id из _state
+  static _getItemById(type, id) {
+    if (type === 'char')        return _state.chars.find(c => c.id === id) ?? null;
+    if (type === 'layer')       return _state.layers.find(l => l.id === id) ?? null;
+    if (type === 'interactive') return _state.interactiveImages.find(i => i.id === id) ?? null;
+    return null;
+  }
+
+  // Подсвечивает выбранный элемент белым ореолом
+  static _applyScrollHighlight(id, type) {
+    const container = document.getElementById('vn-unified-container');
+    if (!container) return;
+
+    // Снимаем прошлое выделение
+    container.querySelectorAll('.vn-scroll-selected').forEach(el => {
+      el.classList.remove('vn-scroll-selected');
+    });
+
+    const selector =
+      type === 'char'        ? `[data-char-id="${id}"]`  :
+      type === 'layer'       ? `[data-layer-id="${id}"]` :
+                               `[data-img-id="${id}"]`;
+    const el = container.querySelector(selector);
+    if (el) el.classList.add('vn-scroll-selected');
+  }
+
+  // Показывает небольшой тост со списком объектов и стрелкой на текущий
+  static _showScrollToast(candidates, curIdx) {
+    let toast = document.getElementById('vn-scroll-select-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'vn-scroll-select-toast';
+      toast.style.cssText = [
+        'position:fixed', 'bottom:72px', 'left:50%',
+        'transform:translateX(-50%)',
+        'background:rgba(10,10,20,.88)',
+        'border:1px solid rgba(255,255,255,.18)',
+        'border-radius:10px',
+        'padding:8px 14px 6px',
+        'font-size:12px',
+        'font-family:monospace',
+        'color:#e8e8f0',
+        'pointer-events:none',
+        'z-index:99999',
+        'backdrop-filter:blur(6px)',
+        'transition:opacity .25s',
+        'white-space:nowrap',
+        'min-width:160px',
+        'text-align:left',
+        'box-shadow:0 4px 24px rgba(0,0,0,.5)',
+      ].join(';');
+      document.body.appendChild(toast);
+    }
+
+    const icon = t =>
+      t === 'char'        ? '👤' :
+      t === 'layer'       ? '🖼' :
+                            '🖱';
+
+    const lines = candidates.map((c, i) => {
+      const item  = this._getItemById(c.type, c.id);
+      const label = item?.name || c.type;
+      const z     = item?.zIndex ?? 0;
+      const isChosen = i === curIdx;
+      const arrow = isChosen ? '<span style="color:#fff;font-weight:bold">▶ </span>' : '&nbsp;&nbsp;';
+      const style = isChosen
+        ? 'color:#fff;background:rgba(255,255,255,.1);border-radius:4px;padding:1px 4px;'
+        : 'color:#aaa;padding:1px 4px;';
+      return `<div style="${style}">${arrow}${icon(c.type)} ${label} <span style="color:#666;font-size:10px">z:${z}</span></div>`;
+    }).join('');
+
+    const hint = '<div style="color:#555;font-size:10px;margin-top:4px;border-top:1px solid rgba(255,255,255,.08);padding-top:4px;">🖱 scroll — выбор · ЛКМ — двигать</div>';
+    toast.innerHTML = lines + hint;
+    toast.style.opacity = '1';
+  }
+
+  // Снимает выделение и прячет тост
+  static _clearScrollSelect() {
+    const ss = this._scrollSelect;
+    ss.active    = false;
+    ss.elemId    = null;
+    ss.elemType  = null;
+    ss.candidates = [];
+    ss.curIdx    = -1;
+    ss._lastHitKey = null;
+
+    const container = document.getElementById('vn-unified-container');
+    container?.querySelectorAll('.vn-scroll-selected').forEach(el => {
+      el.classList.remove('vn-scroll-selected');
+    });
+
+    const toast = document.getElementById('vn-scroll-select-toast');
+    if (toast) {
+      toast.style.opacity = '0';
+      clearTimeout(toast._removeTimer);
+      toast._removeTimer = setTimeout(() => toast.remove(), 280);
+    }
   }
 
   static fitStage() {
@@ -226,38 +489,21 @@ export class DDVNOverlay {
   }
 
   static clearStage() {
-    // Очищаем единый контейнер
     const container = document.getElementById('vn-unified-container');
     if (container) container.innerHTML = '';
-
-    // Скрываем диалоговое окно
     const dialogue = document.getElementById('vn-dialogue');
     if (dialogue) dialogue.style.display = 'none';
-
-    // Очищаем субтитры
     this.hideAllSubtitles();
-
-    console.log('DD VN | Stage cleared');
   }
 
   static apply(state) {
     let overlay = document.getElementById(this.ID);
-    if (!overlay) { 
-      this.build(); 
-      overlay = document.getElementById(this.ID);
-    }
-    if (!overlay) {
-      console.error('DD VN | Cannot create overlay!');
-      return;
-    }
+    if (!overlay) { this.build(); overlay = document.getElementById(this.ID); }
+    if (!overlay) { console.error('DD VN | Cannot create overlay!'); return; }
 
-    console.log('DD VN | Apply state:', state);
-    
-    // Используем opacity для плавной анимации
     if (state.open) overlay.classList.add('interactive');
     else overlay.classList.remove('interactive');
     this._renderBg(state);
-    // Единый рендеринг всех элементов с учётом z-index
     this._renderAllElements(state);
     this._renderDialogue(state.dialogue);
     this._renderNameBar(state.chars || []);
@@ -265,12 +511,10 @@ export class DDVNOverlay {
     const gmBar = document.getElementById('vn-gm-bar');
     if (gmBar) gmBar.style.display = (state.open && game.user?.isGM) ? 'flex' : 'none';
     
-    // Показывать quick-bar всем когда VN открыта
     const quickBar = document.getElementById('vn-quick-bar');
     if (quickBar) quickBar.style.display = state.open ? 'flex' : 'none';
     this.updateMicIndicator();
 
-    // GM левая панель
     DDVNGMBar.update(state);
   }
 
@@ -290,16 +534,10 @@ export class DDVNOverlay {
       btn.querySelector('i')?.classList.replace('fa-microphone', 'fa-microphone-slash');
     }
     
-    // Синхронизируем язык в quick-bar с текущим значением
     const quickLang = document.getElementById('vn-quick-lang');
-    if (quickLang && DDVNMic.lang) {
-      quickLang.value = DDVNMic.lang;
-    }
-    // Синхронизируем язык в панели настроек
+    if (quickLang && DDVNMic.lang) quickLang.value = DDVNMic.lang;
     const panelLang = document.getElementById('vn-mic-lang');
-    if (panelLang && DDVNMic.lang) {
-      panelLang.value = DDVNMic.lang;
-    }
+    if (panelLang && DDVNMic.lang) panelLang.value = DDVNMic.lang;
   }
 
   static ensureOpen() {
@@ -316,19 +554,14 @@ export class DDVNOverlay {
     const currentSrc = bg.dataset.src || '';
     const stateBg = state.background || '';
     
-    // Запоминаем последний установленный фон
     if (stateBg) this._lastBg = stateBg;
     
     bg.style.backgroundColor = state.bgColor || '#0a0a14';
     bg.style.setProperty('--vn-dim', String(state.dimBg || 0));
 
-    // Используем: state фон -> последний запомненный -> текущий в DOM
     let bgToRender = stateBg || this._lastBg || currentSrc;
     
-    // Никогда не очищаем фон если он уже установлен
-    if (!bgToRender && !currentSrc && !this._lastBg) {
-      return;
-    }
+    if (!bgToRender && !currentSrc && !this._lastBg) return;
     
     if (bgToRender && bgToRender !== currentSrc) {
       const isVid = /\.(webm|mp4|ogv)$/i.test(bgToRender);
@@ -342,7 +575,7 @@ export class DDVNOverlay {
         bg.dataset.src = bgToRender;
         bg.innerHTML = '';
         bg.style.backgroundImage = `url('${bgToRender}')`;
-        bg.style.backgroundSize   = state.bgFit || 'cover';
+        bg.style.backgroundSize = state.bgFit || 'cover';
         bg.style.backgroundPosition = 'center';
       }
     }
@@ -357,65 +590,40 @@ export class DDVNOverlay {
     const layers = state.layers || [];
     const interactiveImages = state.interactiveImages || [];
 
-    // Проверяем есть ли активный персонаж
     const hasActive = chars.some(c => c && c.active && c.visible !== false);
-
-    // Собираем все элементы с их z-index и позицией
     const allElements = [];
 
     // ─── Персонажи ───
-    // Группируем по сторонам для расчёта позиций
     const leftChars = chars.filter(c => c && c.side === 'left' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
     const centerChars = chars.filter(c => c && c.side === 'center' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
     const rightChars = chars.filter(c => c && c.side === 'right' && c.visible !== false).sort((a, b) => (a.slot || 0) - (b.slot || 0));
 
-    // Функция для расчёта базовой позиции персонажа по стороне и слоту
     const calcCharBasePos = (side, slot, totalOnSide) => {
-      // Базовые координаты для каждой стороны
       const basePositions = {
-        left: { x: 250, y: 1080 },    // Нижняя левая область
-        center: { x: 960, y: 1080 },  // Нижняя центральная область
-        right: { x: 1670, y: 1080 }   // Нижняя правая область
+        left: { x: 250, y: 1080 },
+        center: { x: 960, y: 1080 },
+        right: { x: 1670, y: 1080 }
       };
       const base = basePositions[side];
       
-      // Динамический расчёт ширины и перекрытия
       let baseWidth = side === 'center' ? 380 : 420;
       let overlap = 0;
       
-      if (totalOnSide <= 3) {
-        baseWidth = side === 'center' ? 350 : 420;
-        overlap = 0;
-      } else if (totalOnSide <= 5) {
-        baseWidth = side === 'center' ? 280 : 350;
-        overlap = 30;
-      } else if (totalOnSide <= 8) {
-        baseWidth = side === 'center' ? 220 : 280;
-        overlap = 50;
-      } else {
-        baseWidth = side === 'center' ? 180 : 220;
-        overlap = 70;
-      }
+      if (totalOnSide <= 3) { baseWidth = side === 'center' ? 350 : 420; overlap = 0; }
+      else if (totalOnSide <= 5) { baseWidth = side === 'center' ? 280 : 350; overlap = 30; }
+      else if (totalOnSide <= 8) { baseWidth = side === 'center' ? 220 : 280; overlap = 50; }
+      else { baseWidth = side === 'center' ? 180 : 220; overlap = 70; }
 
-      // Смещение по слоту
       const slotOffset = slot * (baseWidth - overlap);
       
-      // Для левой стороны - персонажи идут слева направо
-      // Для центра - центрируются
-      // Для правой стороны - персонажи идут справа налево
       let x = base.x;
-      if (side === 'left') {
-        x = 100 + slotOffset;
-      } else if (side === 'center') {
-        x = 960 - (totalOnSide * (baseWidth - overlap)) / 2 + slotOffset;
-      } else if (side === 'right') {
-        x = 1820 - slotOffset - baseWidth;
-      }
+      if (side === 'left') x = 100 + slotOffset;
+      else if (side === 'center') x = 960 - (totalOnSide * (baseWidth - overlap)) / 2 + slotOffset;
+      else if (side === 'right') x = 1820 - slotOffset - baseWidth;
 
       return { x, y: base.y, width: baseWidth };
     };
 
-    // Добавляем персонажей
     const addCharElements = (charList, side) => {
       const total = charList.length;
       charList.forEach((char, idx) => {
@@ -438,30 +646,21 @@ export class DDVNOverlay {
     addCharElements(centerChars, 'center');
     addCharElements(rightChars, 'right');
 
-    // ─── Слои (Layers) ───
     layers.filter(l => l.visible !== false).forEach(layer => {
-      allElements.push({
-        type: 'layer',
-        data: layer,
-        zIndex: ZINDEX_BASE.ALL + (layer.zIndex ?? 0)
-      });
+      allElements.push({ type: 'layer', data: layer, zIndex: ZINDEX_BASE.ALL + (layer.zIndex ?? 0) });
     });
 
-    // ─── Интерактивные изображения ───
     interactiveImages.filter(img => img.visible !== false && img.src).forEach(image => {
-      allElements.push({
-        type: 'interactive',
-        data: image,
-        zIndex: ZINDEX_BASE.ALL + (image.zIndex ?? 0)
-      });
+      allElements.push({ type: 'interactive', data: image, zIndex: ZINDEX_BASE.ALL + (image.zIndex ?? 0) });
     });
 
-    // Сортируем по z-index (меньшие значения — ниже)
     allElements.sort((a, b) => a.zIndex - b.zIndex);
 
     // ─── Рендерим все элементы ───
     allElements.forEach(elem => {
       const el = document.createElement('div');
+      const isMouseControl = state.mouseControl;
+      const canDrag = this._canDragElement(elem.data, state);
 
       if (elem.type === 'char') {
         const char = elem.data;
@@ -470,21 +669,16 @@ export class DDVNOverlay {
         const charScale = char.scale || 1;
         const offsetX = char.x || 0;
         const offsetY = char.y || 0;
-        const mirror = elem.side === 'center' 
-          ? (char.mirror ? -1 : 1) 
-          : ((char.mirror ? 1 : 0) ^ (elem.side === 'right' ? 1 : 0));
+        const mirror = elem.side === 'center' ? (char.mirror ? -1 : 1) : ((char.mirror ? 1 : 0) ^ (elem.side === 'right' ? 1 : 0));
 
-        el.className = `vn-char ${visClass}`;
+        el.className = `vn-char ${visClass}${char.locked ? ' vn-locked' : ''}`;
         el.dataset.charId = char.id;
-        // Контейнер полностью без pointer-events
-        el.style.cssText = `position:absolute;left:${elem.baseX + offsetX}px;bottom:0;width:${elem.width}px;height:900px;z-index:${elem.zIndex};pointer-events:none;`;
+        el.dataset.elemType = 'char';
+        el.style.cssText = `position:absolute;left:${elem.baseX + offsetX}px;bottom:0;width:${elem.width}px;height:900px;z-index:${elem.zIndex};`;
 
-        // Рендерим изображения с поддержкой активного портрета
         const hasMainImg = char.img?.trim();
         const hasActiveImg = char.activeImg?.trim();
         const isActive = char.active;
-
-        // Генерируем уникальный ID для изображений чтобы найти их позже
         const imgId = `char-img-${char.id}-${Date.now()}`;
 
         let portraitHtml;
@@ -493,21 +687,11 @@ export class DDVNOverlay {
           if (hasActiveImg && hasMainImg) {
             portraitHtml = `
               <div class="vn-char-img-wrap" id="${imgId}-wrap">
-                <img class="vn-char-img-base ${isActive ? 'vn-img-hidden' : ''}"
-                     id="${imgId}-base"
-                     src="${char.img}"
-                     alt="${char.name || ''}"
-                     style="pointer-events:auto;cursor:pointer;"
-                     onerror="this.style.display='none'"/>
-                <img class="vn-char-img-active ${isActive ? 'vn-img-visible' : ''}"
-                     id="${imgId}-active"
-                     src="${char.activeImg}"
-                     alt="${char.name || ''}"
-                     style="pointer-events:auto;cursor:pointer;"
-                     onerror="this.style.display='none'"/>
+                <img class="vn-char-img-base ${isActive ? 'vn-img-hidden' : ''}" id="${imgId}-base" src="${char.img}" alt="${char.name || ''}" style="pointer-events:auto;cursor:${isMouseControl && canDrag && !char.locked ? 'grab' : 'pointer'};" onerror="this.style.display='none'"/>
+                <img class="vn-char-img-active ${isActive ? 'vn-img-visible' : ''}" id="${imgId}-active" src="${char.activeImg}" alt="${char.name || ''}" style="pointer-events:auto;cursor:${isMouseControl && canDrag && !char.locked ? 'grab' : 'pointer'};" onerror="this.style.display='none'"/>
               </div>`;
           } else {
-            portraitHtml = `<img id="${imgId}" src="${mainSrc}" alt="${char.name || ''}" style="pointer-events:auto;cursor:pointer;" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
+            portraitHtml = `<img id="${imgId}" src="${mainSrc}" alt="${char.name || ''}" style="pointer-events:auto;cursor:${isMouseControl && canDrag && !char.locked ? 'grab' : 'pointer'};" onerror="this.parentElement.innerHTML='<div class=\\'vn-char-empty\\'><i class=\\'fas fa-user\\'></i></div>'"/>`;
           }
         } else {
           portraitHtml = `<div class="vn-char-empty"><i class="fas fa-user"></i></div>`;
@@ -515,15 +699,15 @@ export class DDVNOverlay {
 
         const glowStyle = char.active ? `filter: drop-shadow(0 0 20px ${charColor}) drop-shadow(0 0 40px ${charColor}80);` : '';
 
-        // wrapper без pointer-events
         el.innerHTML = `
-          <div class="vn-char-wrapper" style="transform:translateY(${offsetY}px);pointer-events:none;">
-            <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}pointer-events:none;">
+          <div class="vn-char-wrapper" style="transform:translateY(${offsetY}px);">
+            <div class="vn-char-portrait" style="transform-origin:bottom center;transform:scaleX(${mirror ? -1 : 1}) scale(${charScale});${glowStyle}">
               ${portraitHtml}
+              ${char.locked ? '<div class="vn-lock-badge"><i class="fas fa-lock"></i></div>' : ''}
             </div>
           </div>`;
 
-        // Hover tracking - вешаем на само изображение (pointer-events:auto на img)
+        // Hover tracking
         const imgs = el.querySelectorAll('img');
         imgs.forEach(img => {
           img.addEventListener('mouseenter', () => {
@@ -536,17 +720,37 @@ export class DDVNOverlay {
           });
         });
 
+        // Drag & Drop (заблокированные получают только ПКМ для разблокировки GM-ом)
+        if (isMouseControl && canDrag && !char.locked) {
+          this._setupDrag(el, 'char', char.id);
+        } else if (isMouseControl && game.user?.isGM && char.locked) {
+          this._setupContextMenu(el, 'char', char.id);
+        }
+
       } else if (elem.type === 'layer') {
         const layer = elem.data;
         const layerScale = layer.scale || 1;
         const layerWidth = (layer.width || 300) * layerScale;
         const layerHeight = (layer.height || 200) * layerScale;
-        el.className = 'vn-layer-item';
-        el.style.cssText = `position:absolute;left:${layer.x||0}px;top:${layer.y||0}px;z-index:${elem.zIndex};opacity:${layer.opacity??1};pointer-events:none;`;
+        el.className = `vn-layer-item${layer.locked ? ' vn-locked' : ''}`;
+        el.dataset.layerId = layer.id;
+        el.dataset.elemType = 'layer';
+        el.style.cssText = `position:absolute;left:${layer.x||0}px;top:${layer.y||0}px;z-index:${elem.zIndex};opacity:${layer.opacity??1};`;
+        
         if (layer.type === 'image' && layer.src) {
-          el.innerHTML = `<img src="${layer.src}" style="width:${layerWidth}px;height:${layerHeight}px;object-fit:contain;display:block;" onerror="this.style.display='none'"/>`;
+          el.innerHTML = `<img src="${layer.src}" style="width:${layerWidth}px;height:${layerHeight}px;object-fit:contain;display:block;cursor:${isMouseControl && !layer.locked ? 'grab' : 'default'};" onerror="this.style.display='none'"/>`;
         } else if (layer.type === 'text' && layer.text) {
-          el.innerHTML = `<div style="width:${(layer.width||400)*layerScale}px;font-size:${(layer.fontSize||28)*layerScale}px;color:${layer.color||'#fff'};font-family:${layer.fontFamily||'inherit'};text-align:${layer.textAlign||'left'};text-shadow:0 2px 10px rgba(0,0,0,.95),0 0 20px rgba(0,0,0,.8);line-height:1.4;white-space:pre-wrap;">${layer.text}</div>`;
+          el.innerHTML = `<div style="width:${(layer.width||400)*layerScale}px;font-size:${(layer.fontSize||28)*layerScale}px;color:${layer.color||'#fff'};font-family:${layer.fontFamily||'inherit'};text-align:${layer.textAlign||'left'};text-shadow:0 2px 10px rgba(0,0,0,.95),0 0 20px rgba(0,0,0,.8);line-height:1.4;white-space:pre-wrap;cursor:${isMouseControl && !layer.locked ? 'grab' : 'default'};">${layer.text}</div>`;
+        }
+        
+        if (layer.locked) {
+          el.innerHTML += '<div class="vn-lock-badge"><i class="fas fa-lock"></i></div>';
+        }
+
+        if (isMouseControl && !layer.locked) {
+          this._setupDrag(el, 'layer', layer.id);
+        } else if (isMouseControl && game.user?.isGM && layer.locked) {
+          this._setupContextMenu(el, 'layer', layer.id);
         }
 
       } else if (elem.type === 'interactive') {
@@ -554,11 +758,13 @@ export class DDVNOverlay {
         const imgScale = image.scale || 1;
         const imgWidth = (image.width || 200) * imgScale;
         const imgHeight = (image.height || 200) * imgScale;
-        el.className = 'vn-interactive-img-item';
+        el.className = `vn-interactive-img-item${image.locked ? ' vn-locked' : ''}`;
         el.dataset.imgId = image.id;
-        el.style.cssText = `position:absolute;left:${image.x||0}px;top:${image.y||0}px;z-index:${elem.zIndex};opacity:${image.opacity??1};width:${imgWidth}px;height:${imgHeight}px;cursor:pointer;pointer-events:auto;transition:filter .2s,transform .1s;`;
+        el.dataset.elemType = 'interactive';
+        el.style.cssText = `position:absolute;left:${image.x||0}px;top:${image.y||0}px;z-index:${elem.zIndex};opacity:${image.opacity??1};width:${imgWidth}px;height:${imgHeight}px;cursor:${isMouseControl && !image.locked ? 'grab' : 'pointer'};transition:filter .2s,transform .1s;`;
         el.innerHTML = `<img src="${image.src}" style="width:100%;height:100%;object-fit:contain;display:block;" title="${image.name||''}" onerror="this.style.display='none'"/>`;
-        if (image.macroId) {
+        
+        if (image.macroId && !isMouseControl) {
           el.addEventListener('click', () => {
             const macro = game.macros?.get(image.macroId) ?? game.macros?.getName(image.macroId);
             if (macro) macro.execute();
@@ -567,20 +773,262 @@ export class DDVNOverlay {
           el.addEventListener('mouseenter', () => { el.style.filter = 'brightness(1.2) drop-shadow(0 0 12px rgba(255,220,60,.6))'; el.style.transform = 'scale(1.05)'; });
           el.addEventListener('mouseleave', () => { el.style.filter = ''; el.style.transform = ''; });
         }
+
+        if (image.locked) {
+          el.innerHTML += '<div class="vn-lock-badge"><i class="fas fa-lock"></i></div>';
+        }
+
+        if (isMouseControl && !image.locked) {
+          this._setupDrag(el, 'interactive', image.id);
+        } else if (isMouseControl && game.user?.isGM && image.locked) {
+          this._setupContextMenu(el, 'interactive', image.id);
+        }
       }
 
       container.appendChild(el);
     });
 
-    console.log('DD VN | Rendered elements:', allElements.length, 'sorted by z-index');
+    console.log('DD VN | Rendered elements:', allElements.length);
   }
 
-  static _renderChars(chars) {
-    // Устаревший метод - теперь используется _renderAllElements
-    // Оставляем для совместимости
+  static _canDragElement(elemData, state) {
+    if (!state.mouseControl) return false;
+    if (game.user?.isGM) return true;
+    if (!state.playerControl) return false;
+    // Игроки могут двигать только свои персонажи
+    if (elemData.playerId === game.userId) return true;
+    return false;
   }
 
-  static _hoveredCharId = null;
+  // ─── Perspective factor for depth mode ────────────────────────────────────
+  // Returns a value [0.02..2.0] representing how large the object should appear
+  // based on its Y position relative to the horizon line.
+  // At the horizon → ~0, at the bottom (y=1080) → scaleMult.
+  static _perspectiveFactor(y, state = _state) {
+    const horizonRef = (state.horizonLine && _horizonY !== null)
+      ? _horizonY
+      : Math.round((state.horizonY ?? 30) / 100 * 1080);
+    const stageH = 1080;
+    const usableH = Math.max(1, stageH - horizonRef);
+    const t = (y - horizonRef) / usableH; // 0 at horizon, 1 at bottom
+    const scaleMult = state.depthScaleMultiplier || 1.0;
+    return Math.max(0.02, Math.min(3.0, t * scaleMult));
+  }
+
+  // Персонажи позиционируются от bottom:0 — их Y это translateY смещение (0 = низ сцены).
+  // Для перспективы нужен Y от верха: effectiveY = stageH + char.y
+  // Слои и интерактивные — top-based, их Y уже правильный.
+  static _depthY(type, item) {
+    if (type === 'char') return 1080 + (item.y || 0);
+    return item.y || 0;
+  }
+
+  static _depthZ(type, item) {
+    const ey = this._depthY(type, item);
+    return Math.max(-50, Math.min(100, Math.round((ey / 1080) * 100)));
+  }
+
+  // Только контекстное меню (ПКМ) — для заблокированных элементов, чтобы GM мог разблокировать
+  static _setupContextMenu(el, type, id) {
+    el.style.pointerEvents = 'auto';
+    el.addEventListener('contextmenu', (e) => {
+      if (!game.user?.isGM) return;
+      if (!_state.mouseControl) return;
+      e.preventDefault();
+      e.stopPropagation();
+      DDVNManager.toggleLock(type, id);
+    });
+    this._setupBaseScaleScroll(el, type, id);
+  }
+
+  // ─── Ctrl+Scroll для baseScale ────────────────────────────────────────────
+  static _setupBaseScaleScroll(el, type, id) {
+    el.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      if (!game.user?.isGM) return;
+      if (!_state.mouseControl) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const state = DDVNManager.getState();
+      let item = null;
+      if (type === 'char') item = state.chars.find(c => c.id === id);
+      else if (type === 'layer') item = state.layers.find(l => l.id === id);
+      else if (type === 'interactive') item = state.interactiveImages.find(i => i.id === id);
+      if (!item) return;
+
+      const step = e.deltaY < 0 ? 0.05 : -0.05;
+      item.baseScale = parseFloat(Math.max(0.05, Math.min(10, (item.baseScale || 1) + step)).toFixed(2));
+
+      // В режиме глубины сразу пересчитываем scale
+      if (_state.depthMode) {
+        item.scale = parseFloat((item.baseScale * DDVNOverlay._perspectiveFactor(item.y || 0)).toFixed(3));
+      } else {
+        item.scale = item.baseScale;
+      }
+
+      DDVNManager.broadcast();
+      // Показываем мини-тост с текущим baseScale
+      const toast = document.getElementById('vn-basescale-toast') || (() => {
+        const t = document.createElement('div');
+        t.id = 'vn-basescale-toast';
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#ffe066;padding:6px 16px;border-radius:20px;font-size:13px;font-family:monospace;pointer-events:none;z-index:99999;transition:opacity .3s;';
+        document.body.appendChild(t);
+        return t;
+      })();
+      toast.textContent = `Base Scale: ${item.baseScale}×`;
+      toast.style.opacity = '1';
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 1200);
+    }, { passive: false });
+  }
+
+  static _setupDrag(el, type, id) {
+    el.style.pointerEvents = 'auto';
+    
+    el.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Только ЛКМ
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const state = DDVNManager.getState();
+      let item = null;
+      
+      if (type === 'char') item = state.chars.find(c => c.id === id);
+      else if (type === 'layer') item = state.layers.find(l => l.id === id);
+      else if (type === 'interactive') item = state.interactiveImages.find(i => i.id === id);
+      
+      if (!item || item.locked) return;
+      
+      // Проверяем право на перетаскивание
+      if (!this._canDragElement(item, state)) return;
+      
+      const rect = el.getBoundingClientRect();
+      const stage = document.getElementById('vn-stage');
+      const stageRect = stage?.getBoundingClientRect();
+      const stageScale = stageRect ? Math.min(window.innerWidth / 1920, window.innerHeight / 1080) : 1;
+      
+      _dragState = {
+        active: true,
+        element: el,
+        type: type,
+        id: id,
+        startX: e.clientX,
+        startY: e.clientY,
+        elemStartX: item.x || 0,
+        elemStartY: item.y || 0,
+        elemStartZ: item.zIndex || 0,
+        elemStartScale: item.scale || 1,
+        elemBaseScale: item.baseScale ?? item.scale ?? 1,
+        stageScale: stageScale,
+      };
+      
+      el.style.cursor = 'grabbing';
+      el.style.zIndex = (parseInt(el.style.zIndex) || 100) + 1000;
+      
+      document.addEventListener('mousemove', this._onDragMove);
+      document.addEventListener('mouseup', this._onDragEnd);
+    });
+    
+    // ПКМ для блокировки (только GM)
+    el.addEventListener('contextmenu', (e) => {
+      if (!game.user?.isGM) return;
+      if (!_state.mouseControl) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      DDVNManager.toggleLock(type, id);
+    });
+
+    // Ctrl+Scroll для baseScale (только GM)
+    this._setupBaseScaleScroll(el, type, id);
+  }
+
+  static _onDragMove = (e) => {
+    if (!_dragState.active) return;
+    
+    const dx = (e.clientX - _dragState.startX) / _dragState.stageScale;
+    const dy = (e.clientY - _dragState.startY) / _dragState.stageScale;
+    
+    let newX = _dragState.elemStartX;
+    let newY = _dragState.elemStartY;
+    let newZ = _dragState.elemStartZ;
+    let newScale = _dragState.elemStartScale;
+
+    // Режим глубины: Y → масштаб + Z-index автоматически
+    if (_state.depthMode) {
+      const yMult = _state.depthYMultiplier || 1.0;
+
+      // Движение по Y с множителем
+      newY = _dragState.elemStartY + dy * yMult;
+
+      // Ограничение горизонтом (для персонажей горизонт тоже в effectiveY пространстве)
+      if (_state.horizonLine && _horizonY !== null) {
+        if (_dragState.type === 'char') {
+          // effectiveY = 1080 + newY, ограничиваем effectiveY >= _horizonY
+          const minY = _horizonY - 1080;
+          newY = Math.max(minY, newY);
+        } else {
+          newY = Math.max(_horizonY, newY);
+        }
+      }
+
+      // effectiveY для перспективы
+      const ey = _dragState.type === 'char' ? 1080 + newY : newY;
+
+      // Масштаб = baseScale × perspectiveFactor(effectiveY)
+      const baseScale = _dragState.elemBaseScale;
+      newScale = parseFloat((baseScale * DDVNOverlay._perspectiveFactor(ey)).toFixed(3));
+
+      // Z-index из effectiveY
+      const stageH = 1080;
+      newZ = Math.max(-50, Math.min(100, Math.round((ey / stageH) * 100)));
+
+      // X движется как обычно
+      newX = _dragState.elemStartX + dx;
+    } else {
+      // Обычный режим: движение по X и Y
+      newX = _dragState.elemStartX + dx;
+      newY = _dragState.elemStartY + dy;
+    }
+    
+    // Ограничения
+    newX = Math.max(-1000, Math.min(2000, newX));
+    newY = Math.max(-500, Math.min(1500, newY));
+    newZ = Math.max(-50, Math.min(100, newZ));
+    
+    // Обновляем элемент
+    DDVNManager.updateElementPosition(_dragState.type, _dragState.id, {
+      x: Math.round(newX),
+      y: Math.round(newY),
+      zIndex: newZ,
+      scale: parseFloat(newScale.toFixed(2))
+    });
+  }
+
+  static _onDragEnd = (e) => {
+    if (_dragState.element) {
+      _dragState.element.style.cursor = 'grab';
+    }
+    
+    _dragState = {
+      active: false,
+      element: null,
+      type: null,
+      id: null,
+      startX: 0,
+      startY: 0,
+      elemStartX: 0,
+      elemStartY: 0,
+      elemStartZ: 0,
+      elemStartScale: 1,
+    };
+    
+    document.removeEventListener('mousemove', this._onDragMove);
+    document.removeEventListener('mouseup', this._onDragEnd);
+  }
 
   static _renderNameBar(chars) {
     const bar = document.getElementById('vn-name-bar');
@@ -591,42 +1039,12 @@ export class DDVNOverlay {
     if (hoveredChar && !activeChars.find(c => c.id === hoveredChar.id) && hoveredChar.name?.trim()) {
       allVisible.push(hoveredChar);
     }
-    if (!allVisible.length) {
-      bar.style.display = 'none';
-      return;
-    }
+    if (!allVisible.length) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
     bar.innerHTML = allVisible.map((c, i) =>
       (i > 0 ? '<span class="vn-name-bar-sep">·</span>' : '') +
       `<span class="vn-name-bar-name">${c.name}</span>`
     ).join('');
-  }
-
-  static _renderLayers(layers) {
-    // Устаревший метод - теперь используется _renderAllElements
-  }
-
-  static _renderInteractiveImages(images) {
-    // Устаревший метод - теперь используется _renderAllElements
-  }
-
-  static _renderDialogue(d) {
-    const box = document.getElementById('vn-dialogue');
-    if (!box) return;
-
-    // Показываем диалоговое окно если есть текст ИЛИ активны субтитры
-    const hasContent = (d.visible && (d.speakerName || d.text)) || d._subtitleActive;
-    box.style.display = hasContent ? 'flex' : 'none';
-
-    const speaker = document.getElementById('vn-speaker');
-    const text    = document.getElementById('vn-text');
-    if (d.visible && (d.speakerName || d.text)) {
-      if (speaker) { speaker.textContent = d.speakerName || ''; speaker.style.color = d.speakerColor || '#ffe066'; }
-      if (text) text.innerHTML = d.text || '';
-    } else {
-      if (speaker) speaker.textContent = '';
-      if (text) text.textContent = '';
-    }
   }
 
   static _subtitles = [];
@@ -639,13 +1057,8 @@ export class DDVNOverlay {
     box.style.display = 'flex';
     
     const existing = this._subtitles.find(s => s.charId === charId);
-    if (existing) {
-      existing.name = name;
-      existing.text = text;
-      existing.color = color;
-    } else {
-      this._subtitles.push({ name, text, color, charId });
-    }
+    if (existing) { existing.name = name; existing.text = text; existing.color = color; }
+    else this._subtitles.push({ name, text, color, charId });
 
     this._renderSubtitles();
     _state.dialogue._subtitleActive = true;
@@ -682,8 +1095,24 @@ export class DDVNOverlay {
   static hideSubtitleByPlayer(charId) {
     this._subtitles = this._subtitles.filter(s => s.charId !== charId);
     this._renderSubtitles();
-    if (this._subtitles.length === 0) {
-      this.hideAllSubtitles();
+    if (this._subtitles.length === 0) this.hideAllSubtitles();
+  }
+
+  static _renderDialogue(d) {
+    const box = document.getElementById('vn-dialogue');
+    if (!box) return;
+
+    const hasContent = (d.visible && (d.speakerName || d.text)) || d._subtitleActive;
+    box.style.display = hasContent ? 'flex' : 'none';
+
+    const speaker = document.getElementById('vn-speaker');
+    const text = document.getElementById('vn-text');
+    if (d.visible && (d.speakerName || d.text)) {
+      if (speaker) { speaker.textContent = d.speakerName || ''; speaker.style.color = d.speakerColor || '#ffe066'; }
+      if (text) text.innerHTML = d.text || '';
+    } else {
+      if (speaker) speaker.textContent = '';
+      if (text) text.textContent = '';
     }
   }
 }
@@ -693,13 +1122,13 @@ export class DDVNOverlay {
 // ─────────────────────────────────────────────────────────────────────────────
 export class DDVNGMBar {
   static _charsOpen = false;
-  static _bgsOpen   = false;
+  static _bgsOpen = false;
   static _presetsOpen = false;
+  static _controlsOpen = false;
   static _charQuery = '';
-  static _bgQuery   = '';
-  static _bound     = false;
+  static _bgQuery = '';
+  static _bound = false;
 
-  // Возвращаем текущий gmCharId из панели настроек (или локальный)
   static get _gmCharId() { return DDVNPanel._instance?._gmCharId ?? this.__gmCharId ?? null; }
   static set _gmCharId(v) {
     this.__gmCharId = v;
@@ -721,9 +1150,65 @@ export class DDVNGMBar {
     const scenePresets = DDVNPresets.listScenes();
     const charPresets = DDVNPresets.listChars();
 
-    // ── Строим HTML ──
     bar.innerHTML = `
       <div class="vn-gml-inner">
+        
+        <!-- Mouse Controls Section -->
+        <div class="vn-gml-section vn-gml-controls-section">
+          <button class="vn-gml-toggle-btn ${this._controlsOpen ? 'open' : ''}" id="vn-gml-controls-btn">
+            <i class="fas fa-mouse-pointer"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.mouseControl')}
+            <i class="fas fa-chevron-${this._controlsOpen ? 'up' : 'down'} vn-gml-chev"></i>
+          </button>
+          <div class="vn-gml-dropdown ${this._controlsOpen ? 'open' : ''}" id="vn-gml-controls-drop">
+            <div class="vn-gml-control-item">
+              <label class="vn-gml-checkbox-label">
+                <input type="checkbox" id="vn-mouse-control" ${state.mouseControl ? 'checked' : ''}/>
+                <span><i class="fas fa-hand-pointer"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.mouseControl')}</span>
+              </label>
+            </div>
+            <div class="vn-gml-control-item">
+              <label class="vn-gml-checkbox-label">
+                <input type="checkbox" id="vn-depth-mode" ${state.depthMode ? 'checked' : ''} ${!state.mouseControl ? 'disabled' : ''}/>
+                <span><i class="fas fa-layer-group"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.depthMode')}</span>
+              </label>
+            </div>
+            <div class="vn-gml-control-item vn-gml-depth-slider ${state.depthMode && state.mouseControl ? '' : 'dd-hidden'}" id="vn-depth-slider-wrap">
+              <label class="vn-gml-slider-label">
+                <span><i class="fas fa-expand-arrows-alt"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.depthScaleMultiplier')}</span>
+                <input type="range" id="vn-depth-scale-mult" value="${state.depthScaleMultiplier || 1}" min="0.1" max="4" step="0.1" style="flex:1;min-width:50px"/>
+                <span class="vn-slider-val">${state.depthScaleMultiplier || 1}x</span>
+              </label>
+            </div>
+            <div class="vn-gml-control-item vn-gml-depth-slider ${state.depthMode && state.mouseControl ? '' : 'dd-hidden'}" id="vn-depth-y-slider-wrap">
+              <label class="vn-gml-slider-label">
+                <span><i class="fas fa-arrows-alt-v"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.depthYMultiplier')}</span>
+                <input type="range" id="vn-depth-y-mult" value="${state.depthYMultiplier || 1}" min="0.1" max="4" step="0.1" style="flex:1;min-width:50px"/>
+                <span class="vn-slider-val">${state.depthYMultiplier || 1}x</span>
+              </label>
+            </div>
+            <div class="vn-gml-control-item ${state.depthMode && state.mouseControl ? '' : 'dd-hidden'}" id="vn-horizon-wrap">
+              <label class="vn-gml-checkbox-label">
+                <input type="checkbox" id="vn-horizon-line" ${state.horizonLine ? 'checked' : ''}/>
+                <span><i class="fas fa-minus"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.horizonLine')}</span>
+              </label>
+              <div class="vn-gml-hint">${game.i18n.localize('DRAMADIRECTOR.vn.gml.horizonLineHint')}</div>
+              <div id="vn-horizon-y-wrap" style="display:${state.horizonLine ? '' : 'none'};margin-top:4px;">
+                <label class="vn-gml-slider-label" style="font-size:11px;">
+                  <span style="white-space:nowrap;min-width:90px;"><i class="fas fa-arrows-alt-v"></i> Горизонт Y</span>
+                  <input type="range" id="vn-horizon-y-slider" value="${state.horizonY ?? 30}" min="0" max="90" step="1" style="flex:1;min-width:50px"/>
+                  <span class="vn-slider-val" id="vn-horizon-y-val">${state.horizonY ?? 30}%</span>
+                </label>
+              </div>
+            </div>
+            <div class="vn-gml-control-item">
+              <label class="vn-gml-checkbox-label">
+                <input type="checkbox" id="vn-player-control" ${state.playerControl ? 'checked' : ''}/>
+                <span><i class="fas fa-users"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.playerControl')}</span>
+              </label>
+              <div class="vn-gml-hint">${game.i18n.localize('DRAMADIRECTOR.vn.gml.playerControlHint')}</div>
+            </div>
+          </div>
+        </div>
 
         <!-- GM Voice -->
         <div class="vn-gml-section vn-gml-voice">
@@ -788,6 +1273,18 @@ export class DDVNGMBar {
                 ${this._renderCharPresets(charPresets)}
               </div>
             </div>
+            <div class="vn-gml-preset-section">
+              <div class="vn-gml-preset-header"><i class="fas fa-layer-group"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.layerPresets')}</div>
+              <div class="vn-gml-preset-list">
+                ${this._renderLayerPresets(DDVNPresets.listLayers())}
+              </div>
+            </div>
+            <div class="vn-gml-preset-section">
+              <div class="vn-gml-preset-header"><i class="fas fa-hand-pointer"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.gml.interactivePresets')}</div>
+              <div class="vn-gml-preset-list">
+                ${this._renderIimgPresets(DDVNPresets.listIimgs())}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -805,14 +1302,14 @@ export class DDVNGMBar {
 
     if (!filtered.length) return `<div class="vn-gml-empty">${game.i18n.localize('DRAMADIRECTOR.notifications.noChars')}</div>`;
 
-    // Список игроков (не-GM)
     const players = (game.users?.contents || []).filter(u => !u.isGM);
 
     return filtered.map(c => {
-      const isActive  = !!c.active;
+      const isActive = !!c.active;
       const isVisible = c.visible !== false;
-      const sideIcon  = c.side === 'left' ? '◀' : c.side === 'center' ? '◆' : '▶';
-      const imgHtml   = c.img
+      const isLocked = c.locked === true;
+      const sideIcon = c.side === 'left' ? '◀' : c.side === 'center' ? '◆' : '▶';
+      const imgHtml = c.img
         ? `<img src="${c.img}" class="vn-gml-char-thumb-img"/>`
         : `<i class="fas fa-user vn-gml-char-thumb-icon"></i>`;
 
@@ -825,11 +1322,14 @@ export class DDVNGMBar {
                         game.i18n.localize('DRAMADIRECTOR.vn.gml.right');
 
       return `
-        <div class="vn-gml-char-item ${isActive ? 'gml-active' : ''} ${isVisible ? '' : 'gml-hidden-char'}"
+        <div class="vn-gml-char-item ${isActive ? 'gml-active' : ''} ${isVisible ? '' : 'gml-hidden-char'} ${isLocked ? 'gml-locked' : ''}"
              data-char-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.charTooltip')}">
           <div class="vn-gml-char-thumb">${imgHtml}</div>
           <div class="vn-gml-char-info">
-            <span class="vn-gml-char-name" style="color:${c.nameColor || '#ffe066'}">${c.name || game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}</span>
+            <span class="vn-gml-char-name" style="color:${c.nameColor || '#ffe066'}">
+              ${c.name || game.i18n.localize('DRAMADIRECTOR.vn.gml.noName')}
+              ${isLocked ? '<i class="fas fa-lock vn-lock-icon"></i>' : ''}
+            </span>
             <div class="vn-gml-char-player-row">
               <span class="vn-gml-char-meta">${sideIcon} ${sideLabel}${c.title ? ' · ' + c.title : ''}</span>
               <select class="vn-gml-player-sel" data-player-for="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.assignPlayer')}">
@@ -838,9 +1338,7 @@ export class DDVNGMBar {
               </select>
             </div>
           </div>
-          <button class="vn-gml-active-btn ${isActive ? 'on' : ''}" data-activate-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.charActivate')}">
-            <i class="fas fa-lightbulb"></i>
-          </button>
+          <button class="vn-gml-active-btn ${isActive ? 'on' : ''}" data-activate-id="${c.id}" title="${game.i18n.localize('DRAMADIRECTOR.vn.charActivate')}"><i class="fas fa-lightbulb"></i></button>
         </div>`;
     }).join('');
   }
@@ -856,7 +1354,7 @@ export class DDVNGMBar {
       html += `<div class="vn-gml-bg-group-name">${group.name}</div>`;
       for (const v of variants) {
         const isVid = /\.(webm|mp4|ogv)$/i.test(v.src);
-        const icon  = isVid ? 'fa-film' : 'fa-image';
+        const icon = isVid ? 'fa-film' : 'fa-image';
         const active = v.src === currentBg ? 'gml-bg-active' : '';
         html += `
           <div class="vn-gml-bg-item ${active}" data-bg-src="${v.src}" title="${v.name}">
@@ -890,31 +1388,135 @@ export class DDVNGMBar {
     `).join('');
   }
 
+  static _renderLayerPresets(layerPresets) {
+    if (!layerPresets.length) return `<div class="vn-gml-empty">${game.i18n.localize("DRAMADIRECTOR.notifications.noSavedLayers")}</div>`;
+    return layerPresets.map(name => `
+      <div class="vn-gml-preset-item" data-layer-preset="${name}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.loadLayers')}">
+        <i class="fas fa-layer-group vn-gml-preset-icon"></i>
+        <span class="vn-gml-preset-name">${name}</span>
+        <i class="fas fa-play vn-gml-preset-load"></i>
+      </div>
+    `).join('');
+  }
+
+  static _renderIimgPresets(iimgPresets) {
+    if (!iimgPresets.length) return `<div class="vn-gml-empty">${game.i18n.localize("DRAMADIRECTOR.notifications.noSavedInteractive")}</div>`;
+    return iimgPresets.map(name => `
+      <div class="vn-gml-preset-item" data-iimg-preset="${name}" title="${game.i18n.localize('DRAMADIRECTOR.vn.gml.loadInteractive')}">
+        <i class="fas fa-hand-pointer vn-gml-preset-icon"></i>
+        <span class="vn-gml-preset-name">${name}</span>
+        <i class="fas fa-play vn-gml-preset-load"></i>
+      </div>
+    `).join('');
+  }
+
   static _bindEvents(bar, state, allBg) {
-    // Голос GM
+    // Controls toggle
+    bar.querySelector('#vn-gml-controls-btn')?.addEventListener('click', () => {
+      this._controlsOpen = !this._controlsOpen;
+      this.update(_state);
+    });
+
+    // Mouse control
+    bar.querySelector('#vn-mouse-control')?.addEventListener('change', (e) => {
+      _state.mouseControl = e.target.checked;
+      const depthCheckbox = bar.querySelector('#vn-depth-mode');
+      if (depthCheckbox) depthCheckbox.disabled = !e.target.checked;
+      // Показать/скрыть все элементы глубины
+      const sliderWrap = bar.querySelector('#vn-depth-slider-wrap');
+      const ySliderWrap = bar.querySelector('#vn-depth-y-slider-wrap');
+      const horizonWrap = bar.querySelector('#vn-horizon-wrap');
+      if (sliderWrap) sliderWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      if (ySliderWrap) ySliderWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      if (horizonWrap) horizonWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      DDVNManager.broadcast();
+    });
+
+    // Depth mode
+    bar.querySelector('#vn-depth-mode')?.addEventListener('change', (e) => {
+      _state.depthMode = e.target.checked;
+      // Показать/скрыть все элементы глубины
+      const sliderWrap = bar.querySelector('#vn-depth-slider-wrap');
+      const ySliderWrap = bar.querySelector('#vn-depth-y-slider-wrap');
+      const horizonWrap = bar.querySelector('#vn-horizon-wrap');
+      if (sliderWrap) sliderWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      if (ySliderWrap) ySliderWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      if (horizonWrap) horizonWrap.classList.toggle('dd-hidden', !_state.depthMode || !_state.mouseControl);
+      // При включении — снимок baseScale и пересчёт перспективы
+      if (_state.depthMode) DDVNManager._snapshotAndRecalcDepth();
+      DDVNManager.broadcast();
+    });
+
+    // Depth scale multiplier
+    bar.querySelector('#vn-depth-scale-mult')?.addEventListener('input', (e) => {
+      _state.depthScaleMultiplier = parseFloat(e.target.value);
+      const valSpan = bar.querySelector('#vn-depth-slider-wrap .vn-slider-val');
+      if (valSpan) valSpan.textContent = _state.depthScaleMultiplier + 'x';
+      DDVNManager.broadcast();
+    });
+
+    // Depth Y multiplier
+    bar.querySelector('#vn-depth-y-mult')?.addEventListener('input', (e) => {
+      _state.depthYMultiplier = parseFloat(e.target.value);
+      const valSpan = bar.querySelector('#vn-depth-y-slider-wrap .vn-slider-val');
+      if (valSpan) valSpan.textContent = _state.depthYMultiplier + 'x';
+      DDVNManager.broadcast();
+    });
+
+    // Horizon line
+    bar.querySelector('#vn-horizon-line')?.addEventListener('change', (e) => {
+      _state.horizonLine = e.target.checked;
+      const yWrap = bar.querySelector('#vn-horizon-y-wrap');
+      if (yWrap) yWrap.style.display = e.target.checked ? '' : 'none';
+      if (e.target.checked) {
+        DDVNManager.initHorizonLine();
+      } else {
+        DDVNManager.clearHorizonLine();
+      }
+      DDVNManager.broadcast();
+    });
+
+    bar.querySelector('#vn-horizon-y-slider')?.addEventListener('input', (e) => {
+      const pct = parseFloat(e.target.value);
+      _state.horizonY = pct;
+      const valSpan = bar.querySelector('#vn-horizon-y-val');
+      if (valSpan) valSpan.textContent = pct + '%';
+      if (_state.horizonLine) {
+        DDVNManager.initHorizonLine();
+        DDVNManager._updateHorizonIndicator();
+      }
+    });
+
+    // Player control
+    bar.querySelector('#vn-player-control')?.addEventListener('change', (e) => {
+      _state.playerControl = e.target.checked;
+      DDVNManager.broadcast();
+    });
+
+    // GM Voice
     bar.querySelector('#vn-gml-voice-sel')?.addEventListener('change', e => {
       this._gmCharId = e.target.value || null;
     });
 
-    // Аккордеон — актёры
+    // Actors accordion
     bar.querySelector('#vn-gml-chars-btn')?.addEventListener('click', () => {
       this._charsOpen = !this._charsOpen;
       this.update(_state);
     });
 
-    // Аккордеон — фоны
+    // Backgrounds accordion
     bar.querySelector('#vn-gml-bgs-btn')?.addEventListener('click', () => {
       this._bgsOpen = !this._bgsOpen;
       this.update(_state);
     });
 
-    // Аккордеон — пресеты
+    // Presets accordion
     bar.querySelector('#vn-gml-presets-btn')?.addEventListener('click', () => {
       this._presetsOpen = !this._presetsOpen;
       this.update(_state);
     });
 
-    // Поиск актёров — live filter без перерисовки всего
+    // Search
     bar.querySelector('#vn-gml-char-search')?.addEventListener('input', e => {
       this._charQuery = e.target.value;
       const list = bar.querySelector('#vn-gml-char-list');
@@ -922,7 +1524,6 @@ export class DDVNGMBar {
       this._bindCharItemEvents(bar, state.chars || []);
     });
 
-    // Поиск фонов — live filter
     bar.querySelector('#vn-gml-bg-search')?.addEventListener('input', e => {
       this._bgQuery = e.target.value;
       const list = bar.querySelector('#vn-gml-bg-list');
@@ -936,9 +1537,7 @@ export class DDVNGMBar {
   }
 
   static _bindCharItemEvents(bar, chars) {
-    // ЛКМ — toggle visible
     bar.querySelectorAll('.vn-gml-char-item').forEach(item => {
-      // Клонируем чтобы убрать старые листенеры
       const fresh = item.cloneNode(true);
       item.replaceWith(fresh);
     });
@@ -948,11 +1547,10 @@ export class DDVNGMBar {
 
       item.addEventListener('click', e => {
         if (e.target.closest('[data-activate-id]')) return;
-        if (e.target.closest('.vn-gml-player-sel')) return; // не скрывать при клике на select
+        if (e.target.closest('.vn-gml-player-sel')) return;
         const c = _state.chars.find(c => c.id === id);
         if (!c) return;
         c.visible = c.visible === false ? true : false;
-        // Синхронизируем с панелью настроек
         this._syncCharToPanel(id);
         DDVNManager.broadcast();
       });
@@ -961,24 +1559,20 @@ export class DDVNGMBar {
         e.preventDefault();
         const c = _state.chars.find(c => c.id === id);
         if (!c) return;
-        // Циклическое переключение: left -> center -> right -> left
         const sides = ['left', 'center', 'right'];
         const currentIdx = sides.indexOf(c.side);
         c.side = sides[(currentIdx + 1) % sides.length];
-        // Пересчитать слоты
         let l = 0, cCnt = 0, r = 0;
         _state.chars.forEach(ch => { 
           if (ch.side === 'left') ch.slot = l++;
           else if (ch.side === 'center') ch.slot = cCnt++;
           else ch.slot = r++;
         });
-        // Синхронизируем с панелью настроек
         this._syncCharToPanel(id);
         DDVNManager.broadcast();
       });
     });
 
-    // Привязка игрока
     bar.querySelectorAll('.vn-gml-player-sel').forEach(sel => {
       sel.addEventListener('change', e => {
         e.stopPropagation();
@@ -986,13 +1580,11 @@ export class DDVNGMBar {
         const c = _state.chars.find(c => c.id === id);
         if (!c) return;
         c.playerId = sel.value || null;
-        // Синхронизируем с панелью настроек
         this._syncCharToPanel(id);
         DDVNManager.broadcast();
       });
     });
 
-    // Кнопка активации
     bar.querySelectorAll('[data-activate-id]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -1000,7 +1592,6 @@ export class DDVNGMBar {
         const c = _state.chars.find(c => c.id === id);
         if (!c) return;
         c.active = !c.active;
-        // Синхронизируем с панелью настроек
         this._syncCharToPanel(id);
         DDVNManager.broadcast();
       });
@@ -1012,11 +1603,7 @@ export class DDVNGMBar {
     const c = _state.chars.find(ch => ch.id === charId);
     if (!c) return;
     const pc = DDVNPanel._instance._chars.find(ch => ch.id === charId);
-    if (pc) {
-      // Копируем все свойства
-      Object.assign(pc, deepClone(c));
-    }
-    // Перерисовываем панель настроек
+    if (pc) Object.assign(pc, deepClone(c));
     DDVNPanel._instance.render();
   }
 
@@ -1024,14 +1611,12 @@ export class DDVNGMBar {
     bar.querySelectorAll('.vn-gml-bg-item').forEach(item => {
       item.addEventListener('click', () => {
         DDVNManager.setBackground(item.dataset.bgSrc);
-        // Перерисовываем панель настроек
         if (DDVNPanel._instance) DDVNPanel._instance.render();
       });
     });
   }
 
   static _bindPresetEvents(bar) {
-    // Загрузка сцены
     bar.querySelectorAll('[data-scene-preset]').forEach(item => {
       item.addEventListener('click', () => {
         const name = item.dataset.scenePreset;
@@ -1040,25 +1625,11 @@ export class DDVNGMBar {
           ui.notifications?.warn(game.i18n.format("DRAMADIRECTOR.notifications.sceneNotFound", {name}));
           return;
         }
-        // Применяем состояние сцены
-        if (scene.background) _state.background = scene.background;
-        if (scene.bgFit) _state.bgFit = scene.bgFit;
-        if (scene.bgColor) _state.bgColor = scene.bgColor;
-        if (scene.dimBg !== undefined) _state.dimBg = scene.dimBg;
-        if (scene.chars) _state.chars = deepClone(scene.chars);
-        if (scene.dialogue) _state.dialogue = { ...scene.dialogue, _subtitleActive: false };
-        // Синхронизируем с панелью настроек и перерисовываем
-        if (DDVNPanel._instance) {
-          DDVNPanel._instance._chars = deepClone(_state.chars);
-          DDVNPanel._instance.render();
-        }
-        DDVNManager.broadcast();
-        DDVNOverlay.ensureOpen();
+        DDVNManager.applySceneState(scene);
         ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.sceneLoaded", {name}));
       });
     });
 
-    // Загрузка ростера
     bar.querySelectorAll('[data-char-preset]').forEach(item => {
       item.addEventListener('click', () => {
         const name = item.dataset.charPreset;
@@ -1068,7 +1639,6 @@ export class DDVNGMBar {
           return;
         }
         _state.chars = deepClone(chars);
-        // Синхронизируем с панелью настроек и перерисовываем
         if (DDVNPanel._instance) {
           DDVNPanel._instance._chars = deepClone(_state.chars);
           DDVNPanel._instance.render();
@@ -1078,6 +1648,46 @@ export class DDVNGMBar {
         ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.rosterLoaded", {name, count: chars.length}));
       });
     });
+
+    // Layer presets
+    bar.querySelectorAll('[data-layer-preset]').forEach(item => {
+      item.addEventListener('click', () => {
+        const name = item.dataset.layerPreset;
+        const layers = DDVNPresets.getLayers(name);
+        if (!layers) {
+          ui.notifications?.warn(game.i18n.format("DRAMADIRECTOR.notifications.layerPresetNotFound", {name}));
+          return;
+        }
+        _state.layers = deepClone(layers);
+        if (DDVNPanel._instance) {
+          DDVNPanel._instance._layers = deepClone(_state.layers);
+          DDVNPanel._instance.render();
+        }
+        DDVNManager.broadcast();
+        DDVNOverlay.ensureOpen();
+        ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.layerPresetLoaded", {name, count: layers.length}));
+      });
+    });
+
+    // Interactive image presets
+    bar.querySelectorAll('[data-iimg-preset]').forEach(item => {
+      item.addEventListener('click', () => {
+        const name = item.dataset.iimgPreset;
+        const iimgs = DDVNPresets.getIimgs(name);
+        if (!iimgs) {
+          ui.notifications?.warn(game.i18n.format("DRAMADIRECTOR.notifications.iimgPresetNotFound", {name}));
+          return;
+        }
+        _state.interactiveImages = deepClone(iimgs);
+        if (DDVNPanel._instance) {
+          DDVNPanel._instance._interactiveImages = deepClone(_state.interactiveImages);
+          DDVNPanel._instance.render();
+        }
+        DDVNManager.broadcast();
+        DDVNOverlay.ensureOpen();
+        ui.notifications?.info(game.i18n.format("DRAMADIRECTOR.notifications.iimgPresetLoaded", {name, count: iimgs.length}));
+      });
+    });
   }
 }
 
@@ -1085,25 +1695,25 @@ export class DDVNGMBar {
 // MIC
 // ─────────────────────────────────────────────────────────────────────────────
 export class DDVNMic {
-  static _stream      = null;
-  static _ctx         = null;
-  static _analyser    = null;
+  static _stream = null;
+  static _ctx = null;
+  static _analyser = null;
   static _recognition = null;
-  static _active      = false;
-  static _vadTimer    = null;
-  static _speaking    = false;
-  static threshold    = 18;
-  static lang         = 'ru-RU';
+  static _active = false;
+  static _vadTimer = null;
+  static _speaking = false;
+  static threshold = 18;
+  static lang = 'ru-RU';
 
   static async start() {
     if (this._active) return;
     try {
-      this._stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this._ctx      = new AudioContext();
+      this._stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this._ctx = new AudioContext();
       this._analyser = this._ctx.createAnalyser();
       this._analyser.fftSize = 256;
       this._ctx.createMediaStreamSource(this._stream).connect(this._analyser);
-      this._active   = true;
+      this._active = true;
       this._startVAD();
       this._startSpeech();
       DDVNOverlay.updateMicIndicator();
@@ -1141,19 +1751,19 @@ export class DDVNMic {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
     const rec = new SR();
-    rec.continuous     = true;
+    rec.continuous = true;
     rec.interimResults = true;
-    rec.lang           = this.lang;
+    rec.lang = this.lang;
 
     rec.onresult = e => {
-      const last  = e.results[e.results.length - 1];
-      const text  = last[0].transcript.trim();
+      const last = e.results[e.results.length - 1];
+      const text = last[0].transcript.trim();
       const final = last.isFinal;
       if (final) DDVNManager.onSpeechResult(text);
     };
 
     rec.onerror = e => { if (e.error === 'not-allowed') ui.notifications?.warn(game.i18n.localize('DRAMADIRECTOR.notifications.micDenied')); };
-    rec.onend   = () => { if (this._active) { try { rec.start(); } catch(_) {} } };
+    rec.onend = () => { if (this._active) { try { rec.start(); } catch(_) {} } };
     try { rec.start(); } catch(_) {}
     this._recognition = rec;
   }
@@ -1163,11 +1773,11 @@ export class DDVNMic {
 // PRESETS
 // ─────────────────────────────────────────────────────────────────────────────
 export class DDVNPresets {
-  static CHARS_KEY  = 'vnCharPresets';
-  static BG_KEY     = 'vnBgPresets';
-  static SCENE_KEY  = 'vnScenePresets';
+  static CHARS_KEY = 'vnCharPresets';
+  static BG_KEY = 'vnBgPresets';
+  static SCENE_KEY = 'vnScenePresets';
   static LAYERS_KEY = 'vnLayerPresets';
-  static IIMGS_KEY  = 'vnIimgPresets';
+  static IIMGS_KEY = 'vnIimgPresets';
 
   static register() {
     const base = { scope: 'world', config: false, type: Object, default: {} };
@@ -1175,42 +1785,36 @@ export class DDVNPresets {
       game.settings.register(MODULE_ID, k, { ...base });
   }
 
-  static _g(k)          { return game.settings.get(MODULE_ID, k) || {}; }
-  static _s(k, v)       { return game.settings.set(MODULE_ID, k, v); }
+  static _g(k) { return game.settings.get(MODULE_ID, k) || {}; }
+  static _s(k, v) { return game.settings.set(MODULE_ID, k, v); }
 
-  // Фоны — формат: { name, src, variants: [{name, src}] }
-  static listBg()       { return Object.entries(this._g(this.BG_KEY)).map(([id, v]) => ({ id, ...v })); }
+  static listBg() { return Object.entries(this._g(this.BG_KEY)).map(([id, v]) => ({ id, ...v })); }
   static saveBg(id, data) { const a = this._g(this.BG_KEY); a[id] = data; return this._s(this.BG_KEY, a); }
-  static deleteBg(id)   { const a = this._g(this.BG_KEY); delete a[id]; return this._s(this.BG_KEY, a); }
+  static deleteBg(id) { const a = this._g(this.BG_KEY); delete a[id]; return this._s(this.BG_KEY, a); }
 
-  // Ростеры персонажей
-  static listChars()    { return Object.keys(this._g(this.CHARS_KEY)).sort(); }
+  static listChars() { return Object.keys(this._g(this.CHARS_KEY)).sort(); }
   static saveChars(n,v) { const a = this._g(this.CHARS_KEY); a[n] = v; return this._s(this.CHARS_KEY, a); }
-  static getChars(n)    { return this._g(this.CHARS_KEY)[n] ?? null; }
+  static getChars(n) { return this._g(this.CHARS_KEY)[n] ?? null; }
   static deleteChars(n) { const a = this._g(this.CHARS_KEY); delete a[n]; return this._s(this.CHARS_KEY, a); }
 
-  // Сцены
-  static listScenes()   { return Object.keys(this._g(this.SCENE_KEY)).sort(); }
+  static listScenes() { return Object.keys(this._g(this.SCENE_KEY)).sort(); }
   static saveScene(n,v) { const a = this._g(this.SCENE_KEY); a[n] = v; return this._s(this.SCENE_KEY, a); }
-  static getScene(n)    { return this._g(this.SCENE_KEY)[n] ?? null; }
+  static getScene(n) { return this._g(this.SCENE_KEY)[n] ?? null; }
   static deleteScene(n) { const a = this._g(this.SCENE_KEY); delete a[n]; return this._s(this.SCENE_KEY, a); }
 
-  // Layers
-  static listLayers()     { return Object.keys(this._g(this.LAYERS_KEY)).sort(); }
+  static listLayers() { return Object.keys(this._g(this.LAYERS_KEY)).sort(); }
   static saveLayers(n, v) { const a = this._g(this.LAYERS_KEY); a[n] = v; return this._s(this.LAYERS_KEY, a); }
-  static getLayers(n)     { return this._g(this.LAYERS_KEY)[n] ?? null; }
-  static deleteLayers(n)  { const a = this._g(this.LAYERS_KEY); delete a[n]; return this._s(this.LAYERS_KEY, a); }
+  static getLayers(n) { return this._g(this.LAYERS_KEY)[n] ?? null; }
+  static deleteLayers(n) { const a = this._g(this.LAYERS_KEY); delete a[n]; return this._s(this.LAYERS_KEY, a); }
 
-  // Interactive images
-  static listIimgs()     { return Object.keys(this._g(this.IIMGS_KEY)).sort(); }
+  static listIimgs() { return Object.keys(this._g(this.IIMGS_KEY)).sort(); }
   static saveIimgs(n, v) { const a = this._g(this.IIMGS_KEY); a[n] = v; return this._s(this.IIMGS_KEY, a); }
-  static getIimgs(n)     { return this._g(this.IIMGS_KEY)[n] ?? null; }
-  static deleteIimgs(n)  { const a = this._g(this.IIMGS_KEY); delete a[n]; return this._s(this.IIMGS_KEY, a); }
+  static getIimgs(n) { return this._g(this.IIMGS_KEY)[n] ?? null; }
+  static deleteIimgs(n) { const a = this._g(this.IIMGS_KEY); delete a[n]; return this._s(this.IIMGS_KEY, a); }
 
-  // Получить все фоны (встроенные + пользовательские)
   static getAllBg() {
-    const builtin  = _resolveBgNames(VN_BUILTIN_BACKGROUNDS);
-    const custom   = this.listBg().map(b => ({ ...b, _builtin: false }));
+    const builtin = _resolveBgNames(VN_BUILTIN_BACKGROUNDS);
+    const custom = this.listBg().map(b => ({ ...b, _builtin: false }));
     return [...builtin, ...custom];
   }
 }
@@ -1220,7 +1824,7 @@ export class DDVNPresets {
 // ─────────────────────────────────────────────────────────────────────────────
 export class DDVNManager {
   static _subTimer = null;
-  static _gmOnlyMode = false; // Режим "только для GM"
+  static _gmOnlyMode = false;
 
   static getState() { return _state; }
 
@@ -1240,18 +1844,15 @@ export class DDVNManager {
     this._gmOnlyMode = false;
     DDVNOverlay.build();
     this.broadcast();
-    // Автозапуск микрофона
     DDVNMic.start();
     DDVNPanel._instance?.render();
   }
 
   static openLocal() {
-    // Открыть VN только для текущего пользователя (без broadcast)
     _state.open = true;
     this._gmOnlyMode = true;
     DDVNOverlay.build();
     DDVNOverlay.apply(_state);
-    // Автозапуск микрофона
     DDVNMic.start();
     DDVNPanel._instance?.render();
     ui.notifications?.info(game.i18n.localize('DRAMADIRECTOR.notifications.vnGmOnly'));
@@ -1261,7 +1862,6 @@ export class DDVNManager {
     _state.open = false;
     this._gmOnlyMode = false;
     DDVNMic.stop();
-    // Очищаем сцену от персонажей и диалога при закрытии
     DDVNOverlay.clearStage();
     if (bcast) this.broadcast();
     else DDVNOverlay.apply(_state);
@@ -1269,7 +1869,6 @@ export class DDVNManager {
   }
 
   static stopLocal() {
-    // Закрыть VN локально (без broadcast)
     _state.open = false;
     this._gmOnlyMode = false;
     DDVNMic.stop();
@@ -1278,9 +1877,7 @@ export class DDVNManager {
     DDVNPanel._instance?.render();
   }
 
-  static isGmOnlyMode() {
-    return this._gmOnlyMode;
-  }
+  static isGmOnlyMode() { return this._gmOnlyMode; }
 
   static setBackground(path) {
     _state.background = path;
@@ -1310,7 +1907,7 @@ export class DDVNManager {
 
   // ── Layers ───────────────────────────────────────────────────────────────
   static setLayers(layers) { _state.layers = deepClone(layers); this.broadcast(); }
-  static addLayer(layer)   { _state.layers.push(deepClone(layer)); this.broadcast(); }
+  static addLayer(layer) { _state.layers.push(deepClone(layer)); this.broadcast(); }
   static updateLayer(id, props) {
     const l = _state.layers.find(l => l.id === id);
     if (l) { Object.assign(l, props); this.broadcast(); }
@@ -1319,12 +1916,170 @@ export class DDVNManager {
 
   // ── Interactive Images ───────────────────────────────────────────────────
   static setInteractiveImages(images) { _state.interactiveImages = deepClone(images); this.broadcast(); }
-  static addInteractiveImage(img)     { _state.interactiveImages.push(deepClone(img)); this.broadcast(); }
+  static addInteractiveImage(img) { _state.interactiveImages.push(deepClone(img)); this.broadcast(); }
   static updateInteractiveImage(id, props) {
     const img = _state.interactiveImages.find(i => i.id === id);
     if (img) { Object.assign(img, props); this.broadcast(); }
   }
   static removeInteractiveImage(id) { _state.interactiveImages = _state.interactiveImages.filter(i => i.id !== id); this.broadcast(); }
+
+  // ── Generic Element Position Update ──────────────────────────────────────
+  static updateElementPosition(type, id, props) {
+    let list;
+    if (type === 'char') list = _state.chars;
+    else if (type === 'layer') list = _state.layers;
+    else if (type === 'interactive') list = _state.interactiveImages;
+    else return;
+    
+    const item = list.find(item => item.id === id);
+    if (item) {
+      Object.assign(item, props);
+      this.broadcast();
+    }
+  }
+
+  // ── Lock/Unlock ───────────────────────────────────────────────────────────
+  // При включении depth mode: сохраняем текущий scale как baseScale,
+  // затем пересчитываем scale и zIndex из текущей Y-позиции для всех элементов.
+  static _snapshotAndRecalcDepth() {
+    const recalc = (items, type) => {
+      items.forEach(item => {
+        item.baseScale = item.baseScale ?? item.scale ?? 1;
+        const pf = DDVNOverlay._perspectiveFactor(DDVNOverlay._depthY(type, item));
+        item.scale  = parseFloat((item.baseScale * pf).toFixed(3));
+        item.zIndex = DDVNOverlay._depthZ(type, item);
+      });
+    };
+    recalc(_state.chars,             'char');
+    recalc(_state.layers,            'layer');
+    recalc(_state.interactiveImages, 'interactive');
+    console.log('DD VN | Depth mode ON — baseScales snapshotted, scales recalculated');
+  }
+
+  // ── Единый метод применения пресета сцены ────────────────────────────────
+  // Вызывается из GM-бара и из панели. Применяет ВСЕ поля состояния.
+  static applySceneState(scene) {
+    if (!scene) return;
+
+    // Фон и оформление
+    if (scene.background  !== undefined) _state.background  = scene.background;
+    if (scene.bgFit       !== undefined) _state.bgFit       = scene.bgFit;
+    if (scene.bgColor     !== undefined) _state.bgColor     = scene.bgColor;
+    if (scene.dimBg       !== undefined) _state.dimBg       = scene.dimBg;
+
+    // Элементы сцены
+    if (scene.chars)             _state.chars             = deepClone(scene.chars);
+    if (scene.layers)            _state.layers            = deepClone(scene.layers);
+    if (scene.interactiveImages) _state.interactiveImages = deepClone(scene.interactiveImages);
+
+    // Диалог
+    if (scene.dialogue) {
+      _state.dialogue = { ...scene.dialogue, _subtitleActive: false };
+    }
+
+    // Управление мышью и глубиной
+    if (scene.mouseControl      !== undefined) _state.mouseControl      = scene.mouseControl;
+    if (scene.depthMode         !== undefined) _state.depthMode         = scene.depthMode;
+    if (scene.playerControl     !== undefined) _state.playerControl     = scene.playerControl;
+    if (scene.depthScaleMultiplier !== undefined) _state.depthScaleMultiplier = scene.depthScaleMultiplier;
+    if (scene.depthYMultiplier  !== undefined) _state.depthYMultiplier  = scene.depthYMultiplier;
+
+    // Горизонт
+    if (scene.horizonLine !== undefined) _state.horizonLine = scene.horizonLine;
+    if (scene.horizonY    !== undefined) _state.horizonY    = scene.horizonY;
+    if (_state.horizonLine) {
+      DDVNManager.initHorizonLine();
+    } else {
+      DDVNManager.clearHorizonLine();
+    }
+
+    // Синхронизируем локальные копии в панели если она открыта
+    if (DDVNPanel._instance) {
+      DDVNPanel._instance._chars             = deepClone(_state.chars);
+      DDVNPanel._instance._layers            = deepClone(_state.layers);
+      DDVNPanel._instance._interactiveImages = deepClone(_state.interactiveImages);
+      DDVNPanel._instance.render();
+    }
+
+    this.broadcast();
+    DDVNOverlay.ensureOpen();
+  }
+
+  static toggleLock(type, id) {
+    let item = null;
+    if (type === 'char') item = _state.chars.find(c => c.id === id);
+    else if (type === 'layer') item = _state.layers.find(l => l.id === id);
+    else if (type === 'interactive') item = _state.interactiveImages.find(i => i.id === id);
+    
+    if (item) {
+      item.locked = !item.locked;
+      this.broadcast();
+      ui.notifications?.info(item.locked 
+        ? game.i18n.format('DRAMADIRECTOR.vn.gml.elementLocked', {name: item.name || id})
+        : game.i18n.format('DRAMADIRECTOR.vn.gml.elementUnlocked', {name: item.name || id})
+      );
+    }
+  }
+
+  static setLock(type, id, locked) {
+    let item = null;
+    if (type === 'char') item = _state.chars.find(c => c.id === id);
+    else if (type === 'layer') item = _state.layers.find(l => l.id === id);
+    else if (type === 'interactive') item = _state.interactiveImages.find(i => i.id === id);
+    
+    if (item) {
+      item.locked = locked;
+      this.broadcast();
+    }
+  }
+
+  // ── Horizon Line ───────────────────────────────────────────────────────────
+  static initHorizonLine() {
+    // Горизонт теперь задаётся вручную в % от высоты стейджа (1080px)
+    const pct = _state.horizonY ?? 30;
+    _horizonY = Math.round((pct / 100) * 1080);
+    console.log('DD VN | Horizon line set at Y:', _horizonY, `(${pct}% of stage)`);
+    this._updateHorizonIndicator();
+  }
+
+  static _updateHorizonIndicator() {
+    const stage = document.getElementById('vn-stage');
+    if (!stage) return;
+
+    let indicator = document.getElementById('vn-horizon-indicator');
+    if (_state.horizonLine && _horizonY !== null) {
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'vn-horizon-indicator';
+        indicator.style.cssText = [
+          'position:absolute', 'left:0', 'right:0',
+          'height:2px',
+          'background:repeating-linear-gradient(90deg,rgba(255,220,60,.7) 0,rgba(255,220,60,.7) 12px,transparent 12px,transparent 20px)',
+          'pointer-events:none',
+          'z-index:9999',
+          'transition:top .15s ease',
+        ].join(';');
+        // Метка
+        const label = document.createElement('div');
+        label.id = 'vn-horizon-label';
+        label.style.cssText = 'position:absolute;right:10px;top:-18px;font-size:11px;color:rgba(255,220,60,.9);font-family:monospace;pointer-events:none;text-shadow:0 1px 3px #000;';
+        label.textContent = `⬇ Горизонт`;
+        indicator.appendChild(label);
+        stage.appendChild(indicator);
+      }
+      indicator.style.top = _horizonY + 'px';
+      // Обновляем процент в метке
+      const label = indicator.querySelector('#vn-horizon-label');
+      if (label) label.textContent = `⬇ Горизонт ${_state.horizonY ?? 30}%`;
+    } else {
+      indicator?.remove();
+    }
+  }
+
+  static clearHorizonLine() {
+    _horizonY = null;
+    this._updateHorizonIndicator();
+  }
 
   static showDialogue(speakerName, text, speakerColor = '#ffe066', autoClose = 0) {
     _state.dialogue = { visible: true, speakerName, text, speakerColor, _subtitleActive: _state.dialogue._subtitleActive };
@@ -1342,7 +2097,6 @@ export class DDVNManager {
 
     let myChar;
     if (game.user?.isGM) {
-      // GM: используем выбранного персонажа из левой панели / панели настроек
       const gmCharId = DDVNGMBar._gmCharId;
       if (!gmCharId) return;
       myChar = _state.chars.find(c => c.id === gmCharId);
@@ -1360,7 +2114,6 @@ export class DDVNManager {
   static onSpeechResult(text) {
     if (!_state.open) return;
     
-    // Для GM используется выбранный персонаж, для игроков - их персонаж
     let myChar = null;
     let charName = '';
     let charColor = '#ffe066';
@@ -1369,14 +2122,12 @@ export class DDVNManager {
     let isGM = game.user.isGM;
     
     if (isGM) {
-      // GM говорит от лица выбранного персонажа
       const gmCharId = DDVNGMBar._gmCharId;
       if (gmCharId) {
         myChar = _state.chars.find(c => c.id === gmCharId);
         charId = gmCharId;
       }
     } else {
-      // Игрок говорит за своего персонажа
       myChar = _state.chars.find(c => c.playerId === game.userId);
       charId = myChar?.id || null;
     }
@@ -1388,9 +2139,7 @@ export class DDVNManager {
       charName = game.user?.name || '';
     }
 
-    // Показываем субтитры БЕЗ активации персонажа (кроме GM)
     DDVNOverlay.showSubtitle(charName, text, charColor, charId);
-    // Разослать всем
     game.socket.emit(SOCKET, { type: 'vn:subtitle', name: charName, text, color: charColor, charId: charId, isGM: isGM });
   }
 }
@@ -1404,11 +2153,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(opts = {}) {
     super(opts);
     DDVNPanel._instance = this;
-    this._chars    = deepClone(_state.chars);
-    this._layers   = deepClone(_state.layers);
+    this._chars = deepClone(_state.chars);
+    this._layers = deepClone(_state.layers);
     this._interactiveImages = deepClone(_state.interactiveImages);
     this._activeTab = 'scene';
-    this._editBgId  = null; // id редактируемого bg preset
+    this._editBgId = null;
   }
 
   static DEFAULT_OPTIONS = {
@@ -1421,36 +2170,53 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = { form: { template: `modules/${MODULE_ID}/templates/vn-panel.hbs` } };
 
   async _prepareContext() {
-    // Wait for language override to finish loading before localizing
     await getLanguagePromise();
     
-    const s    = DDVNManager.getState();
+    // Синхронизируем локальные копии с глобальным состоянием
+    // Это предотвращает сброс позиции при изменении настроек в панели
+    const s = DDVNManager.getState();
+    
+    // Обновляем локальные копии, сохраняя порядок и добавляя отсутствующие элементы
+    this._chars = s.chars.map(c => {
+      const existing = this._chars.find(ec => ec.id === c.id);
+      return existing ? { ...existing, ...c } : deepClone(c);
+    });
+    this._layers = s.layers.map(l => {
+      const existing = this._layers.find(el => el.id === l.id);
+      return existing ? { ...existing, ...l } : deepClone(l);
+    });
+    this._interactiveImages = s.interactiveImages.map(img => {
+      const existing = this._interactiveImages.find(ei => ei.id === img.id);
+      return existing ? { ...existing, ...img } : deepClone(img);
+    });
+    
     const allBg = DDVNPresets.getAllBg();
 
     return {
-      open:         s.open,
-      background:   s.background,
-      bgFit:        s.bgFit,
-      bgColor:      s.bgColor,
-      dimBg:        s.dimBg,
-      chars:        this._chars.map((c, i) => ({ ...c, _idx: i })),
-      leftChars:    this._chars.filter(c => c.side === 'left').length,
-      centerChars:  this._chars.filter(c => c.side === 'center').length,
-      rightChars:   this._chars.filter(c => c.side === 'right').length,
-      players:      game.users.filter(u => !u.isGM).map(u => ({ id: u.id, name: u.name })),
-      micOn:        DDVNMic._active,
+      open: s.open,
+      background: s.background,
+      bgFit: s.bgFit,
+      bgColor: s.bgColor,
+      dimBg: s.dimBg,
+      chars: this._chars.map((c, i) => ({ ...c, _idx: i })),
+      leftChars: this._chars.filter(c => c.side === 'left').length,
+      centerChars: this._chars.filter(c => c.side === 'center').length,
+      rightChars: this._chars.filter(c => c.side === 'right').length,
+      players: game.users.filter(u => !u.isGM).map(u => ({ id: u.id, name: u.name })),
+      micOn: DDVNMic._active,
       micThreshold: DDVNMic.threshold,
-      micLang:      DDVNMic.lang,
-      dialogue:     s.dialogue,
-      charPresets:  DDVNPresets.listChars(),
+      micLang: DDVNMic.lang,
+      dialogue: s.dialogue,
+      charPresets: DDVNPresets.listChars(),
       scenePresets: DDVNPresets.listScenes(),
       allBg,
-      gmCharId:     this._gmCharId || '',
-      layers:       this._layers.map((l, i) => ({ ...l, _idx: i })),
+      gmCharId: this._gmCharId || '',
+      layers: this._layers.map((l, i) => ({ ...l, _idx: i })),
       interactiveImages: this._interactiveImages.map((img, i) => ({ ...img, _idx: i })),
-      macros:       (game.macros?.contents || []).map(m => ({ id: m.id, name: m.name })).sort((a,b) => a.name.localeCompare(b.name)),
+      macros: (game.macros?.contents || []).map(m => ({ id: m.id, name: m.name })).sort((a,b) => a.name.localeCompare(b.name)),
       layerPresets: DDVNPresets.listLayers(),
-      iimgPresets:  DDVNPresets.listIimgs(),
+      iimgPresets: DDVNPresets.listIimgs(),
+      depthMode: s.depthMode,
     };
   }
 
@@ -1458,7 +2224,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(ctx, opts);
     const el = this.element;
 
-    // Восстановить активную вкладку
     el.querySelectorAll('.vn-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         this._activeTab = tab.dataset.vtab;
@@ -1470,7 +2235,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = el.querySelector(`.vn-tab[data-vtab="${this._activeTab}"]`);
     if (activeTab) activeTab.click();
 
-    // ── VN Open/Close ──
     el.querySelector('[data-action="vn-open"]')?.addEventListener('click', () => {
       DDVNManager.open(); this.render();
     });
@@ -1481,7 +2245,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       DDVNManager.stop(true); this.render();
     });
 
-    // ── Фон ──
     el.querySelector('#vn-bg-path')?.addEventListener('change', e => {
       DDVNManager.setBackground(e.target.value);
     });
@@ -1503,19 +2266,16 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       DDVNManager.broadcast({ dimBg: Number(e.target.value) });
     });
 
-    // Быстрый выбор фона — плитки вариантов
     el.querySelectorAll('[data-bg-variant]').forEach(btn => {
       btn.addEventListener('click', () => {
         const src = btn.dataset.bgVariant;
         const inp = el.querySelector('#vn-bg-path');
         if (inp) inp.value = src;
         DDVNManager.setBackground(src);
-        // Подсветка активной плитки
         el.querySelectorAll('[data-bg-variant]').forEach(b => b.classList.toggle('vn-bg-tile-active', b === btn));
       });
     });
 
-    // Поиск по фонам в панели
     el.querySelector('#vn-bg-search')?.addEventListener('input', e => {
       const q = e.target.value.toLowerCase().trim();
       el.querySelectorAll('.vn-bg-group').forEach(group => {
@@ -1531,7 +2291,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     });
 
-    // ── Управление пресетами фона ──
     el.querySelector('[data-action="vn-bg-add"]')?.addEventListener('click', () => {
       this._showBgEditForm(el);
     });
@@ -1551,7 +2310,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       el.querySelector('#vn-bg-edit-form')?.remove();
     });
 
-    // Порядок плиток — drag (упрощённо через кнопки ←→)
     el.querySelectorAll('[data-bg-move]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const [id, dir] = btn.dataset.bgMove.split(':');
@@ -1560,12 +2318,10 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
         if (idx < 0) return;
         const newIdx = dir === 'left' ? idx - 1 : idx + 1;
         if (newIdx < 0 || newIdx >= allCustom.length) return;
-        // Swap
         const raw = DDVNPresets._g(DDVNPresets.BG_KEY);
         const keys = Object.keys(raw);
         const ki = keys.indexOf(id), kj = keys[newIdx];
         [raw[id], raw[kj]] = [raw[kj], raw[id]];
-        // Rebuild ordered object
         const reordered = {};
         keys.forEach(k => { reordered[k] = raw[k]; });
         await game.settings.set(MODULE_ID, DDVNPresets.BG_KEY, reordered);
@@ -1573,11 +2329,9 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     });
 
-    // ── Персонажи ──
     this._bindCharEvents(el);
     this._bindTextPicsEvents(el);
 
-    // Пресеты ростера
     el.querySelector('[data-action="vn-chars-save"]')?.addEventListener('click', async () => {
       const name = el.querySelector('#vn-chars-preset-name')?.value?.trim();
       if (!name) return;
@@ -1600,12 +2354,11 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       this.render();
     });
 
-    // ── Диалог ──
     el.querySelector('[data-action="vn-dlg-show"]')?.addEventListener('click', () => {
-      const name  = el.querySelector('#vn-dlg-name')?.value  || '';
-      const text  = el.querySelector('#vn-dlg-text')?.value  || '';
+      const name = el.querySelector('#vn-dlg-name')?.value || '';
+      const text = el.querySelector('#vn-dlg-text')?.value || '';
       const color = el.querySelector('#vn-dlg-color')?.value || '#ffe066';
-      const auto  = Number(el.querySelector('#vn-dlg-auto')?.value) || 0;
+      const auto = Number(el.querySelector('#vn-dlg-auto')?.value) || 0;
       DDVNManager.showDialogue(name, text, color, auto);
     });
     el.querySelector('[data-action="vn-dlg-hide"]')?.addEventListener('click', () => DDVNManager.hideDialogue());
@@ -1616,7 +2369,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       DDVNManager.showDialogue(active.name, text, active.nameColor);
     });
 
-    // ── Микрофон ──
     el.querySelector('[data-action="vn-mic-start"]')?.addEventListener('click', async () => {
       await DDVNMic.start(); this.render();
     });
@@ -1630,45 +2382,28 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     el.querySelector('#vn-mic-lang')?.addEventListener('change', e => {
       DDVNMic.lang = e.target.value;
-      // Синхронизируем с quick-bar
       const quickLang = document.getElementById('vn-quick-lang');
       if (quickLang) quickLang.value = e.target.value;
       if (DDVNMic._active) { DDVNMic.stop(); DDVNMic.start(); }
     });
 
-    // GM от лица
     el.querySelector('#vn-gm-char')?.addEventListener('change', e => {
       this._gmCharId = e.target.value || null;
     });
 
-    // Пресеты сцен (сохраняют всё: chars, layers, interactiveImages)
     el.querySelector('[data-action="vn-scene-save"]')?.addEventListener('click', async () => {
       const name = el.querySelector('#vn-scene-name')?.value?.trim();
       if (!name) return;
-      // Сохраняем напрямую из _state - это всегда актуальное состояние
       await DDVNPresets.saveScene(name, deepClone(_state));
       ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneSaved', {name}));
       this.render();
     });
     el.querySelector('[data-action="vn-scene-load"]')?.addEventListener('click', () => {
       const n = el.querySelector('#vn-scene-select')?.value;
+      if (!n) return;
       const s = DDVNPresets.getScene(n);
       if (!s) return;
-      // Загружаем состояние в _state
-      Object.assign(_state, {
-        open: s.open ?? _state.open,
-        background: s.background ?? '',
-        bgFit: s.bgFit ?? 'cover',
-        bgColor: s.bgColor ?? '#0a0a14',
-        dimBg: s.dimBg ?? 0,
-        chars: deepClone(s.chars || []),
-        dialogue: s.dialogue ?? { visible: false, speakerName: '', speakerColor: '#ffe066', text: '', _subtitleActive: false },
-        layers: deepClone(s.layers || []),
-        interactiveImages: deepClone(s.interactiveImages || [])
-      });
-      // Синхронизируем панельные переменные с _state
-      this._syncCharsFromState();
-      DDVNManager.broadcast();
+      DDVNManager.applySceneState(s);
       this.render();
       ui.notifications.info(game.i18n.format('DRAMADIRECTOR.notifications.sceneLoaded', {name: n}));
     });
@@ -1678,7 +2413,6 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       await DDVNPresets.deleteScene(n); this.render();
     });
 
-    // ── Copy macro buttons ────────────────────────────────────────────────
     el.querySelectorAll('.vn-macro-copy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const pre = btn.closest('.vn-macro-wrap')?.querySelector('.vn-macro-example');
@@ -1691,9 +2425,7 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
-  // ── Text & Pictures events ──────────────────────────────────────────────────
   _bindTextPicsEvents(el) {
-    // ── Layers ──────────────────────────────────────────────────────────────
     el.querySelector('[data-action="vn-layer-add-img"]')?.addEventListener('click', () => {
       this._layers.push(newLayer('image'));
       DDVNManager.setLayers(this._layers);
@@ -1738,11 +2470,10 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
       row.querySelectorAll('input, select, textarea').forEach(inp => {
         inp.addEventListener('change', () => this._syncLayerRow(idx, row));
-        inp.addEventListener('input',  () => this._syncLayerRow(idx, row));
+        inp.addEventListener('input', () => this._syncLayerRow(idx, row));
       });
     });
 
-    // Layer presets
     el.querySelector('[data-action="vn-layers-save"]')?.addEventListener('click', async () => {
       const name = el.querySelector('#vn-layers-preset-name')?.value?.trim();
       if (!name) return;
@@ -1776,7 +2507,6 @@ game.dramaDirector.vn.setLayers(layers);`;
       this.render();
     });
 
-    // ── Interactive Images ──────────────────────────────────────────────────
     el.querySelector('[data-action="vn-iimg-add"]')?.addEventListener('click', () => {
       this._interactiveImages.push(newInteractiveImage());
       DDVNManager.setInteractiveImages(this._interactiveImages);
@@ -1803,11 +2533,10 @@ game.dramaDirector.vn.setLayers(layers);`;
 
       row.querySelectorAll('input, select').forEach(inp => {
         inp.addEventListener('change', () => this._syncIimgRow(idx, row));
-        inp.addEventListener('input',  () => this._syncIimgRow(idx, row));
+        inp.addEventListener('input', () => this._syncIimgRow(idx, row));
       });
     });
 
-    // Interactive images presets
     el.querySelector('[data-action="vn-iimg-save"]')?.addEventListener('click', async () => {
       const name = el.querySelector('#vn-iimg-preset-name')?.value?.trim();
       if (!name) return;
@@ -1846,21 +2575,27 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
     const l = this._layers[idx];
     if (!l) return;
     const q = s => row.querySelector(s);
-    l.name      = q('.vn-layer-name-inp')?.value ?? l.name;
-    l.src       = q('.vn-layer-src-inp')?.value  ?? l.src;
-    l.text      = q('.vn-layer-text-inp')?.value ?? l.text;
-    l.x         = Number(q('.vn-layer-x')?.value) || 0;
-    l.y         = Number(q('.vn-layer-y')?.value) || 0;
-    l.zIndex    = Number(q('.vn-layer-z')?.value) || 0;
-    l.width     = Number(q('.vn-layer-w')?.value) || 300;
-    l.height    = Number(q('.vn-layer-h')?.value) || 200;
-    l.opacity   = parseFloat(q('.vn-layer-opacity')?.value ?? 1);
-    l.scale     = parseFloat(q('.vn-layer-scale')?.value ?? 1);
-    l.fontSize  = Number(q('.vn-layer-fontsize')?.value) || 28;
-    l.color     = q('.vn-layer-color')?.value ?? l.color;
+    l.name = q('.vn-layer-name-inp')?.value ?? l.name;
+    l.src = q('.vn-layer-src-inp')?.value ?? l.src;
+    l.text = q('.vn-layer-text-inp')?.value ?? l.text;
+    l.x = Number(q('.vn-layer-x')?.value) || 0;
+    l.y = Number(q('.vn-layer-y')?.value) || 0;
+    l.zIndex = Number(q('.vn-layer-z')?.value) || 0;
+    l.width = Number(q('.vn-layer-w')?.value) || 300;
+    l.height = Number(q('.vn-layer-h')?.value) || 200;
+    l.opacity = parseFloat(q('.vn-layer-opacity')?.value ?? 1);
+    l.baseScale = parseFloat(q('.vn-layer-scale')?.value ?? 1);
+    // В режиме глубины — пересчитываем
+    if (_state.depthMode) {
+      l.scale  = parseFloat((l.baseScale * DDVNOverlay._perspectiveFactor(DDVNOverlay._depthY('layer', l))).toFixed(3));
+      l.zIndex = DDVNOverlay._depthZ('layer', l);
+    } else {
+      l.scale = l.baseScale;
+    }
+    l.fontSize = Number(q('.vn-layer-fontsize')?.value) || 28;
+    l.color = q('.vn-layer-color')?.value ?? l.color;
     l.textAlign = q('.vn-layer-align')?.value ?? l.textAlign;
-    l.visible   = q('.vn-layer-visible')?.checked !== false;
-    // Update slider labels
+    l.visible = q('.vn-layer-visible')?.checked !== false;
     ['.vn-layer-x', '.vn-layer-y', '.vn-layer-z', '.vn-layer-w', '.vn-layer-h', '.vn-layer-opacity', '.vn-layer-scale', '.vn-layer-fontsize'].forEach(sel => {
       const inp = q(sel);
       if (inp?.nextElementSibling?.classList.contains('vn-slider-val')) {
@@ -1874,16 +2609,23 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
     const img = this._interactiveImages[idx];
     if (!img) return;
     const q = s => row.querySelector(s);
-    img.name    = q('.vn-iimg-name-inp')?.value ?? img.name;
-    img.src     = q('.vn-iimg-src-inp')?.value  ?? img.src;
+    img.name = q('.vn-iimg-name-inp')?.value ?? img.name;
+    img.src = q('.vn-iimg-src-inp')?.value ?? img.src;
     img.macroId = q('.vn-iimg-macro-sel')?.value ?? img.macroId;
-    img.x       = Number(q('.vn-iimg-x')?.value) || 0;
-    img.y       = Number(q('.vn-iimg-y')?.value) || 0;
-    img.zIndex  = Number(q('.vn-iimg-z')?.value) || 0;
-    img.width   = Number(q('.vn-iimg-w')?.value) || 200;
-    img.height  = Number(q('.vn-iimg-h')?.value) || 200;
+    img.x = Number(q('.vn-iimg-x')?.value) || 0;
+    img.y = Number(q('.vn-iimg-y')?.value) || 0;
+    img.zIndex = Number(q('.vn-iimg-z')?.value) || 0;
+    img.width = Number(q('.vn-iimg-w')?.value) || 200;
+    img.height = Number(q('.vn-iimg-h')?.value) || 200;
     img.opacity = parseFloat(q('.vn-iimg-opacity')?.value ?? 1);
-    img.scale   = parseFloat(q('.vn-iimg-scale')?.value ?? 1);
+    img.baseScale = parseFloat(q('.vn-iimg-scale')?.value ?? 1);
+    // В режиме глубины — пересчитываем
+    if (_state.depthMode) {
+      img.scale  = parseFloat((img.baseScale * DDVNOverlay._perspectiveFactor(DDVNOverlay._depthY('interactive', img))).toFixed(3));
+      img.zIndex = DDVNOverlay._depthZ('interactive', img);
+    } else {
+      img.scale = img.baseScale;
+    }
     img.visible = q('.vn-iimg-visible')?.checked !== false;
     ['.vn-iimg-x', '.vn-iimg-y', '.vn-iimg-z', '.vn-iimg-w', '.vn-iimg-h', '.vn-iimg-opacity', '.vn-iimg-scale'].forEach(sel => {
       const inp = q(sel);
@@ -1894,310 +2636,300 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
     DDVNManager.setInteractiveImages(this._interactiveImages);
   }
 
-  // ── Bg Edit Form ─────────────────────────────────────────────────────────
-  _showBgEditForm(el, editId = null) {
-    const existing = el.querySelector('#vn-bg-edit-form');
-    if (existing) existing.remove();
-
-    const allCustom = DDVNPresets.listBg();
-    const editData  = editId ? allCustom.find(b => b.id === editId) : null;
-
-    const varRows = editData?.variants
-      ? editData.variants.map((v, i) => this._variantRowHtml(i, v)).join('')
-      : this._variantRowHtml(0);
-
-    const form = document.createElement('div');
-    form.id = 'vn-bg-edit-form';
-    form.innerHTML = `
-      <div class="vn-bgedit-overlay">
-        <div class="vn-bgedit-box">
-          <h4>${editId ? game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleEdit') : game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleAdd')}</h4>
-          <input type="hidden" id="vn-bgedit-id" value="${editId || ''}"/>
-          <div class="dd-row"><label>${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.name')}</label>
-            <input type="text" id="vn-bgedit-name" class="dd-input" value="${editData?.name || ''}"/>
-          </div>
-          <div id="vn-bgedit-variants">${varRows}</div>
-          <button type="button" id="vn-bgedit-add-var" class="vn-btn-secondary" style="margin-top:4px">
-            <i class="fas fa-plus"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.addVariant')}
-          </button>
-          <div class="vn-bgedit-actions">
-            <button type="button" data-action="vn-bg-edit-cancel" class="vn-btn-secondary">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.cancel')}</button>
-            <button type="button" data-action="vn-bg-edit-save" class="vn-btn-primary">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.save')}</button>
-          </div>
-        </div>
-      </div>`;
-    el.appendChild(form);
-
-    // Re-bind cancel/save
-    form.querySelector('[data-action="vn-bg-edit-cancel"]')?.addEventListener('click', () => form.remove());
-    form.querySelector('[data-action="vn-bg-edit-save"]')?.addEventListener('click', () => this._saveBgFromForm(el));
-    form.querySelector('#vn-bgedit-add-var')?.addEventListener('click', () => {
-      const container = form.querySelector('#vn-bgedit-variants');
-      const count = container.querySelectorAll('.vn-bgedit-var-row').length;
-      if (count >= 3) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxVariants'));
-      container.insertAdjacentHTML('beforeend', this._variantRowHtml(count));
-      this._bindVarBrowse(form);
-    });
-    this._bindVarBrowse(form);
-  }
-
-  _variantRowHtml(idx, v = null) {
-    return `<div class="vn-bgedit-var-row">
-      <span class="vn-bgedit-var-num">${idx + 1}.</span>
-      <input type="text" class="vn-bgedit-var-name dd-input" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantName')}" value="${v?.name || ''}"/>
-      <input type="text" class="vn-bgedit-var-src dd-input" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantPath')}" value="${v?.src || ''}"/>
-      <button type="button" class="vn-bgedit-browse-var"><i class="fas fa-folder-open"></i></button>
-    </div>`;
-  }
-
-  _bindVarBrowse(form) {
-    form.querySelectorAll('.vn-bgedit-browse-var').forEach((btn, i) => {
-      // Remove old listener by cloning
-      const fresh = btn.cloneNode(true);
-      btn.replaceWith(fresh);
-      fresh.addEventListener('click', () => {
-        const rows = form.querySelectorAll('.vn-bgedit-var-row');
-        const srcInp = rows[i]?.querySelector('.vn-bgedit-var-src');
-        this._openFilePicker('imagevideo', p => { if (srcInp) srcInp.value = p; });
-      });
-    });
-  }
-
-  async _saveBgFromForm(el) {
-    const form = el.querySelector('#vn-bg-edit-form');
-    if (!form) return;
-
-    const editId = form.querySelector('#vn-bgedit-id')?.value?.trim();
-    const name   = form.querySelector('#vn-bgedit-name')?.value?.trim();
-    if (!name) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgNameRequired'));
-
-    const variants = [];
-    form.querySelectorAll('.vn-bgedit-var-row').forEach((row, i) => {
-      const vName = row.querySelector('.vn-bgedit-var-name')?.value?.trim();
-      const vSrc  = row.querySelector('.vn-bgedit-var-src')?.value?.trim();
-      if (vSrc) variants.push({ id: uid(), name: vName || name, src: vSrc });
-    });
-    if (!variants.length) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgVariantRequired'));
-
-    const id = editId || uid();
-    await DDVNPresets.saveBg(id, { name, variants });
-    form.remove();
-    this.render();
-  }
-
-  // ── Chars ─────────────────────────────────────────────────────────────────
-  _bindCharEvents(el) {
-    el.querySelector('[data-action="vn-char-add-left"]')  ?.addEventListener('click', () => this._addChar('left'));
-    el.querySelector('[data-action="vn-char-add-center"]')?.addEventListener('click', () => this._addChar('center'));
-    el.querySelector('[data-action="vn-char-add-right"]') ?.addEventListener('click', () => this._addChar('right'));
-    el.querySelector('[data-action="vn-deactivate-all"]')?.addEventListener('click', () => {
-      DDVNManager.deactivateAll(); this._syncCharsFromState(); this.render();
-    });
-
-    // Поиск персонажей
-    el.querySelector('#vn-char-search')?.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase().trim();
-      el.querySelectorAll('[data-char-idx]').forEach(row => {
-        const name = row.querySelector('.vn-char-name-inp')?.value?.toLowerCase() || '';
-        const title = row.querySelector('.vn-char-title-inp')?.value?.toLowerCase() || '';
-        const match = !query || name.includes(query) || title.includes(query);
-        row.classList.toggle('dd-hidden', !match);
-      });
-    });
-
-    el.querySelectorAll('[data-char-idx]').forEach(row => {
-      const idx = Number(row.dataset.charIdx);
-
-      row.querySelector('[data-char-action="active"]')?.addEventListener('click', () => {
-        this._chars[idx].active = !this._chars[idx].active;
-        DDVNManager.setChars(this._chars); this.render();
-      });
-      row.querySelector('[data-char-action="remove"]')?.addEventListener('click', () => {
-        this._chars.splice(idx, 1);
-        this._reorderSlots();
-        DDVNManager.setChars(this._chars); this.render();
-      });
-      row.querySelector('[data-char-action="move-up"]')?.addEventListener('click', () => {
-        if (idx > 0) { [this._chars[idx-1], this._chars[idx]] = [this._chars[idx], this._chars[idx-1]]; this._reorderSlots(); DDVNManager.setChars(this._chars); this.render(); }
-      });
-      row.querySelector('[data-char-action="move-down"]')?.addEventListener('click', () => {
-        if (idx < this._chars.length - 1) { [this._chars[idx], this._chars[idx+1]] = [this._chars[idx+1], this._chars[idx]]; this._reorderSlots(); DDVNManager.setChars(this._chars); this.render(); }
-      });
-      row.querySelector('[data-char-action="switch-side"]')?.addEventListener('click', () => {
-        // Циклическое переключение: left -> center -> right -> left
-        const sides = ['left', 'center', 'right'];
-        const currentIdx = sides.indexOf(this._chars[idx].side);
-        this._chars[idx].side = sides[(currentIdx + 1) % sides.length];
-        this._reorderSlots();
-        DDVNManager.setChars(this._chars); this.render();
-      });
-      row.querySelector('[data-char-action="browse"]')?.addEventListener('click', () => {
-        this._openFilePicker('image', p => {
-          this._chars[idx].img = p;
-          row.querySelector('.vn-char-img-inp').value = p;
-          DDVNManager.setChars(this._chars);
-        });
-      });
-      row.querySelector('[data-char-action="browse-active"]')?.addEventListener('click', () => {
-        this._openFilePicker('image', p => {
-          this._chars[idx].activeImg = p;
-          row.querySelector('.vn-char-active-img-inp').value = p;
-          DDVNManager.setChars(this._chars);
-        });
-      });
-
-      row.querySelectorAll('input, select').forEach(inp => {
-        inp.addEventListener('change', () => this._syncCharRow(idx, row));
-        inp.addEventListener('input',  () => this._syncCharRow(idx, row));
-      });
-    });
-  }
-
-  // Helper to open FilePicker above VN panel
-  _openFilePicker(type, callback) {
-    // Create FilePicker using Foundry API
-    const fp = new FilePicker({ 
-      type, 
-      callback: (path) => {
-        callback(path);
-        // After selection, bring VN panel back to proper position
-        setTimeout(() => {
-          if (this.bringToTop) this.bringToTop();
-        }, 100);
-      }
-    });
-    
-    // Render the FilePicker
-    fp.render(true);
-    
-    // Use Hook-based approach: Foundry will fire renderFilePicker hook
-    // We handle bringing to front there (see initVNSystem)
-    
-    // Additional DOM-based approach for immediate effect
-    const ensureFront = () => {
-      // Find all FilePicker windows and bring them to front
-      const selectors = [
-        '.filepicker',
-        '.app.window-app.filepicker', 
-        '.window-app.filepicker',
-        '.application.filepicker',
-        '[data-application="filepicker"]',
-        '#file-picker'  // v13 style
-      ];
-      
-      selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => {
-          el.style.setProperty('z-index', '10050', 'important');
-          if (el.classList) {
-            el.classList.add('dd-frontend');
-          }
-        });
-      });
-      
-      // Use Foundry's bringToTop if available
-      if (fp.bringToTop) {
-        try { fp.bringToTop(); } catch(e) {}
-      }
-    };
-    
-    // Try multiple times to catch async rendering
-    ensureFront();
-    setTimeout(ensureFront, 10);
-    setTimeout(ensureFront, 50);
-    setTimeout(ensureFront, 100);
-    setTimeout(ensureFront, 200);
-    setTimeout(ensureFront, 500);
-  }
-
-  _syncCharRow(idx, row) {
-    if (!this._chars[idx]) return;
-    const c = this._chars[idx];
-    const q = s => row.querySelector(s);
-    c.name      = q('.vn-char-name-inp')?.value  ?? c.name;
-    c.title     = q('.vn-char-title-inp')?.value ?? c.title;
-    c.img       = q('.vn-char-img-inp')?.value   ?? c.img;
-    c.activeImg = q('.vn-char-active-img-inp')?.value   ?? c.activeImg;
-    c.nameColor = q('.vn-char-ncolor')?.value     ?? c.nameColor;
-    c.scale     = Number(q('.vn-char-scale')?.value)  || 1;
-    c.x         = Number(q('.vn-char-x')?.value)      || 0;
-    c.y         = Number(q('.vn-char-y')?.value)      || 0;
-    c.zIndex    = Number(q('.vn-char-z')?.value)      || 0;
-    c.mirror    = q('.vn-char-mirror')?.checked  || false;
-    c.visible   = q('.vn-char-visible')?.checked !== false;
-    c.playerId  = q('.vn-char-player')?.value    || null;
-
-    // Обновить отображение значений слайдеров
-    const scaleVal = q('.vn-char-scale')?.nextElementSibling;
-    const xVal = q('.vn-char-x')?.nextElementSibling;
-    const yVal = q('.vn-char-y')?.nextElementSibling;
-    const zVal = q('.vn-char-z')?.nextElementSibling;
-    if (scaleVal) scaleVal.textContent = c.scale.toFixed(2);
-    if (xVal) xVal.textContent = c.x;
-    if (yVal) yVal.textContent = c.y;
-    if (zVal) zVal.textContent = c.zIndex;
-
-    DDVNManager.setChars(this._chars);
-  }
-
-  _addChar(side) {
-    const sideCount = this._chars.filter(c => c.side === side).length;
-    const maxChars = side === 'center' ? 5 : 10;
-    if (sideCount >= maxChars) { ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars')); return; }
-    this._chars.push(newChar(side, sideCount));
-    DDVNManager.setChars(this._chars);
-    this.render();
-  }
-
-  _reorderSlots() {
-    let l = 0, c = 0, r = 0;
-    this._chars.forEach(ch => {
-      if (ch.side === 'left') ch.slot = l++;
-      else if (ch.side === 'center') ch.slot = c++;
-      else ch.slot = r++;
-    });
-  }
-
   _syncCharsFromState() {
     this._chars = deepClone(_state.chars);
     this._layers = deepClone(_state.layers);
     this._interactiveImages = deepClone(_state.interactiveImages);
+  }
+
+  _bindCharEvents(el) {
+    el.querySelector('[data-action="vn-deactivate-all"]')?.addEventListener('click', () => {
+      DDVNManager.deactivateAll();
+      this.render();
+    });
+    el.querySelector('[data-action="vn-char-add-left"]')?.addEventListener('click', () => {
+      const count = this._chars.filter(c => c.side === 'left').length;
+      if (count >= 10) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars'));
+      const char = newChar('left', count);
+      this._chars.push(char);
+      DDVNManager.setChars(this._chars);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-char-add-center"]')?.addEventListener('click', () => {
+      const count = this._chars.filter(c => c.side === 'center').length;
+      if (count >= 5) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars'));
+      const char = newChar('center', count);
+      this._chars.push(char);
+      DDVNManager.setChars(this._chars);
+      this.render();
+    });
+    el.querySelector('[data-action="vn-char-add-right"]')?.addEventListener('click', () => {
+      const count = this._chars.filter(c => c.side === 'right').length;
+      if (count >= 10) return ui.notifications.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxChars'));
+      const char = newChar('right', count);
+      this._chars.push(char);
+      DDVNManager.setChars(this._chars);
+      this.render();
+    });
+
+    el.querySelector('#vn-char-search')?.addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      el.querySelectorAll('.vn-char-row').forEach(row => {
+        const name = (row.dataset.charName || '').toLowerCase();
+        row.style.display = !q || name.includes(q) ? '' : 'none';
+      });
+    });
+
+    el.querySelectorAll('.vn-char-row').forEach(row => {
+      const idx = Number(row.dataset.charIdx);
+      const char = this._chars[idx];
+      if (!char) return;
+
+      row.querySelectorAll('input, select').forEach(inp => {
+        inp.addEventListener('input', () => this._syncCharRow(idx, row));
+      });
+
+      row.querySelectorAll('[data-char-action]').forEach(btn => {
+        const action = btn.dataset.charAction;
+        btn.addEventListener('click', () => {
+          if (action === 'active') {
+            this._chars.forEach((c, i) => { c.active = i === idx ? !c.active : false; });
+            DDVNManager.setChars(this._chars);
+          } else if (action === 'switch-side') {
+            const sides = ['left', 'center', 'right'];
+            const currentIdx = sides.indexOf(char.side);
+            char.side = sides[(currentIdx + 1) % sides.length];
+            this._recalcSlots();
+            DDVNManager.setChars(this._chars);
+          } else if (action === 'move-up') {
+            if (idx > 0) {
+              const sameSide = this._chars.filter(c => c.side === char.side);
+              const sameIdx = sameSide.indexOf(char);
+              if (sameIdx > 0) {
+                const other = sameSide[sameIdx - 1];
+                const temp = char.slot;
+                char.slot = other.slot;
+                other.slot = temp;
+                this._sortChars();
+                DDVNManager.setChars(this._chars);
+              }
+            }
+          } else if (action === 'move-down') {
+            const sameSide = this._chars.filter(c => c.side === char.side);
+            const sameIdx = sameSide.indexOf(char);
+            if (sameIdx < sameSide.length - 1) {
+              const other = sameSide[sameIdx + 1];
+              const temp = char.slot;
+              char.slot = other.slot;
+              other.slot = temp;
+              this._sortChars();
+              DDVNManager.setChars(this._chars);
+            }
+          } else if (action === 'remove') {
+            this._chars.splice(idx, 1);
+            this._recalcSlots();
+            DDVNManager.setChars(this._chars);
+          } else if (action === 'browse') {
+            this._openFilePicker('image', p => {
+              char.img = p;
+              row.querySelector('.vn-char-img-inp').value = p;
+              DDVNManager.setChars(this._chars);
+            });
+          } else if (action === 'browse-active') {
+            this._openFilePicker('image', p => {
+              char.activeImg = p;
+              row.querySelector('.vn-char-active-img-inp').value = p;
+              DDVNManager.setChars(this._chars);
+            });
+          }
+          this.render();
+        });
+      });
+    });
+  }
+
+  _syncCharRow(idx, row) {
+    const c = this._chars[idx];
+    if (!c) return;
+    c.name = row.querySelector('.vn-char-name-inp')?.value ?? c.name;
+    c.nameColor = row.querySelector('.vn-char-ncolor')?.value ?? c.nameColor;
+    c.title = row.querySelector('.vn-char-title-inp')?.value ?? c.title;
+    c.img = row.querySelector('.vn-char-img-inp')?.value ?? c.img;
+    c.activeImg = row.querySelector('.vn-char-active-img-inp')?.value ?? c.activeImg;
+    c.baseScale = parseFloat(row.querySelector('.vn-char-scale')?.value) || 1;
+    c.x = Number(row.querySelector('.vn-char-x')?.value) || 0;
+    c.y = Number(row.querySelector('.vn-char-y')?.value) || 0;
+    c.zIndex = Number(row.querySelector('.vn-char-z')?.value) || 0;
+    c.mirror = row.querySelector('.vn-char-mirror')?.checked ?? false;
+    c.visible = row.querySelector('.vn-char-visible')?.checked ?? true;
+    c.playerId = row.querySelector('.vn-char-player')?.value || null;
+    c.locked = row.querySelector('.vn-char-locked')?.checked ?? false;
+    // В режиме глубины scale пересчитывается из baseScale + Y; иначе scale = baseScale
+    if (_state.depthMode) {
+      c.scale  = parseFloat((c.baseScale * DDVNOverlay._perspectiveFactor(DDVNOverlay._depthY('char', c))).toFixed(3));
+      c.zIndex = DDVNOverlay._depthZ('char', c);
+    } else {
+      c.scale = c.baseScale;
+    }
+
+    row.querySelectorAll('.vn-slider-val').forEach(v => {
+      const inp = v.previousElementSibling;
+      if (inp) v.textContent = inp.value;
+    });
+
+    DDVNManager.setChars(this._chars);
+  }
+
+  _recalcSlots() {
+    let l = 0, c = 0, r = 0;
+    this._chars.forEach(char => {
+      if (char.side === 'left') char.slot = l++;
+      else if (char.side === 'center') char.slot = c++;
+      else char.slot = r++;
+    });
+  }
+
+  _sortChars() {
+    this._chars.sort((a, b) => {
+      if (a.side !== b.side) {
+        const order = { left: 0, center: 1, right: 2 };
+        return order[a.side] - order[b.side];
+      }
+      return a.slot - b.slot;
+    });
+  }
+
+  _openFilePicker(type, callback) {
+    const fp = new FilePicker({ type });
+    fp.options.callback = callback;
+    fp.render(true);
+  }
+
+  _showBgEditForm(el, editId = null) {
+    const existingForm = el.querySelector('#vn-bg-edit-form');
+    if (existingForm) existingForm.remove();
+
+    const editBg = editId ? DDVNPresets.listBg().find(b => b.id === editId) : null;
+
+    const form = document.createElement('div');
+    form.id = 'vn-bg-edit-form';
+    form.className = 'vn-bg-edit-form';
+    form.innerHTML = `
+      <h4>${editBg ? game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleEdit') : game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.titleAdd')}</h4>
+      <div class="dd-row">
+        <label>${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.name')}</label>
+        <input type="text" id="vn-bg-edit-name" class="dd-input" value="${editBg?.name || ''}" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.name')}"/>
+      </div>
+      <div id="vn-bg-edit-variants">
+        ${(editBg?.variants || [{name: '', src: ''}]).map((v, i) => `
+          <div class="vn-bg-edit-variant" data-variant-idx="${i}">
+            <div class="dd-row">
+              <input type="text" class="vn-bg-edit-vname dd-input" value="${v.name || ''}" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantName')}"/>
+              <input type="text" class="vn-bg-edit-vpath dd-input" value="${v.src || ''}" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantPath')}"/>
+              <button type="button" class="dd-icon-btn vn-bg-edit-browse"><i class="fas fa-folder-open"></i></button>
+              ${i > 0 ? '<button type="button" class="dd-icon-btn dd-danger-btn vn-bg-edit-vdel"><i class="fas fa-times"></i></button>' : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button type="button" class="vn-btn-add" id="vn-bg-edit-add-variant"><i class="fas fa-plus"></i> ${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.addVariant')}</button>
+      <div class="dd-row" style="margin-top:8px">
+        <button type="button" class="vn-btn-secondary" data-action="vn-bg-edit-cancel">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.cancel')}</button>
+        <button type="button" class="vn-btn-primary" data-action="vn-bg-edit-save">${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.save')}</button>
+      </div>
+    `;
+
+    const bgSection = el.querySelector('.vn-bg-group:last-child')?.parentElement || el.querySelector('.dd-section');
+    bgSection?.appendChild(form);
+
+    form.querySelector('#vn-bg-edit-add-variant')?.addEventListener('click', () => {
+      const variantsContainer = form.querySelector('#vn-bg-edit-variants');
+      const count = variantsContainer.querySelectorAll('.vn-bg-edit-variant').length;
+      if (count >= 3) {
+        ui.notifications?.warn(game.i18n.localize('DRAMADIRECTOR.notifications.maxVariants'));
+        return;
+      }
+      const newVariant = document.createElement('div');
+      newVariant.className = 'vn-bg-edit-variant';
+      newVariant.dataset.variantIdx = count;
+      newVariant.innerHTML = `
+        <div class="dd-row">
+          <input type="text" class="vn-bg-edit-vname dd-input" value="" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantName')}"/>
+          <input type="text" class="vn-bg-edit-vpath dd-input" value="" placeholder="${game.i18n.localize('DRAMADIRECTOR.vn.bgEdit.variantPath')}"/>
+          <button type="button" class="dd-icon-btn vn-bg-edit-browse"><i class="fas fa-folder-open"></i></button>
+          <button type="button" class="dd-icon-btn dd-danger-btn vn-bg-edit-vdel"><i class="fas fa-times"></i></button>
+        </div>
+      `;
+      variantsContainer.appendChild(newVariant);
+      this._bindVariantEvents(newVariant);
+    });
+
+    form.querySelectorAll('.vn-bg-edit-variant').forEach(v => this._bindVariantEvents(v));
+
+    form.querySelector('[data-action="vn-bg-edit-cancel"]')?.addEventListener('click', () => form.remove());
+    form.querySelector('[data-action="vn-bg-edit-save"]')?.addEventListener('click', async () => {
+      const name = form.querySelector('#vn-bg-edit-name')?.value?.trim();
+      if (!name) {
+        ui.notifications?.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgNameRequired'));
+        return;
+      }
+
+      const variants = [];
+      form.querySelectorAll('.vn-bg-edit-variant').forEach(vRow => {
+        const vName = vRow.querySelector('.vn-bg-edit-vname')?.value?.trim();
+        const vPath = vRow.querySelector('.vn-bg-edit-vpath')?.value?.trim();
+        if (vPath) variants.push({ name: vName || vPath.split('/').pop(), src: vPath });
+      });
+
+      if (!variants.length) {
+        ui.notifications?.warn(game.i18n.localize('DRAMADIRECTOR.notifications.bgVariantRequired'));
+        return;
+      }
+
+      const bgId = editId || `bg-${Date.now()}`;
+      await DDVNPresets.saveBg(bgId, { name, variants });
+      form.remove();
+      this.render();
+    });
+  }
+
+  _bindVariantEvents(vRow) {
+    vRow.querySelector('.vn-bg-edit-browse')?.addEventListener('click', () => {
+      this._openFilePicker('imagevideo', p => {
+        vRow.querySelector('.vn-bg-edit-vpath').value = p;
+      });
+    });
+    vRow.querySelector('.vn-bg-edit-vdel')?.addEventListener('click', () => vRow.remove());
+  }
+
+  async _saveBgFromForm(el) {
+    // This is handled in _showBgEditForm now
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API
 // ─────────────────────────────────────────────────────────────────────────────
-export const DDVNApi = {
-  open()                             { DDVNOverlay.build(); DDVNManager.open(); },
-  openLocal()                        { DDVNOverlay.build(); DDVNManager.openLocal(); },
-  stop(bcast = true)                 { DDVNManager.stop(bcast); },
-  stopLocal()                        { DDVNManager.stopLocal(); },
-  setBackground(path)                { DDVNManager.setBackground(path); },
-  setChars(chars)                    { DDVNManager.setChars(chars); },
-  activateChar(id, val)              { DDVNManager.activateChar(id, val ?? true); },
-  activateExclusive(id)              { DDVNManager.activateExclusive(id); },
-  deactivateAll()                    { DDVNManager.deactivateAll(); },
-  showDialogue(name, text, col, auto){ DDVNManager.showDialogue(name, text, col, auto); },
-  hideDialogue()                     { DDVNManager.hideDialogue(); },
-  startMic()                         { return DDVNMic.start(); },
-  stopMic()                          { DDVNMic.stop(); },
-  state()                            { return _state; },
-  setLayers(layers)                  { DDVNManager.setLayers(layers); },
-  addLayer(layer)                    { DDVNManager.addLayer(layer); },
-  updateLayer(id, props)             { DDVNManager.updateLayer(id, props); },
-  removeLayer(id)                    { DDVNManager.removeLayer(id); },
-  setInteractiveImages(images)       { DDVNManager.setInteractiveImages(images); },
-  addInteractiveImage(img)           { DDVNManager.addInteractiveImage(img); },
-  updateInteractiveImage(id, props)  { DDVNManager.updateInteractiveImage(id, props); },
-  removeInteractiveImage(id)         { DDVNManager.removeInteractiveImage(id); },
-  openPanel() {
-    const ex = foundry.applications.instances.get('dd-vn-panel');
-    if (ex) { ex.bringToTop(); return; }
-    const p = new DDVNPanel();
-    DDVNPanel._instance = p;
-    p.render(true);
-  },
-};
+export class DDVNApi {
+  static open() { DDVNManager.open(); }
+  static openLocal() { DDVNManager.openLocal(); }
+  static stop() { DDVNManager.stop(true); }
+  static setBackground(path) { DDVNManager.setBackground(path); }
+  static setChars(chars) { DDVNManager.setChars(chars); }
+  static setLayers(layers) { DDVNManager.setLayers(layers); }
+  static setInteractiveImages(images) { DDVNManager.setInteractiveImages(images); }
+  static showDialogue(name, text, color, autoClose) { DDVNManager.showDialogue(name, text, color, autoClose); }
+  static hideDialogue() { DDVNManager.hideDialogue(); }
+  static activateExclusive(id) { DDVNManager.activateExclusive(id); }
+  static deactivateAll() { DDVNManager.deactivateAll(); }
+  static openPanel() {
+    if (DDVNPanel._instance) {
+      DDVNPanel._instance.render(true);
+    } else {
+      new DDVNPanel().render(true);
+    }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -2205,65 +2937,25 @@ export const DDVNApi = {
 export function initVNSystem() {
   DDVNPresets.register();
 
-  game.socket.on(SOCKET, packet => {
-    if (packet?.type === 'vn:state') DDVNManager.applyRemote(packet.state);
-    if (packet?.type === 'vn:subtitle') {
-      // Показываем субтитры (активация персонажа идёт через vn:state от VAD)
-      DDVNOverlay.showSubtitle(packet.name, packet.text, packet.color, packet.charId);
-      
-      // Удалить субтитры этого игрока через таймаут
-      setTimeout(() => {
-        DDVNOverlay.hideSubtitleByPlayer(packet.charId);
-      }, Math.max(3000, (packet.text?.length || 0) * 65));
+  game.socket.on(SOCKET, (data) => {
+    if (data.type === 'vn:state') {
+      if (DDVNManager.isGmOnlyMode() && !game.user?.isGM) return;
+      DDVNManager.applyRemote(data.state);
+    } else if (data.type === 'vn:subtitle') {
+      DDVNOverlay.showSubtitle(data.name, data.text, data.color, data.charId);
     }
   });
 
-  Hooks.on('canvasReady', () => DDVNOverlay.build());
-  if (document.getElementById('interface')) DDVNOverlay.build();
-
-  // Автозапрос микрофона при входе (для не-GM)
-  if (!game.user.isGM) {
-    Hooks.once('ready', () => {
-      // Небольшая задержка чтобы VN успела инициализироваться
-      setTimeout(() => {
-        if (_state.open && !DDVNMic._active) {
-          DDVNMic.start().catch(() => {});
-        }
-      }, 1000);
-    });
-  }
-
-  // Hook to bring FilePicker and other apps to front when VN panel is open
-  Hooks.on('renderFilePicker', (app) => {
-    // Use multiple attempts to ensure FilePicker gets proper z-index
-    const bringToFront = () => {
-      if (app.bringToTop) app.bringToTop();
-      // Also set via DOM for good measure
-      const el = app.element;
-      if (el) {
-        el.style.zIndex = '10050';
-        el.style.setProperty('z-index', '10050', 'important');
-      }
+  Hooks.on('getSceneControlButtons', (buttons) => {
+    if (!game.user?.isGM) return;
+    const tool = {
+      name: 'vn',
+      title: 'Visual Novel',
+      icon: 'fas fa-book-open',
+      onClick: () => DDVNApi.openPanel(),
+      button: true
     };
-    bringToFront();
-    setTimeout(bringToFront, 10);
-    setTimeout(bringToFront, 50);
-    setTimeout(bringToFront, 100);
+    const tokenTools = buttons.find(b => b.name === 'token');
+    if (tokenTools) tokenTools.tools.push(tool);
   });
-
-  // Also hook other common apps
-  Hooks.on('renderFormApplication', (app) => {
-    if (app.bringToTop) {
-      setTimeout(() => app.bringToTop(), 50);
-    }
-  });
-
-  Hooks.on('renderDialog', (app) => {
-    if (app.bringToTop) {
-      setTimeout(() => app.bringToTop(), 50);
-    }
-  });
-
-  if (!game.dramaDirector) game.dramaDirector = {};
-  game.dramaDirector.vn = DDVNApi;
 }

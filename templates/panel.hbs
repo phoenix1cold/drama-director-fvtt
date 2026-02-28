@@ -16,7 +16,7 @@
     <button class="dd-tab active" data-tab="intro"><i class="fas fa-film"></i> {{localize "DRAMADIRECTOR.tabs.intro"}}</button>
     <button class="dd-tab" data-tab="endings"><i class="fas fa-door-open"></i> {{localize "DRAMADIRECTOR.tabs.endings"}}</button>
     <button class="dd-tab" data-tab="effects"><i class="fas fa-magic"></i> {{localize "DRAMADIRECTOR.tabs.effects"}}</button>
-    <button class="dd-tab" data-tab="textpics"><i class="fas fa-layer-group"></i> Text and Pictures</button>
+    <button class="dd-tab" data-tab="textpics"><i class="fas fa-layer-group"></i> {{localize "DRAMADIRECTOR.tabs.textpics"}}</button>
     <button class="dd-tab" data-tab="video"><i class="fas fa-video"></i> {{localize "DRAMADIRECTOR.tabs.video"}}</button>
     <button class="dd-tab" data-tab="vn"><i class="fas fa-book-open"></i> {{localize "DRAMADIRECTOR.tabs.vn"}}</button>
   </div>
@@ -192,30 +192,30 @@
               <option value="fade">{{localize "DRAMADIRECTOR.charIntroAnimFade"}}</option>
               <option value="slideLeft">{{localize "DRAMADIRECTOR.charIntroAnimSlideLeft"}}</option>
               <option value="slideRight">{{localize "DRAMADIRECTOR.charIntroAnimSlideRight"}}</option>
-              <option value="slideUp">Slide Up</option>
-              <option value="slideDown">Slide Down</option>
+              <option value="slideUp">{{localize "DRAMADIRECTOR.slideUp"}}</option>
+              <option value="slideDown">{{localize "DRAMADIRECTOR.slideDown"}}</option>
               <option value="zoom">{{localize "DRAMADIRECTOR.charIntroAnimZoom"}}</option>
-              <option value="zoomOut">Zoom Out</option>
+              <option value="zoomOut">{{localize "DRAMADIRECTOR.zoomOut"}}</option>
               <option value="smoke">{{localize "DRAMADIRECTOR.charIntroAnimSmoke"}}</option>
-              <option value="flip">Flip</option>
-              <option value="bounce">Bounce</option>
+              <option value="flip">{{localize "DRAMADIRECTOR.flipAnim"}}</option>
+              <option value="bounce">{{localize "DRAMADIRECTOR.bounceAnim"}}</option>
             </select>
           </div>
           <div class="dd-transform-grid" style="margin-top:.3rem">
             <div class="dd-transform-item">
-              <label class="dd-label">Scale</label>
+              <label class="dd-label">{{localize "DRAMADIRECTOR.scaleParam"}}</label>
               <input type="number" id="dd-portrait-scale" class="dd-input" value="1" min="0.1" max="5" step="0.1">
             </div>
             <div class="dd-transform-item">
-              <label class="dd-label">X %</label>
+              <label class="dd-label">{{localize "DRAMADIRECTOR.xPercent"}}</label>
               <input type="number" id="dd-portrait-x" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
             </div>
             <div class="dd-transform-item">
-              <label class="dd-label">Y %</label>
+              <label class="dd-label">{{localize "DRAMADIRECTOR.yPercent"}}</label>
               <input type="number" id="dd-portrait-y" class="dd-input" value="0" min="-100" max="100" step="1" placeholder="0">
             </div>
             <div class="dd-transform-item">
-              <label class="dd-label">Z-Index</label>
+              <label class="dd-label">{{localize "DRAMADIRECTOR.zIndexParam"}}</label>
               <input type="number" id="dd-portrait-z" class="dd-input" value="0" min="-10" max="20" step="1" placeholder="0">
             </div>
           </div>
@@ -226,8 +226,8 @@
     {{!-- Text Layers (up to 10) --}}
     <div class="dd-panel-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
-        <h3 style="margin:0"><i class="fas fa-font"></i> Text Layers <span id="dd-text-layer-count" class="dd-badge">0/10</span></h3>
-        <button type="button" class="dd-icon-btn" data-action="add-text-layer" title="Add text layer"><i class="fas fa-plus"></i> Add</button>
+        <h3 style="margin:0"><i class="fas fa-font"></i> {{localize "DRAMADIRECTOR.textLayers"}} <span id="dd-text-layer-count" class="dd-badge">0/10</span></h3>
+        <button type="button" class="dd-icon-btn" data-action="add-text-layer" title="{{localize "DRAMADIRECTOR.addTextLayer"}}"><i class="fas fa-plus"></i> {{localize "DRAMADIRECTOR.addInteractive"}}</button>
       </div>
       <div id="dd-text-layers-container" class="dd-layers-container"></div>
     </div>
@@ -235,8 +235,8 @@
     {{!-- Image Layers (up to 10) --}}
     <div class="dd-panel-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
-        <h3 style="margin:0"><i class="fas fa-image"></i> Image Layers <span id="dd-image-layer-count" class="dd-badge">0/10</span></h3>
-        <button type="button" class="dd-icon-btn" data-action="add-image-layer" title="Add image layer"><i class="fas fa-plus"></i> Add</button>
+        <h3 style="margin:0"><i class="fas fa-image"></i> {{localize "DRAMADIRECTOR.imageLayers"}} <span id="dd-image-layer-count" class="dd-badge">0/10</span></h3>
+        <button type="button" class="dd-icon-btn" data-action="add-image-layer" title="{{localize "DRAMADIRECTOR.addImageLayer"}}"><i class="fas fa-plus"></i> {{localize "DRAMADIRECTOR.addInteractive"}}</button>
       </div>
       <div id="dd-image-layers-container" class="dd-layers-container"></div>
     </div>
@@ -255,7 +255,7 @@
           <i class="fas fa-code"></i>
         </button>
         <button type="button" class="dd-clear-btn" data-action="clear" style="flex:0.5">
-          <i class="fas fa-times"></i> Clear
+          <i class="fas fa-times"></i> {{localize "DRAMADIRECTOR.clearBtn"}}
         </button>
       </div>
     </div>
