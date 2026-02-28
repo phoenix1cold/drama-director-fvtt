@@ -543,7 +543,7 @@ export class DDVNOverlay {
   static ensureOpen() {
     if (!_state.open) {
       _state.open = true;
-      this.broadcast();
+      DDVNManager.broadcast();
     }
   }
 
@@ -2250,8 +2250,13 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     el.querySelector('[data-action="vn-browse-bg"]')?.addEventListener('click', () => {
       this._openFilePicker('imagevideo', p => {
+        console.log('DD VN | vn-browse-bg callback, path:', p);
         const inp = el.querySelector('#vn-bg-path');
-        if (inp) inp.value = p;
+        console.log('DD VN | input element:', inp);
+        if (inp) {
+          inp.value = p;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         DDVNManager.setBackground(p);
       });
     });
@@ -2461,9 +2466,13 @@ export class DDVNPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       row.querySelector('[data-layer-action="browse"]')?.addEventListener('click', () => {
         this._openFilePicker(layer.type === 'image' ? 'image' : 'any', p => {
+          console.log('DD VN | layer browse callback, path:', p);
           this._layers[idx].src = p;
           const inp = row.querySelector('.vn-layer-src-inp');
-          if (inp) inp.value = p;
+          if (inp) {
+            inp.value = p;
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
           DDVNManager.setLayers(this._layers);
         });
       });
@@ -2524,9 +2533,13 @@ game.dramaDirector.vn.setLayers(layers);`;
       });
       row.querySelector('[data-iimg-action="browse"]')?.addEventListener('click', () => {
         this._openFilePicker('image', p => {
+          console.log('DD VN | iimg browse callback, path:', p);
           this._interactiveImages[idx].src = p;
           const inp = row.querySelector('.vn-iimg-src-inp');
-          if (inp) inp.value = p;
+          if (inp) {
+            inp.value = p;
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
           DDVNManager.setInteractiveImages(this._interactiveImages);
         });
       });
@@ -2695,12 +2708,14 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
           if (action === 'active') {
             this._chars.forEach((c, i) => { c.active = i === idx ? !c.active : false; });
             DDVNManager.setChars(this._chars);
+            this.render();
           } else if (action === 'switch-side') {
             const sides = ['left', 'center', 'right'];
             const currentIdx = sides.indexOf(char.side);
             char.side = sides[(currentIdx + 1) % sides.length];
             this._recalcSlots();
             DDVNManager.setChars(this._chars);
+            this.render();
           } else if (action === 'move-up') {
             if (idx > 0) {
               const sameSide = this._chars.filter(c => c.side === char.side);
@@ -2714,35 +2729,51 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
                 DDVNManager.setChars(this._chars);
               }
             }
+            this.render();
           } else if (action === 'move-down') {
             const sameSide = this._chars.filter(c => c.side === char.side);
             const sameIdx = sameSide.indexOf(char);
             if (sameIdx < sameSide.length - 1) {
               const other = sameSide[sameIdx + 1];
               const temp = char.slot;
-              char.slot = other.slot;
+              other.slot = temp;
               other.slot = temp;
               this._sortChars();
               DDVNManager.setChars(this._chars);
             }
+            this.render();
           } else if (action === 'remove') {
             this._chars.splice(idx, 1);
             this._recalcSlots();
             DDVNManager.setChars(this._chars);
+            this.render();
           } else if (action === 'browse') {
             this._openFilePicker('image', p => {
+              console.log('DD VN | browse callback, path:', p, 'char:', char);
               char.img = p;
-              row.querySelector('.vn-char-img-inp').value = p;
+              const inp = row.querySelector('.vn-char-img-inp');
+              console.log('DD VN | input element:', inp);
+              if (inp) {
+                inp.value = p;
+                inp.dispatchEvent(new Event('change', { bubbles: true }));
+              }
               DDVNManager.setChars(this._chars);
+              this.render();
             });
           } else if (action === 'browse-active') {
             this._openFilePicker('image', p => {
+              console.log('DD VN | browse-active callback, path:', p, 'char:', char);
               char.activeImg = p;
-              row.querySelector('.vn-char-active-img-inp').value = p;
+              const inp = row.querySelector('.vn-char-active-img-inp');
+              console.log('DD VN | input element:', inp);
+              if (inp) {
+                inp.value = p;
+                inp.dispatchEvent(new Event('change', { bubbles: true }));
+              }
               DDVNManager.setChars(this._chars);
+              this.render();
             });
           }
-          this.render();
         });
       });
     });
@@ -2800,8 +2831,21 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
   }
 
   _openFilePicker(type, callback) {
-    const fp = new FilePicker({ type, callback });
-    fp.render({force: true});
+    // Foundry V13: FilePicker API
+    const FilePickerClass = foundry.applications.apps.FilePicker.implementation;
+    
+    const fp = new FilePickerClass({
+      type: type,
+      callback: (path) => {
+        console.log('DD VN | FilePicker callback path:', path);
+        // Call the original callback and trigger change event
+        callback(path);
+      }
+    });
+    
+    console.log('DD VN | FilePicker instance created');
+    
+    fp.render({ force: true });
   }
 
   _showBgEditForm(el, editId = null) {
@@ -2895,7 +2939,11 @@ game.dramaDirector.vn.setInteractiveImages(images);`;
   _bindVariantEvents(vRow) {
     vRow.querySelector('.vn-bg-edit-browse')?.addEventListener('click', () => {
       this._openFilePicker('imagevideo', p => {
-        vRow.querySelector('.vn-bg-edit-vpath').value = p;
+        const inp = vRow.querySelector('.vn-bg-edit-vpath');
+        if (inp) {
+          inp.value = p;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        }
       });
     });
     vRow.querySelector('.vn-bg-edit-vdel')?.addEventListener('click', () => vRow.remove());
